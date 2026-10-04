@@ -135,6 +135,26 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
   is rendered even for an empty week, because the limit card's row takes its height from it; so the summary and
   limit cards never move when a week fills or empties. Stacked (narrow) layouts drop it with display:none.
 
+- Data lock (5.0.3): every read-then-write of tracked data holds `withData` (core.js, a Web Lock named
+  `memoir-data`): the tracker's queue (`enqueue` in background.js) and the report's import, Never-track
+  anonymizing, title erasing and Clear all. Never await the tracker (`sendMessage({type:'sync'})`) inside it.
+- Import (5.0.3): `readImport` only keeps names the tracker could have written (`siteKey`: `domainFromUrl`
+  round-trip; titles through `safeKey`). Days that already have time open the merge/replace popover
+  (`#import-pop`, MorphPopover from the Import button). Merge = larger time per site per hour (`mergeDay`),
+  idempotent; days without per-hour detail keep the fuller record.
+- Private windows (5.0.3): when allowed in incognito, those tabs record as `~private`.
+- Title-only tab updates sync only while titles are on (`titlesOn` in background.js).
+- Background tab (5.0.3): `onStorageChanged` folds changes while `document.hidden` and applies them once on
+  `visibilitychange` (`applyHiddenChanges`), so a hidden report does no DOM work per tab switch and is current
+  as soon as it's seen. `goalTick` and the cursor's recheck timer also stop while hidden.
+- Scrolling (5.0.3): in-page lists no longer use `overscroll-behavior: contain` (popover lists still do), and
+  scroll.js latches a wheel gesture to what it started on (`GESTURE_GAP_MS`): a list that runs out holds the
+  rest of that gesture, the next one carries on to the page.
+- Right-click menu (5.0.3): right-clicking while it's open glides it (translate + height, WAAPI) to the new spot;
+  the old rows ride along in `.context-ghost` and fade while the new ones enter.
+- Bug reports (5.0.3): hovering/focusing "Mina Vian" in the Settings footer morphs `#author-pop` out of it
+  (120 ms hover intent, 220 ms grace to cross into it; Tab steps in, Escape returns to the name).
+
 ## Possible next step
 A small one-time welcome touch in the popup the first time it opens (a line + pulse on Weekly Report).
 

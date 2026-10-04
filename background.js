@@ -14,22 +14,25 @@ import {
   APP_NAME, IDLE_SECONDS, HEARTBEAT_MINUTES, MAX_GAP_MS, SLEEP_CREDIT_MS, PRIVATE_KEY, MAX_TITLES_PER_SITE,
   domainFromUrl, isExcluded, isPrivate, cleanTitle, dayKey, storageKeyForDay, normalizeDay, dayTotal,
   getSettings, getSession, getDays, startOfWeek, weekDayKeys, addDays, formatDuration,
-  getGoalHistory, limitOn, retentionCutoffKey, listDayKeys,
+  getGoalHistory, limitOn, retentionCutoffKey, listDayKeys, withData,
 } from './shared/core.js';
 
 chrome.idle.setDetectionInterval(IDLE_SECONDS);
 
-// Every change runs through one queue so saves never race each other.
+// Every change runs through one queue so saves never race each other, and under
+// the data lock so they never race the report's imports and privacy changes either.
 let chain = Promise.resolve();
 function enqueue(fn) {
-  chain = chain.then(fn).catch(err => console.warn(`[${APP_NAME}]`, err));
+  chain = chain.then(() => withData(fn)).catch(err => console.warn(`[${APP_NAME}]`, err));
   return chain;
 }
 const sync = () => enqueue(syncNow);
 
 // Page titles can change every few seconds (chat counters, players), so title-only
-// updates are batched.
+// updates are batched, and skipped entirely while titles aren't being saved.
 let titleTimer = 0;
+let titlesOn = null; // unknown until settings load: sync to be safe
+getSettings().then(s => { titlesOn = !!s.titles; });
 function syncSoon() {
   clearTimeout(titleTimer);
   titleTimer = setTimeout(sync, 1500);
@@ -55,7 +58,8 @@ async function currentTarget(settings) {
   if (!domain) return null;
   if (idle === 'idle' && !tab.audible) return null;
 
-  if (isExcluded(domain, settings.excluded)) return { domain: PRIVATE_KEY, origin: null, title: null };
+  // Private windows (when Memoir is allowed in them) count, but only as Private time.
+  if (tab.incognito || isExcluded(domain, settings.excluded)) return { domain: PRIVATE_KEY, origin: null, title: null };
   let origin = null;
   try { origin = new URL(url).origin; } catch { /* ignore */ }
   const title = settings.titles ? cleanTitle(tab.title, domain) : null;
@@ -275,7 +279,7 @@ chrome.tabs.onRemoved.addListener(sync);
 chrome.tabs.onUpdated.addListener((tabId, info, tab) => {
   if (!tab.active) return;
   if (info.url || info.audible !== undefined) sync();
-  else if (info.title) syncSoon();
+  else if (info.title && titlesOn !== false) syncSoon();
 });
 chrome.windows.onFocusChanged.addListener(sync);
 chrome.idle.onStateChanged.addListener(sync);
@@ -286,6 +290,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
     sync();
     const o = changes.settings.oldValue || {};
     const n = changes.settings.newValue || {};
+    titlesOn = !!n.titles;
     if (o.reminderDay !== n.reminderDay || o.reminderMinutes !== n.reminderMinutes) enqueue(() => scheduleWeekly(true));
     if (o.retention !== n.retention) enqueue(pruneOldDays);
   }

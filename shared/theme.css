@@ -674,6 +674,10 @@ button, input { font: inherit; color: inherit; letter-spacing: inherit; }
   color: var(--label);
 }
 .context-menu.closing { pointer-events: none; }
+/* right-clicking again: the menu glides to the new spot, carrying its old rows as they fade */
+.context-menu.gliding { overflow: hidden; }
+.context-ghost { position: absolute; left: 6px; right: 6px; pointer-events: none; }
+.context-menu .context-ghost > * { animation: none; }
 .context-title { margin: 5px 10px 7px; color: var(--label-2); font-size: 11px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .context-separator { height: 0.5px; margin: 5px 8px; background: var(--sep); }
 .context-item {
@@ -731,7 +735,7 @@ button, input { font: inherit; color: inherit; letter-spacing: inherit; }
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  overscroll-behavior: contain;
+  /* no containment: a list with nothing left to scroll hands the wheel to the page */
   scrollbar-width: none;
   --ft: 0px;
   --fb: 0px;

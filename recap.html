@@ -185,7 +185,7 @@
                   </div>
                 </div>
               </div>
-              <p class="p-foot">Memoir · Made by Mina Vian · Your data never leaves this browser</p>
+              <p class="p-foot">Memoir · Made by <button class="p-author" id="author" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="author-pop">Mina Vian</button> · Your data never leaves this browser</p>
             </div>
           </div>
           <button class="icon-btn morph-trigger" id="settings-btn" aria-label="Settings" aria-expanded="false" aria-controls="settings-panel">
@@ -300,6 +300,23 @@
 
   <div class="menu" id="cat-menu" role="menu" hidden></div>
   <div class="pop" id="cat-pop" role="dialog" aria-label="Sites in this category" hidden></div>
+  <div class="pop import-pop" id="import-pop" role="dialog" aria-labelledby="ip-title" aria-describedby="ip-text" hidden>
+    <p class="ip-title" id="ip-title">Some days are already here</p>
+    <p class="ip-text" id="ip-text"><b id="ip-count">1 day</b> in this file also has time in Memoir. Every other day is added either way.</p>
+    <div class="ip-choices">
+      <button class="ip-choice" type="button" data-mode="merge" style="--d:70ms"><b>Merge</b><small>Keep both, without counting any time twice</small></button>
+      <button class="ip-choice" type="button" data-mode="replace" style="--d:110ms"><b>Replace</b><small>Use the file’s version of those days</small></button>
+    </div>
+    <button class="ip-cancel" type="button" data-mode="" style="--d:150ms">Cancel</button>
+  </div>
+  <div class="pop author-pop" id="author-pop" role="dialog" aria-labelledby="ap-title" hidden>
+    <p class="ap-title" id="ap-title">Looking to report bugs?</p>
+    <p class="ap-text">Send here!</p>
+    <div class="ap-mail">
+      <a class="ap-addr" id="ap-addr" href="mailto:iamminavian@gmail.com">iamminavian@gmail.com</a>
+      <button class="ap-copy" id="ap-copy" type="button" aria-label="Copy email address"><span class="ap-copy-label">Copy</span></button>
+    </div>
+  </div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <script type="module" src="recap.js"></script>

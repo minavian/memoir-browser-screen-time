@@ -1208,6 +1208,121 @@ body { overflow: hidden; }
 .pop .scroll-area { flex: 0 1 auto; }
 .pop .row { height: 42px; }
 .pop-foot { padding: 6px 2px 0; font-size: 11.5px; color: var(--label-3); }
+/* popover lists stay in their popover: the page behind them never scrolls */
+.pop .scroll-area { overscroll-behavior: contain; }
+
+/* ---------- import: merge or replace, grown out of the Import button ---------- */
+.import-pop { width: 300px; padding: 14px 12px 8px; }
+.ip-title { margin: 0 4px 3px; font-size: 14px; font-weight: 700; animation: context-row-in 0.32s var(--ease-out) 150ms backwards; }
+.ip-text { margin: 0 4px 11px; font-size: 12px; line-height: 1.45; color: var(--label-2); animation: context-row-in 0.32s var(--ease-out) 180ms backwards; }
+.ip-text b { color: var(--label); font-weight: 600; }
+.ip-choices { display: flex; flex-direction: column; gap: 6px; }
+.ip-choice {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  width: 100%;
+  padding: 9px 12px;
+  border: 0;
+  border-radius: 11px;
+  background: var(--fill-1);
+  color: var(--label);
+  font: inherit;
+  text-align: left;
+  cursor: var(--cursor-hand);
+  transition: background-color 0.18s var(--ease), transform 0.25s var(--ease-out);
+  animation: context-row-in 0.32s var(--ease-out) calc(170ms + var(--d, 0ms)) backwards;
+}
+.ip-choice b { font-size: 13px; font-weight: 600; }
+.ip-choice small { font-size: 11.5px; color: var(--label-2); }
+.ip-choice:hover { background: var(--fill-2); }
+.ip-choice:focus-visible { outline: none; box-shadow: var(--ring); }
+.ip-choice:active { background: var(--fill-3); transform: scale(0.98); }
+.ip-cancel {
+  align-self: center;
+  margin-top: 6px;
+  height: 28px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--label-2);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: var(--cursor-hand);
+  transition: background-color 0.18s var(--ease), color 0.18s var(--ease);
+  animation: context-row-in 0.32s var(--ease-out) calc(170ms + var(--d, 0ms)) backwards;
+}
+.ip-cancel:hover, .ip-cancel:focus-visible { background: var(--fill-1); color: var(--label); outline: none; }
+
+/* ---------- the author's name in Settings: where bug reports go ---------- */
+.p-author {
+  position: relative;
+  display: inline;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 500;
+  color: var(--label-2);
+  cursor: var(--cursor-hand);
+  isolation: isolate;
+  outline: none;
+  transition: color 0.18s var(--ease);
+}
+.p-author::before {
+  content: "";
+  position: absolute;
+  inset: -2px -6px;
+  z-index: -1;
+  border-radius: 6px;
+  background: var(--fill-2);
+  opacity: 0;
+  transform: scale(0.88);
+  transition: opacity 0.18s var(--ease), transform 0.3s var(--ease-out);
+}
+.p-author:hover, .p-author:focus-visible, .p-author[aria-expanded="true"] { color: var(--label); }
+.p-author:hover::before, .p-author:focus-visible::before, .p-author[aria-expanded="true"]::before { opacity: 1; transform: none; }
+.p-author:focus-visible::before { box-shadow: var(--ring); }
+.author-pop { width: auto; padding: 13px 14px 12px; align-items: center; text-align: center; }
+.ap-title { margin: 0; font-size: 13.5px; font-weight: 700; animation: context-row-in 0.32s var(--ease-out) 150ms backwards; }
+.ap-text { margin: 2px 0 10px; font-size: 12px; color: var(--label-2); animation: context-row-in 0.32s var(--ease-out) 180ms backwards; }
+.ap-mail {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 3px 3px 12px;
+  border-radius: 999px;
+  background: var(--fill-1);
+  animation: context-row-in 0.32s var(--ease-out) 210ms backwards;
+}
+.ap-addr { font-size: 12.5px; font-weight: 600; color: var(--label); text-decoration: none; border-radius: 4px; outline: none; transition: color 0.18s var(--ease); }
+.ap-addr:hover, .ap-addr:focus-visible { color: var(--accent); }
+.ap-addr:focus-visible { box-shadow: var(--ring); }
+.ap-copy {
+  height: 24px;
+  min-width: 58px;
+  padding: 0 11px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--raised);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  color: var(--label);
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: var(--cursor-hand);
+  outline: none;
+  transition: transform 0.25s var(--ease-out), color 0.18s var(--ease);
+}
+.ap-copy:hover { color: var(--accent); }
+.ap-copy:focus-visible { box-shadow: var(--ring); }
+.ap-copy:active { transform: scale(0.95); }
+.ap-copy-label { display: inline-block; }
+.ap-copy-label.swap { animation: swap 0.35s var(--ease-out); }
 
 /* ---------- toast ---------- */
 

@@ -162,7 +162,11 @@ function mount() {
     const t = document.elementFromPoint(lastX, lastY);
     if (t && !t.closest('.cc')) setMode(stateFor(t));
   };
-  const timer = setInterval(recheck, 400);
+  // the recheck only runs while the page can be seen
+  let timer = 0;
+  const watch = () => { clearInterval(timer); timer = document.hidden ? 0 : setInterval(recheck, 400); };
+  const visibility = () => { hide(); watch(); };
+  watch();
 
   // pointerrawupdate arrives as soon as the mouse reports, not once per frame
   const MOVE = 'onpointerrawupdate' in window ? 'pointerrawupdate' : 'pointermove';
@@ -173,14 +177,14 @@ function mount() {
   document.addEventListener('pointerup', up, { passive: true });
   document.addEventListener('pointercancel', up, { passive: true });
   document.documentElement.addEventListener('mouseleave', leave);
-  document.addEventListener('visibilitychange', hide);
+  document.addEventListener('visibilitychange', visibility);
   window.addEventListener('blur', hide);
 
   return () => {
     clearInterval(timer);
     clearTimeout(edgeTimer);
     document.documentElement.removeEventListener('mouseleave', leave);
-    document.removeEventListener('visibilitychange', hide);
+    document.removeEventListener('visibilitychange', visibility);
     cancelAnimationFrame(raf);
     document.removeEventListener(MOVE, move);
     document.removeEventListener('pointerover', over);

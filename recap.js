@@ -4,6 +4,7 @@ import {
   setCategoryOverride, getOrigins, formatDuration, formatBytes, formatTimeOfDay, hourLabel, hourRange, escapeHtml,
   storageKeyForDay, normalizeDay, cloneDay, dayTotal, listDayKeys, normalizeSite, isExcluded, uses24h,
   getGoalHistory, limitOn, limitLocked, commitLimit, removeLimit, goalLevel, retentionCutoffKey, resetLimit,
+  withData, domainFromUrl, safeKey,
 } from './shared/core.js';
 import {
   animateNumber, tween, reveal, createTooltip, faviconTile, reducedMotion, syncSegmented, slicePath, initPetals,
@@ -63,6 +64,8 @@ const state = {
 
 const tip = createTooltip();
 const catPop = new MorphPopover($('cat-pop'), { radius: 16 });
+const importPop = new MorphPopover($('import-pop'), { radius: 16 });
+const authorPop = new MorphPopover($('author-pop'), { radius: 16, onClose: () => $('author').setAttribute('aria-expanded', 'false') });
 
 // On the first load (and when the board switches between an empty week and a
 // full one) the cards come in 110 ms apart (see the end of recap.css) and what's
@@ -133,6 +136,7 @@ async function init() {
 
   watchTheme(updateAppearanceUI);
   chrome.storage.onChanged.addListener(onStorageChanged);
+  document.addEventListener('visibilitychange', applyHiddenChanges);
   setInterval(() => {
     if (isCurrentWeek() && !state.demo && !document.hidden) render({ soft: true });
   }, 60_000);
@@ -2260,6 +2264,7 @@ function updateGoal() {
 }
 
 function goalTick() {
+  if (document.hidden) return; // caught up when the tab is shown again
   const nowKey = dayKey(new Date());
   if (nowKey !== state.todayKey) {
     state.todayKey = nowKey;
@@ -2468,6 +2473,8 @@ function closeSettings(focusTrigger = false) {
   pendingRetention = null;
   $('ex-form').classList.remove('invalid');
   tip.hide();
+  answerImport(null, true);
+  closeAuthor(true);
   $('settings-btn').setAttribute('aria-expanded', 'false');
   $('settings-btn').setAttribute('aria-label', 'Settings');
   if (focusTrigger) $('settings-btn').focus({ preventScroll: true });
@@ -2784,9 +2791,11 @@ function setNukeStep(n) {
 }
 
 async function clearAllData() {
-  const keys = await listDayKeys();
-  await chrome.storage.local.remove([...keys.map(storageKeyForDay), 'categories', 'origins', 'goalNotify']);
-  await chrome.storage.session.remove('session');
+  await withData(async () => {
+    const keys = await listDayKeys();
+    await chrome.storage.local.remove([...keys.map(storageKeyForDay), 'categories', 'origins', 'goalNotify']);
+    await chrome.storage.session.remove('session');
+  });
   state.overrides = {};
   state.earliestKey = null;
   state.todayRec = normalizeDay(null);
@@ -2842,6 +2851,8 @@ function wire() {
     if (e.key === 'Escape') {
       if (!$('cat-menu').hidden) closeCatMenu();
       else if (catPop.isOpen) closeCatPop();
+      else if (importAnswer) { answerImport(null); $('import').focus({ preventScroll: true }); }
+      else if (authorPop.isOpen) { closeAuthor(); focusAuthor(); }
       else if ($('settings').classList.contains('open')) {
         if ($('data-row').dataset.step !== '0') setNukeStep(0);
         else closeSettings(true);
@@ -2935,7 +2946,9 @@ function wire() {
   });
   document.addEventListener('pointerdown', e => {
     if (e.target.closest('.pk-layer, .gx-layer, .tour')) return;
-    if ($('settings').classList.contains('open') && !e.target.closest('#settings')) closeSettings();
+    if ($('settings').classList.contains('open') && !e.target.closest('#settings, #import-pop, #author-pop')) closeSettings();
+    if (importAnswer && !e.target.closest('#import-pop')) answerImport(null);
+    if (authorPop.isOpen && !e.target.closest('#author-pop, #author')) closeAuthor();
     if (!$('cat-menu').hidden && !e.target.closest('#cat-menu') && !e.target.closest('.cat-btn')) closeCatMenu();
     if (catPop.isOpen && !e.target.closest('#cat-pop') && !e.target.closest('[data-act="cat"]') && !e.target.closest('.cat-legend') && !e.target.closest('.donut-seg')) closeCatPop();
   });
@@ -2997,7 +3010,7 @@ function wire() {
   $('detail-keep').addEventListener('click', () => { setReveal('detail-confirm', false); toast('Saved titles kept; new ones won’t be saved'); });
   $('detail-erase').addEventListener('click', async () => {
     setReveal('detail-confirm', false);
-    const n = await eraseTitles();
+    const n = await withData(eraseTitles);
     toast(n ? 'Saved page titles erased' : 'No page titles to erase');
     render({ soft: true });
   });
@@ -3133,7 +3146,16 @@ function wire() {
     const file = e.target.files[0];
     e.target.value = '';
     if (!file) return;
-    const n = await importFile(file);
+    const parsed = await readImport(file);
+    if (!parsed) { toast('That file isn’t a Memoir export'); return; }
+    // days that already hold time here: ask before touching them
+    const here = await chrome.storage.local.get(Object.keys(parsed.days));
+    const overlap = Object.keys(parsed.days).filter(k => here[k] && dayTotal(normalizeDay(here[k])) > 0).length;
+    const mode = overlap ? await askImportMode(overlap) : 'replace';
+    if (!mode) return;
+    let n = 0;
+    try { n = await withData(() => writeImport(parsed, mode)); }
+    catch { toast('The import couldn’t be completed. Nothing was changed.'); return; }
     if (n > 0) {
       if (state.demo) exitDemo(false);
       const keys = await listDayKeys();
@@ -3144,9 +3166,20 @@ function wire() {
       await render({});
       updateGoal();
       refreshStats();
-      toast(`Imported ${n} day${n === 1 ? '' : 's'}`);
-    } else toast('That file isn’t a Memoir export');
+      const days = `Imported ${n} day${n === 1 ? '' : 's'}`;
+      toast(overlap ? `${days} · ${overlap} ${mode === 'merge' ? 'merged' : 'replaced'}` : days);
+    }
   });
+  $('import-pop').addEventListener('click', e => {
+    const b = e.target.closest('[data-mode]');
+    if (b) { answerImport(b.dataset.mode || null); $('import').focus({ preventScroll: true }); }
+  });
+  // the panel scrolls under its popovers: keep them on what they came from
+  $('settings-panel').addEventListener('scroll', () => {
+    if (!$('import-pop').hidden) importPop.place($('import').getBoundingClientRect());
+    if (!$('author-pop').hidden) authorPop.place($('author').getBoundingClientRect());
+  }, { passive: true });
+  wireAuthor();
   $('nuke').addEventListener('click', async () => {
     const step = +$('data-row').dataset.step;
     if (step === 0) setNukeStep(1);
@@ -3184,7 +3217,7 @@ async function addExcluded(site) {
   if (list.includes(site)) { toast(`${site} is already private`); return true; }
   state.settings = await updateSettings({ excluded: [...list, site] });
   renderExcluded(site);
-  const n = await anonymizeSites([site]);
+  const n = await withData(() => anonymizeSites([site]));
   toast(n ? `${site} won’t be tracked; its past time is now Private` : `${site} won’t be tracked`);
   // repaint the report once the chip has landed, not while it's still moving
   setTimeout(() => render({ soft: true }), reducedMotion() ? 0 : 600);
@@ -3201,47 +3234,168 @@ function toast(text) {
 }
 
 // Accepts an export from any version of Browser Screen Time or Memoir.
-async function importFile(file) {
-  try {
-    const json = JSON.parse(await file.text());
-    const data = json && typeof json === 'object' && json.data && typeof json.data === 'object' ? json.data : json;
-    const patch = {};
-    let days = 0;
-    const num = x => (Number.isFinite(x) && x >= 0 ? Math.round(x) : 0);
-    const cleanMap = (m, depth) => {
-      const out = {};
-      if (!m || typeof m !== 'object') return out;
-      for (const [k, v] of Object.entries(m)) {
-        if (typeof k !== 'string' || k.length > 256 || k === '__proto__') continue;
-        if (depth > 1) { const inner = cleanMap(v, depth - 1); if (Object.keys(inner).length) out[k] = inner; }
-        else if (Number.isFinite(v) && v >= 0) out[k] = Math.round(v);
-      }
-      return out;
-    };
-    for (const [k, v] of Object.entries(data || {})) {
-      if (/^day:\d{4}-\d{2}-\d{2}$/.test(k) && v && typeof v.s === 'object' && Array.isArray(v.h) && v.h.length === 24) {
-        const hs = {};
-        for (const [h, slot] of Object.entries(cleanMap(v.hs, 2))) if (/^([0-9]|1[0-9]|2[0-3])$/.test(h)) hs[h] = slot;
-        patch[k] = { s: cleanMap(v.s, 1), h: v.h.map(num), hs, ti: cleanMap(v.ti, 2) };
-        days++;
-      } else if (k === 'categories' && v && typeof v === 'object') {
-        const c = { ...state.overrides };
-        for (const [d, cat] of Object.entries(v)) if (CATEGORY_BY_ID[cat] && d !== '__proto__') c[d] = cat;
-        patch.categories = c;
-      } else if (k === 'origins' && v && typeof v === 'object') {
-        const o = await getOrigins();
-        for (const [d, origin] of Object.entries(v)) if (typeof origin === 'string' && /^https?:\/\/[^/]+$/.test(origin) && d !== '__proto__') o[d] = origin;
-        patch.origins = o;
-      }
+// Names from a file must look exactly like the ones the tracker writes: no
+// built-in object names, no markup, nothing a page address couldn't produce.
+const siteKey = d => (d === PRIVATE_KEY || domainFromUrl(`http://${d}`) === d ? d : null);
+const titleKey = t => (t.length <= 256 && safeKey(t) !== null ? t : null);
+
+// Reads an export into clean records, or null when the file isn't one.
+async function readImport(file) {
+  let json;
+  try { json = JSON.parse(await file.text()); } catch { return null; }
+  const data = json && typeof json === 'object' && json.data && typeof json.data === 'object' ? json.data : json;
+  if (!data || typeof data !== 'object') return null;
+  const ms = v => (Number.isFinite(v) && v >= 0 ? Math.round(v) : null);
+  const times = (m, keyOf) => {
+    const out = {};
+    if (!m || typeof m !== 'object') return out;
+    for (const [k, v] of Object.entries(m)) {
+      const name = keyOf(k);
+      const t = ms(v);
+      if (name !== null && t !== null) out[name] = t;
     }
-    if (!days) return 0;
-    await chrome.storage.local.set(patch);
-    if (patch.categories) state.overrides = patch.categories;
-    if (state.settings.excluded.length) await anonymizeSites(state.settings.excluded);
-    return days;
-  } catch {
-    return 0;
+    return out;
+  };
+  const days = {};
+  const categories = {};
+  const origins = {};
+  for (const [k, v] of Object.entries(data)) {
+    if (/^day:\d{4}-\d{2}-\d{2}$/.test(k) && v && typeof v.s === 'object' && Array.isArray(v.h) && v.h.length === 24) {
+      const hs = {};
+      for (const [h, slot] of Object.entries(v.hs && typeof v.hs === 'object' ? v.hs : {})) {
+        if (!/^([0-9]|1[0-9]|2[0-3])$/.test(h)) continue;
+        const clean = times(slot, siteKey);
+        if (Object.keys(clean).length) hs[h] = clean;
+      }
+      const ti = {};
+      for (const [d, pages] of Object.entries(v.ti && typeof v.ti === 'object' ? v.ti : {})) {
+        if (isPrivate(d) || siteKey(d) === null) continue;
+        const clean = times(pages, titleKey);
+        if (Object.keys(clean).length) ti[d] = clean;
+      }
+      days[k] = { s: times(v.s, siteKey), h: v.h.map(x => ms(x) ?? 0), hs, ti };
+    } else if (k === 'categories' && v && typeof v === 'object') {
+      for (const [d, cat] of Object.entries(v)) if (CATEGORY_BY_ID[cat] && !isPrivate(d) && siteKey(d) !== null) categories[d] = cat;
+    } else if (k === 'origins' && v && typeof v === 'object') {
+      for (const [d, origin] of Object.entries(v)) if (typeof origin === 'string' && /^https?:\/\/[^/]+$/.test(origin) && !isPrivate(d) && siteKey(d) !== null) origins[d] = origin;
+    }
   }
+  return Object.keys(days).length ? { days, categories, origins } : null;
+}
+
+// A day in both: the larger time for each site in each hour, so nothing is ever
+// counted twice (importing the same file again changes nothing). Days kept
+// without per-hour detail by older versions keep whichever record holds more.
+const hourlyTotal = d => Object.values(d.hs).reduce((t, slot) => t + sum(Object.values(slot)), 0);
+function mergeDay(a, b) {
+  if (Math.abs(hourlyTotal(a) - dayTotal(a)) > 1000 || Math.abs(hourlyTotal(b) - dayTotal(b)) > 1000) return dayTotal(b) > dayTotal(a) ? b : a;
+  const out = { s: {}, h: new Array(24).fill(0), hs: {}, ti: {} };
+  for (let h = 0; h < 24; h++) {
+    const slot = {};
+    for (const from of [a.hs[h], b.hs[h]]) for (const [d, ms] of Object.entries(from || {})) slot[d] = Math.max(slot[d] || 0, ms);
+    if (!Object.keys(slot).length) continue;
+    out.hs[h] = slot;
+    for (const [d, ms] of Object.entries(slot)) { out.s[d] = (out.s[d] || 0) + ms; out.h[h] += ms; }
+  }
+  for (const from of [a.ti, b.ti]) {
+    for (const [d, pages] of Object.entries(from)) {
+      const into = out.ti[d] || (out.ti[d] = {});
+      for (const [t, ms] of Object.entries(pages)) into[t] = Math.max(into[t] || 0, ms);
+    }
+  }
+  return out;
+}
+
+// Runs under the data lock, so the tracker can't save in between.
+async function writeImport({ days, categories, origins }, mode) {
+  const keys = Object.keys(days);
+  const raw = await chrome.storage.local.get([...keys, 'categories', 'origins']);
+  const patch = {};
+  for (const k of keys) patch[k] = mode === 'merge' && raw[k] ? mergeDay(normalizeDay(raw[k]), days[k]) : days[k];
+  if (Object.keys(categories).length) patch.categories = { ...(raw.categories || {}), ...categories };
+  if (Object.keys(origins).length) patch.origins = { ...(raw.origins || {}), ...origins };
+  await chrome.storage.local.set(patch);
+  if (patch.categories) state.overrides = patch.categories;
+  if (state.settings.excluded.length) await anonymizeSites(state.settings.excluded);
+  return keys.length;
+}
+
+// Merge or replace: a popover that grows out of the Import button.
+let importAnswer = null;
+function askImportMode(count) {
+  answerImport(null, true);
+  $('ip-text').innerHTML = `<b>${count} day${count === 1 ? '' : 's'}</b> in this file also ${count === 1 ? 'has' : 'have'} time in Memoir. Every other day is added either way.`;
+  return new Promise(resolve => {
+    importAnswer = resolve;
+    importPop.open($('import'));
+    $('import-pop').querySelector('[data-mode="merge"]').focus({ preventScroll: true });
+  });
+}
+function answerImport(mode, instant = false) {
+  const resolve = importAnswer;
+  importAnswer = null;
+  if (!$('import-pop').hidden) importPop.close({ instant });
+  if (resolve) resolve(mode);
+}
+
+// ----- the author's name in Settings: where bug reports go -----
+
+let authorTimer = 0;
+let copyTimer = 0;
+let authorQuiet = false;
+// focus going back to the name (after Escape or leaving the popover) mustn't reopen it
+function focusAuthor() {
+  authorQuiet = true;
+  $('author').focus({ preventScroll: true });
+  authorQuiet = false;
+}
+function closeAuthor(instant = false) {
+  clearTimeout(authorTimer);
+  if (!$('author-pop').hidden) authorPop.close({ instant });
+}
+function wireAuthor() {
+  const name = $('author');
+  const pop = $('author-pop');
+  const addr = $('ap-addr');
+  const copy = $('ap-copy');
+  addr.href = `mailto:iamminavian@gmail.com?subject=${encodeURIComponent(`Memoir ${chrome.runtime.getManifest().version} bug report`)}`;
+  const open = delay => {
+    clearTimeout(authorTimer);
+    if (authorPop.isOpen) return;
+    authorTimer = setTimeout(() => { name.setAttribute('aria-expanded', 'true'); authorPop.open(name); }, delay);
+  };
+  // moving between the name and the popover keeps it open; leaving both closes it
+  const leave = () => { clearTimeout(authorTimer); authorTimer = setTimeout(() => closeAuthor(), 220); };
+  name.addEventListener('pointerenter', () => open(120));
+  name.addEventListener('pointerleave', leave);
+  pop.addEventListener('pointerenter', () => clearTimeout(authorTimer));
+  pop.addEventListener('pointerleave', leave);
+  name.addEventListener('click', () => open(0));
+  name.addEventListener('focus', () => { if (!authorQuiet && name.matches(':focus-visible')) open(0); });
+  name.addEventListener('blur', e => { if (!pop.contains(e.relatedTarget)) leave(); });
+  pop.addEventListener('focusout', e => { if (!pop.contains(e.relatedTarget) && e.relatedTarget !== name) leave(); });
+  // the popover sits outside the panel: Tab steps into it and back out
+  name.addEventListener('keydown', e => {
+    if (e.key === 'Tab' && !e.shiftKey && !pop.hidden) { e.preventDefault(); addr.focus({ preventScroll: true }); }
+  });
+  pop.addEventListener('keydown', e => {
+    if (e.key !== 'Tab') return;
+    if (e.shiftKey && document.activeElement === addr) { e.preventDefault(); focusAuthor(); }
+    else if (!e.shiftKey && document.activeElement === copy) { e.preventDefault(); closeAuthor(); focusAuthor(); }
+  });
+  copy.addEventListener('click', async () => {
+    const label = copy.querySelector('.ap-copy-label');
+    try {
+      await navigator.clipboard.writeText('iamminavian@gmail.com');
+    } catch {
+      toast('Couldn’t copy. The address is iamminavian@gmail.com');
+      return;
+    }
+    label.textContent = 'Copied';
+    replay(label, 'swap');
+    clearTimeout(copyTimer);
+    copyTimer = setTimeout(() => { label.textContent = 'Copy'; replay(label, 'swap'); }, 1600);
+  });
 }
 
 async function enterDemo() {
@@ -3527,7 +3681,25 @@ function exitDemo(rerender) {
   else render({ direction: 'prev' });
 }
 
+// In a background tab nothing is drawn: every tab switch the tracker records is
+// folded into one set of changes, applied once when the report is looked at again.
+const hiddenChanges = { local: null, session: null };
+function applyHiddenChanges() {
+  if (document.hidden) return;
+  goalTick();
+  for (const area of ['session', 'local']) {
+    const changes = hiddenChanges[area];
+    hiddenChanges[area] = null;
+    if (changes) onStorageChanged(changes, area);
+  }
+}
+
 function onStorageChanged(changes, area) {
+  if (document.hidden && area in hiddenChanges) {
+    const into = hiddenChanges[area] || (hiddenChanges[area] = {});
+    for (const [k, c] of Object.entries(changes)) into[k] = { oldValue: k in into ? into[k].oldValue : c.oldValue, newValue: c.newValue };
+    return;
+  }
   if (area === 'session' && changes.session) {
     state.session = changes.session.newValue || null;
     updateGoal();

@@ -150,15 +150,32 @@ export function initContextMenu({ getItems = () => [], beforeOpen = () => {}, on
     return result;
   }
 
+  // The rows a gliding menu is leaving: they ride along inside it while they fade.
+  function ghostOf() {
+    const ghost = document.createElement('div');
+    ghost.className = 'context-ghost';
+    ghost.setAttribute('aria-hidden', 'true');
+    ghost.inert = true;
+    ghost.style.top = `${6 - menu.scrollTop}px`;
+    ghost.append(...[...menu.children].filter(child => !child.classList.contains('context-ghost')));
+    return ghost;
+  }
+
   function open(event) {
     event.preventDefault();
     if (menu.contains(event.target)) return;
-    ++token;
+    const current = ++token;
+    // Already open: the same surface glides to the new spot instead of starting over.
+    const glide = !menu.hidden && !menu.classList.contains('closing') && !reducedMotion();
+    const from = glide ? menu.getBoundingClientRect() : null;
+    const ghost = glide ? ghostOf() : null;
+    const previousFocus = glide ? context?.previousFocus : null;
     context = contextFor(event);
+    if (previousFocus) context.previousFocus = previousFocus;
     items = baseItems(context);
     beforeOpen(context);
     menu.getAnimations().forEach(a => a.cancel());
-    menu.classList.remove('closing');
+    menu.classList.remove('closing', 'gliding');
     menu.replaceChildren();
     const title = document.createElement('p');
     title.className = 'context-title';
@@ -193,7 +210,21 @@ export function initContextMenu({ getItems = () => [], beforeOpen = () => {}, on
     menu.style.top = `${top}px`;
     menu.style.transformOrigin = `${Math.max(0, Math.min(w, x - left))}px ${Math.max(0, Math.min(h, y - top))}px`;
     menu.querySelector('.context-item:not(:disabled)')?.focus({ preventScroll: true });
-    if (!reducedMotion()) menu.animate([{ opacity: 0, transform: 'translateY(6px) scale(0.9)' }, { opacity: 1, transform: 'none' }], { duration: 380, easing: EASE_OUT });
+    if (glide) {
+      // position and height travel together; the old rows fade as the new ones arrive
+      menu.classList.add('gliding');
+      menu.appendChild(ghost);
+      const to = menu.getBoundingClientRect();
+      const done = () => { if (current === token) menu.classList.remove('gliding'); ghost.remove(); };
+      menu.animate([
+        { transform: `translate(${from.left - to.left}px, ${from.top - to.top}px)`, height: `${from.height}px` },
+        { transform: 'none', height: `${to.height}px` },
+      ], { duration: 420, easing: EASE_OUT }).finished.then(done, done);
+      ghost.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 160, easing: 'ease-out', fill: 'forwards' });
+      for (const el of menu.querySelectorAll(':scope > .context-title, :scope > .context-separator')) {
+        el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 240, delay: 80, easing: 'ease-out', fill: 'backwards' });
+      }
+    } else if (!reducedMotion()) menu.animate([{ opacity: 0, transform: 'translateY(6px) scale(0.9)' }, { opacity: 1, transform: 'none' }], { duration: 380, easing: EASE_OUT });
   }
 
   document.addEventListener('contextmenu', open, true);

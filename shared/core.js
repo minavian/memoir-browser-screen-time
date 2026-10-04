@@ -322,6 +322,10 @@ export const dayTotal = d => Object.values(d.s).reduce((a, b) => a + b, 0);
 
 // ---------- storage ----------
 
+// Every read-then-write of tracked data holds this lock, in the tracker and in the
+// pages alike, so one save can never land between another's read and its write.
+export const withData = fn => navigator.locks.request('memoir-data', fn);
+
 export async function getSettings() {
   const { settings } = await chrome.storage.local.get('settings');
   const merged = { ...DEFAULT_SETTINGS, ...(settings || {}) };

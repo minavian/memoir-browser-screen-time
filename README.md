@@ -103,7 +103,12 @@ Open the gear in the top-right corner of the report.
 - **Sample week** and **Tutorial:** look around with made-up data, or replay
   the tour.
 - **Your data:** Export, Import, and **Clear all**, which asks twice. Clearing
-  keeps your settings and today's limit.
+  keeps your settings and today's limit. If a file has days that already have
+  time here, Import asks first: **Merge** keeps the larger time for each site in
+  each hour, so importing the same file twice never counts anything twice;
+  **Replace** uses the file's version of those days. Other days are always added.
+- **Found a bug?** Hover (or tab to) **Mina Vian** at the bottom of Settings for
+  the address to send it to.
 
 ## What counts as time
 
@@ -114,13 +119,18 @@ Only the active tab of the focused Chrome window is timed. The clock pauses when
 - the screen locks or the computer sleeps
 - you pause tracking
 
+Incognito windows aren't tracked unless you allow Memoir in them (Details →
+Allow in Incognito on `chrome://extensions`); then their time counts only as
+Private.
+
 Everything is stored locally in this browser. Nothing is ever sent anywhere.
 
 **Keyboard:** ← / → switch weeks (or step through a day or hour) · arrow keys
 move around the hour grid and Enter opens a square · Esc closes menus, settings
 and detail views.
 
-Right-click anywhere for a menu that matches your theme. Site rows offer open,
+Right-click anywhere for a menu that matches your theme; right-click again while
+it's open and it glides to the new spot. Site rows offer open,
 copy, and category actions; text fields offer editing actions. Elsewhere, quickly
 open Settings or the weekly report, pause tracking, or refresh. Use ↑ / ↓ to move
 through the menu, Enter to choose, and Esc to close it.

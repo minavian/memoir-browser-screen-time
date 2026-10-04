@@ -58,6 +58,11 @@ Line endings: `web/` files use CRLF and the extension uses LF. Compare with `dif
 - `importFile()`: accept an `apps` object (name ≤ 160 chars, known category, icon must match `^[a-f0-9]{24}\.png$`) and merge it into `window.memoir.apps`.
 - `'Page and window titles…'` and `'Names only'` replace `'Page titles…'` and `'Domains only'` in the tracking-detail text.
 
+- `readImport()` (extension 5.0.3+): its `siteKey` only accepts website names, so add the app case or every
+  `app:` key in an import is dropped: `d === PRIVATE_KEY || /^app:[^<>:"/\\|?*\x00-\x1f]+\.exe$/.test(d) || domainFromUrl(...) === d`.
+- `withData` (the `memoir-data` Web Lock) works in WebView2 but the native tracker doesn't take it; the page-side
+  lock still orders the page's own writes, and the native `Store` applies each `storage.set` atomically.
+
 ### `recap.html`
 - "Track screen time" / "Pause any time from Today or the tray" (tracking switch), "Names only" (detail option), Never-track description in terms of apps and websites, footer "Your data never leaves this computer", empty-state text, `aria-label="Apps and websites in this category"`.
 
