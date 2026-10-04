@@ -71,7 +71,9 @@ function blocksIn(parts) {
     const r = el.getBoundingClientRect();
     if (!r.width || !r.height) return;
     if (r.width * r.height <= SMALL || !el.children.length || el instanceof SVGElement) {
-      const own = getComputedStyle(el).color;
+      const cs = getComputedStyle(el);
+      if (cs.visibility === 'hidden') return; // unseen (e.g. the hour grid's entrance veil once it's done)
+      const own = cs.color;
       const parent = el.parentElement ? getComputedStyle(el.parentElement).color : bodyColor;
       out.push({ el, keep: own === parent && own !== bodyColor, x: r.left + r.width / 2, y: r.top + r.height / 2 });
       return;

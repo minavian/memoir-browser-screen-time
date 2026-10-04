@@ -2,7 +2,7 @@
 
 Chrome MV3 extension by **Mina Vian** ("Made by Mina Vian" credit stays everywhere).
 Logs browsing time and shows today in a popup and the whole week in a full-page report.
-Current version: **5.0.2** (`manifest.json`). Load unpacked from this folder; after edits,
+Current version: **5.1.2** (`manifest.json`). Load unpacked from this folder; after edits,
 press reload on the extension in `chrome://extensions` and refresh the report tab.
 
 ## What the owner cares about (apply to every change)
@@ -57,7 +57,7 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
   is unset the report shows the welcome (`welcome.js`): hourglass pops and pours, letters rise, cards cascade,
   pin hint points at the toolbar. "Take the tour" flies the hourglass into the header logo while the page
   reveals, then the tutorial runs; "Skip for now" (or Esc) just sets `onboarded`. Replay the tour from Settings.
-- Welcome (5.0.3): a single card on the tour's own dim (`--tour-dim`, no colour orbs, no feature cards). Its surface
+- Welcome (5.1.2): a single card on the tour's own dim (`--tour-dim`, no colour orbs, no feature cards). Its surface
   is `.wel-card::before`, so the hourglass inside can fly off on its own (blurring and fading into the header logo).
   "Take the tour" starts the tour at once, under the card, while the words fade; the dims swap in one frame
   (`.tour.handoff` skips the spot's fade); once the words are gone and the page is calm (`calm()`), a shell reshapes
@@ -147,30 +147,30 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
   is rendered even for an empty week, because the limit card's row takes its height from it; so the summary and
   limit cards never move when a week fills or empties. Stacked (narrow) layouts drop it with display:none.
 
-- Data lock (5.0.3): every read-then-write of tracked data holds `withData` (core.js, a Web Lock named
+- Data lock (5.1.2): every read-then-write of tracked data holds `withData` (core.js, a Web Lock named
   `memoir-data`): the tracker's queue (`enqueue` in background.js) and the report's import, Never-track
   anonymizing, title erasing and Clear all. Never await the tracker (`sendMessage({type:'sync'})`) inside it.
-- Import (5.0.3): `readImport` only keeps names the tracker could have written (`siteKey`: `domainFromUrl`
+- Import (5.1.2): `readImport` only keeps names the tracker could have written (`siteKey`: `domainFromUrl`
   round-trip; titles through `safeKey`). Days that already have time open the merge/replace popover
   (`#import-pop`, MorphPopover from the Import button). Merge = larger time per site per hour (`mergeDay`),
   idempotent; days without per-hour detail keep the fuller record.
-- Private windows (5.0.3): when allowed in incognito, those tabs record as `~private`.
+- Private windows (5.1.2): when allowed in incognito, those tabs record as `~private`.
 - Title-only tab updates sync only while titles are on (`titlesOn` in background.js).
-- Background tab (5.0.3): `onStorageChanged` folds changes while `document.hidden` and applies them once on
+- Background tab (5.1.2): `onStorageChanged` folds changes while `document.hidden` and applies them once on
   `visibilitychange` (`applyHiddenChanges`), so a hidden report does no DOM work per tab switch and is current
   as soon as it's seen. `goalTick` and the cursor's recheck timer also stop while hidden.
-- Scrolling (5.0.3): in-page lists no longer use `overscroll-behavior: contain` (popover lists still do), and
+- Scrolling (5.1.2): in-page lists no longer use `overscroll-behavior: contain` (popover lists still do), and
   scroll.js latches a wheel gesture to what it started on (`GESTURE_GAP_MS`): a list that runs out holds the
   rest of that gesture, the next one carries on to the page.
-- Right-click menu (5.0.3): right-clicking while it's open glides it (translate + height, WAAPI) to the new spot;
+- Right-click menu (5.1.2): right-clicking while it's open glides it (translate + height, WAAPI) to the new spot;
   the old rows ride along in `.context-ghost` and fade while the new ones enter.
-- Bug reports (5.0.3): hovering/focusing "Mina Vian" in the Settings footer morphs `#author-pop` out of it
+- Bug reports (5.1.2): hovering/focusing "Mina Vian" in the Settings footer morphs `#author-pop` out of it
   (120 ms hover intent, 220 ms grace to cross into it; Tab steps in, Escape returns to the name).
-- MorphPopover is fully interruptible (5.0.3, all popovers): open/close take over the shell still in flight
+- MorphPopover is fully interruptible (5.1.2, all popovers): open/close take over the shell still in flight
   (`takeShell`) and continue from its current rect, radius and opacity, so there's only ever one surface. The
   remaining trip sets the duration, and an interrupted trip turns from rest (`TURN` easing) instead of snapping.
 
-- Tour fixes (5.0.3): the limit step is hands-on ("Tap Set limit to try it out", only when no limit is locked). A
+- Tour fixes (5.1.2): the limit step is hands-on ("Tap Set limit to try it out", only when no limit is locked). A
   limit committed while `touring` writes `goalTrial {from, until: +24 h}`: Settings shows "Undo" (one click, no
   gauntlet) until it expires, then `trialActive()` removes it. While a picker is up, `body.picking` fades the whole
   tour out (dim + card, no pointer events), so the picker's scrim is the only dim/blur. The hour step has `autoNext`
@@ -178,16 +178,21 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
   Settings step). Sparks fly inside the tour card (card-relative), so they land on Next when the card moves. Tour
   buttons have no focus ring. Day stepping cross-fades the hour bars' colours (`.hbar-old`, reuseStrip).
 
-- Mouse Back button (5.0.3, recap.js): a button-3 press is taken at window/capture (before any other handler) and
+- Mouse Back button (5.1.2, recap.js): a button-3 press is taken at window/capture (before any other handler) and
   acts once on pointerup (cancelling the press cancels its mouseup): tour → previous step; otherwise, if anything is
   open or a day/hour is showing, a synthetic Escape; with nothing to step back from, the browser's own Back runs.
-- Favicons don't blink on refresh (5.0.3, fx.js): `iconKnown` remembers each resolved icon, so a redrawn list
+- Favicons don't blink on refresh (5.1.2, fx.js): `iconKnown` remembers each resolved icon, so a redrawn list
   (soft render after every tracker save) shows it at once with no entrance; the pop-in only plays the first time.
 
-- No hover tooltips (5.0.3, fx.js `disableTitleTooltips`, called by recap and popup): any `title` is removed on
+- No hover tooltips (5.1.2, fx.js `disableTitleTooltips`, called by recap and popup): any `title` is removed on
   pointerover, before the browser's tooltip delay, so it never shows; a control without text gets it as aria-label.
 
-- Theme change (5.0.3, theme.js `setThemePref(pref, origin, { panel, panelParts, parts, cards })`): every pick
+- Hour grid entrance (5.1.2, recap.css `.heat-veil`, added by `buildHeat`): one card-coloured veil with a long
+  slanted soft edge slides off the cells (transform only), then hides. It replaces 168 per-cell opacity fades: each
+  got a compositing layer and a page-wide layout (40–70 ms) as it began, which stalled the categories ring and
+  everything else arriving. Don't give many small elements their own staggered opacity animations.
+
+- Theme change (5.1.2, theme.js `setThemePref(pref, origin, { panel, panelParts, parts, cards })`): every pick
   sends a wave, and waves follow each other without limit (light, dark, light… each rolls in behind the last; none is
   cut short). No view transition (one at a time, two images, and it routes clicks to <html>). Instead:
   - Surfaces: one fixed `.wave-layer[data-wave]` per wave (page background + the cards' shapes as `<i>`s), stacked

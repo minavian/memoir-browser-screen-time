@@ -2025,6 +2025,12 @@ function buildHeat() {
     lab.textContent = hourLabel(h);
     wrap.appendChild(lab);
   }
+  // the cells' entrance (recap.css .heat-veil): one sliding veil, not a fade per cell
+  const veil = document.createElement('div');
+  veil.className = 'heat-veil';
+  veil.setAttribute('aria-hidden', 'true');
+  veil.appendChild(document.createElement('i'));
+  wrap.appendChild(veil);
   heatCells[0][0].tabIndex = 0;
 
   const showCell = (cell, x, y) => {

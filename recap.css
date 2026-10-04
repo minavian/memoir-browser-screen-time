@@ -1039,7 +1039,38 @@ body { overflow: hidden; }
   grid-template-rows: repeat(7, var(--s)) auto;
   gap: var(--gap);
   outline: none;
+  position: relative;
 }
+/* The cells' entrance: a veil the colour of the card covers them and slides off to the
+   right, its long soft edge slanted, so they fade in from the top-left. Transform only
+   (the compositor runs it); one animation instead of 168 per-cell fades, each of which
+   got its own layer and a page-wide layout as it began, stalling everything else
+   arriving on the page. Labels aren't covered. */
+.heat-veil {
+  grid-column: 2 / -1;
+  grid-row: 1 / 8;
+  position: absolute; /* over the cells' area, taking no grid cells */
+  inset: -3px;
+  z-index: 1;
+  overflow: hidden;
+  pointer-events: none;
+  visibility: hidden;
+  animation: heat-veil-on 0.92s step-end backwards;
+  animation-delay: var(--intro-wait, 0ms);
+}
+.heat-veil > i {
+  position: absolute;
+  top: -20%;
+  bottom: -20%;
+  left: 0;
+  width: 500%;
+  background: linear-gradient(to right, transparent 20%, var(--surface) 72%);
+  transform: translateX(8%) skewX(-30deg);
+  animation: heat-veil-off 0.72s var(--ease) backwards;
+  animation-delay: calc(200ms + var(--intro-wait, 0ms));
+}
+@keyframes heat-veil-on { from { visibility: visible; } to { visibility: visible; } }
+@keyframes heat-veil-off { from { transform: translateX(-80%) skewX(-30deg); } }
 .heat-day {
   align-self: center;
   justify-self: start;
@@ -1065,8 +1096,6 @@ body { overflow: hidden; }
   outline-offset: 1px;
   cursor: var(--cursor-hand);
   transition: background-color 0.5s var(--ease) var(--d, 0ms), outline-color 0.15s var(--ease);
-  animation: fade-in 0.5s var(--ease) backwards;
-  animation-delay: calc(var(--d, 0ms) + 200ms + var(--intro-wait, 0ms));
 }
 .cell:hover, .cell:focus-visible { outline-color: var(--label); transition-delay: 0ms; }
 .cell.future { background: transparent; box-shadow: inset 0 0 0 1px var(--sep); cursor: var(--cursor); }
