@@ -1,0 +1,25 @@
+# Personal history and runtime profiles: never commit
+Windows Memoir/Data/
+WebView/
+*.writing
+*.damaged-*
+errors.log
+
+# Build outputs (build.ps1 and tests/run.ps1 recreate them)
+Windows Memoir/Memoir.exe
+Windows Memoir/Memoir.build.exe
+Windows Memoir/*.dll
+Windows Memoir/tests/*.exe
+Windows Memoir/build-tools/Memoir.previous-*.exe
+
+# WebView2 SDK: Microsoft.Web.WebView2 1.0.4258.31 from NuGet, extracted to build-tools/webview2 for build.ps1
+Windows Memoir/build-tools/webview2/
+Windows Memoir/build-tools/webview2.nupkg
+
+# Test runs, verification profiles (real app usage) and generated screenshots
+Windows Memoir/tests/runs/
+Windows Memoir/tests/native-data/
+Windows Memoir/tests/native-final/
+Windows Memoir/tests/native-diagnostics.json
+Windows Memoir/tests/native-final.json
+Windows Memoir/tests/*.png
