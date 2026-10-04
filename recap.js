@@ -3366,7 +3366,8 @@ function wireAuthor() {
   };
   // moving between the name and the popover keeps it open; leaving both closes it
   const leave = () => { clearTimeout(authorTimer); authorTimer = setTimeout(() => closeAuthor(), 220); };
-  name.addEventListener('pointerenter', () => open(120));
+  // hover intent only from rest: coming back while it's closing reverses it at once
+  name.addEventListener('pointerenter', () => open(pop.hidden ? 120 : 0));
   name.addEventListener('pointerleave', leave);
   pop.addEventListener('pointerenter', () => clearTimeout(authorTimer));
   pop.addEventListener('pointerleave', leave);

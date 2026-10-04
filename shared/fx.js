@@ -381,7 +381,7 @@ const px = n => `${Math.round(n * 100) / 100}px`;
 const radiusFor = (r, rect) => (r === 'pill' || r === 'circle' ? Math.min(rect.width, rect.height) / 2 : r);
 
 export function morph({
-  from, to, fromRadius = 10, toRadius = 18, background = 'var(--raised)', fade = null,
+  from, to, fromRadius = 10, toRadius = 18, background = 'var(--raised)', fade = null, fromOpacity = null,
   duration = 440, easing = EASE_OUT, z = 3000, shadow = true, className = '', parent = document.body,
 }) {
   const shell = document.createElement('div');
@@ -395,7 +395,7 @@ export function morph({
     borderRadius: px(radiusFor(rad, r)), opacity: op,
   });
   const kf = [
-    frame(from, fromRadius, fade === 'in' ? 0 : 1),
+    frame(from, fromRadius, fromOpacity ?? (fade === 'in' ? 0 : 1)),
     frame(to, toRadius, fade === 'out' ? 0 : 1),
   ];
   if (reducedMotion()) {
@@ -418,7 +418,20 @@ export function dropShell(shell, duration = 140) {
     .finished.then(() => shell.remove(), () => shell.remove());
 }
 
+// An interrupted trip turns around from rest instead of at full speed, so a reversal
+// eases through its turn rather than snapping.
+const TURN = 'cubic-bezier(0.4, 0, 0.2, 1)';
+
+// How much of a trip from `start` to `to` is still ahead when the surface is at `now` (0–1).
+function remaining(now, to, start) {
+  const gap = (a, b) => Math.abs(a.left - b.left) + Math.abs(a.top - b.top) + Math.abs(a.width - b.width) + Math.abs(a.height - b.height);
+  const whole = gap(start, to);
+  return whole < 1 ? 0 : Math.min(1, gap(now, to) / whole);
+}
+
 // A popover that grows out of the element that opened it and shrinks back into it.
+// Fully interruptible: opening and closing always pick up from wherever the surface
+// is at that moment, with one surface on screen, never a jump or a second shell.
 export class MorphPopover {
   constructor(el, { width = null, radius = 16, onClose = null, z = 1990 } = {}) {
     this.el = el;
@@ -448,12 +461,24 @@ export class MorphPopover {
     el.style.top = `${Math.round(top)}px`;
   }
 
+  // The surface still in flight (opening or closing): where it is right now, then gone.
+  // The next surface starts from exactly there, in the same frame, so nothing flickers.
+  takeShell() {
+    const shell = this.shell;
+    this.shell = null;
+    if (!shell || !shell.isConnected) return null;
+    const style = getComputedStyle(shell);
+    const now = { rect: shell.getBoundingClientRect(), radius: parseFloat(style.borderTopLeftRadius) || 0, opacity: +style.opacity };
+    shell.remove();
+    return now;
+  }
+
   open(anchor, { fromRect = null, fromRadius = 8 } = {}) {
     const token = ++this.token;
     const el = this.el;
     this.anchor = anchor;
+    const flight = this.takeShell();
     el.getAnimations().forEach(a => a.cancel());
-    if (this.shell) { this.shell.remove(); this.shell = null; }
     el.hidden = false;
     el.style.background = '';
     el.style.boxShadow = '';
@@ -463,8 +488,13 @@ export class MorphPopover {
     this.place(src);
     const to = el.getBoundingClientRect();
     const bg = getComputedStyle(el).backgroundColor;
+    // reopened mid-close: grow on from where it is, in the time the rest of the trip needs
+    const left = flight ? remaining(flight.rect, to, src) : 1;
     // the shell goes next to the popover (same stacking context), so the content shows above it
-    const m = morph({ from: src, to, fromRadius, toRadius: this.radius, background: bg, duration: 460, easing: POP, z: this.z, parent: el.parentNode || document.body });
+    const m = morph({
+      from: flight ? flight.rect : src, to, fromRadius: flight ? flight.radius : fromRadius, fromOpacity: flight ? flight.opacity : null,
+      toRadius: this.radius, background: bg, duration: 160 + 300 * left, easing: flight ? TURN : POP, z: this.z, parent: el.parentNode || document.body,
+    });
     this.shell = m.shell;
     // the content fades in while the shell is still growing (the shell is the
     // surface until it lands), so there's no pause before anything appears
@@ -477,7 +507,7 @@ export class MorphPopover {
       el.style.opacity = '';
       if (!reducedMotion()) el.animate([{ opacity: 0, scale: 0.97 }, { opacity: 1, scale: 1 }], { duration: 240, easing: EASE_OUT });
     };
-    const early = setTimeout(show, reducedMotion() ? 0 : 150);
+    const early = setTimeout(show, reducedMotion() ? 0 : 150 * left);
     return m.finished.then(() => {
       clearTimeout(early);
       if (token !== this.token) { m.shell.remove(); return; }
@@ -496,7 +526,8 @@ export class MorphPopover {
     const el = this.el;
     if (el.hidden) return Promise.resolve();
     const token = ++this.token;
-    if (this.shell) { this.shell.remove(); this.shell = null; }
+    const flight = this.takeShell();
+    el.getAnimations().forEach(a => a.cancel());
     el.style.background = '';
     el.style.boxShadow = '';
     const anchor = this.anchor;
@@ -510,13 +541,24 @@ export class MorphPopover {
     };
     if (instant || reducedMotion()) { done(); return Promise.resolve(); }
     el.dataset.state = 'closing';
-    const from = el.getBoundingClientRect();
+    const full = el.getBoundingClientRect();
     const target = anchor && anchor.isConnected ? anchor.getBoundingClientRect() : null;
     const bg = getComputedStyle(el).backgroundColor;
     el.style.opacity = '0';
     if (!target || target.width === 0) { done(); return Promise.resolve(); }
-    const m = morph({ from, to: target, fromRadius: this.radius, toRadius: 8, background: bg, fade: 'out', duration: 300, easing: EASE_OUT, z: this.z, parent: el.parentNode || document.body });
-    return m.finished.then(shell => { shell.remove(); done(); });
+    // closed mid-open: shrink back from where the surface had got to
+    const from = flight ? flight.rect : full;
+    const left = remaining(from, target, full);
+    const m = morph({
+      from, to: target, fromRadius: flight ? flight.radius : this.radius, fromOpacity: flight ? flight.opacity : null,
+      toRadius: 8, background: bg, fade: 'out', duration: 120 + 180 * left, easing: flight ? TURN : EASE_OUT, z: this.z, parent: el.parentNode || document.body,
+    });
+    this.shell = m.shell;
+    return m.finished.then(shell => {
+      if (this.shell === shell) this.shell = null;
+      shell.remove();
+      done();
+    });
   }
 }
 

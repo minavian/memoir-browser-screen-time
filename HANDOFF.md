@@ -154,6 +154,9 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
   the old rows ride along in `.context-ghost` and fade while the new ones enter.
 - Bug reports (5.0.3): hovering/focusing "Mina Vian" in the Settings footer morphs `#author-pop` out of it
   (120 ms hover intent, 220 ms grace to cross into it; Tab steps in, Escape returns to the name).
+- MorphPopover is fully interruptible (5.0.3, all popovers): open/close take over the shell still in flight
+  (`takeShell`) and continue from its current rect, radius and opacity, so there's only ever one surface. The
+  remaining trip sets the duration, and an interrupted trip turns from rest (`TURN` easing) instead of snapping.
 
 ## Possible next step
 A small one-time welcome touch in the popup the first time it opens (a line + pulse on Weekly Report).
