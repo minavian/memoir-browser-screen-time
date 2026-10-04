@@ -5,7 +5,7 @@ import {
   getGoalHistory, limitOn, limitLocked, commitLimit, removeLimit,
 } from './shared/core.js';
 import {
-  animateNumber, reveal, faviconTile, tween, slicePath, initPetals, setOrigins, siteLinkHtml, replay, reducedMotion, POP, makeScroller, initSmoothScrolling,
+  animateNumber, reveal, faviconTile, tween, slicePath, initPetals, setOrigins, siteLinkHtml, replay, reducedMotion, POP, makeScroller, initSmoothScrolling, disableTitleTooltips,
 } from './shared/fx.js';
 import { watchTheme } from './shared/theme.js';
 import { createGoalRing, openPicker } from './shared/goal.js';
@@ -42,6 +42,7 @@ main();
 
 async function main() {
   initSmoothScrolling();
+  disableTitleTooltips();
   initCursor({ edge: true });
   watchTheme();
   initPetals(6, [8, 13]);

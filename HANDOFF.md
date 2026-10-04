@@ -57,6 +57,18 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
   is unset the report shows the welcome (`welcome.js`): hourglass pops and pours, letters rise, cards cascade,
   pin hint points at the toolbar. "Take the tour" flies the hourglass into the header logo while the page
   reveals, then the tutorial runs; "Skip for now" (or Esc) just sets `onboarded`. Replay the tour from Settings.
+- Welcome (5.0.3): a single card on the tour's own dim (`--tour-dim`, no colour orbs, no feature cards). Its surface
+  is `.wel-card::before`, so the hourglass inside can fly off on its own (blurring and fading into the header logo).
+  "Take the tour" starts the tour at once, under the card, while the words fade; the dims swap in one frame
+  (`.tour.handoff` skips the spot's fade); once the words are gone and the page is calm (`calm()`), a shell reshapes
+  the card into the tour's first card (`handoff(card)` from `runTour`). The board's first render waits until it has
+  landed (`onHanded`), so it never competes with the reshape. The real week renders behind the dim just after the
+  welcome starts playing in (`onShown`, 120 ms), so the page isn't blank and its follow-up work (about 2.5 s of
+  small tasks) is done before most clicks; the tour path redraws it as the sample week after landing.
+  Card radius 40 px (reshapes to the tour card's 18). Pin hint: a straight up arrow, `right: 72px` (tip ~104 px
+  from the right edge), aimed at the Extensions (puzzle) button.
+  Measured: reshape frames are a steady 6 ms once the GPU shader cache is warm; a brand-new browser profile may drop
+  a frame or two on its very first run (GPU shader compilation, not page work).
 - Limit lock (4.3.0): a committed limit stays locked on later days too (`limitLocked` = any limit in effect).
   Only the Settings gauntlet unlocks it (`resetLimit` writes `{from: today, limit: null}`; past days keep theirs).
 - Limit picker (4.3.0): knob rides a critically damped spring (`FOLLOW`/`SETTLE`/`GLIDE` in goal.js), follows the
@@ -157,6 +169,52 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
 - MorphPopover is fully interruptible (5.0.3, all popovers): open/close take over the shell still in flight
   (`takeShell`) and continue from its current rect, radius and opacity, so there's only ever one surface. The
   remaining trip sets the duration, and an interrupted trip turns from rest (`TURN` easing) instead of snapping.
+
+- Tour fixes (5.0.3): the limit step is hands-on ("Tap Set limit to try it out", only when no limit is locked). A
+  limit committed while `touring` writes `goalTrial {from, until: +24 h}`: Settings shows "Undo" (one click, no
+  gauntlet) until it expires, then `trialActive()` removes it. While a picker is up, `body.picking` fades the whole
+  tour out (dim + card, no pointer events), so the picker's scrim is the only dim/blur. The hour step has `autoNext`
+  (moves on 900 ms after Next fills). Most used: no scroll task, and its `before` closes Settings (Back from the
+  Settings step). Sparks fly inside the tour card (card-relative), so they land on Next when the card moves. Tour
+  buttons have no focus ring. Day stepping cross-fades the hour bars' colours (`.hbar-old`, reuseStrip).
+
+- Mouse Back button (5.0.3, recap.js): a button-3 press is taken at window/capture (before any other handler) and
+  acts once on pointerup (cancelling the press cancels its mouseup): tour → previous step; otherwise, if anything is
+  open or a day/hour is showing, a synthetic Escape; with nothing to step back from, the browser's own Back runs.
+- Favicons don't blink on refresh (5.0.3, fx.js): `iconKnown` remembers each resolved icon, so a redrawn list
+  (soft render after every tracker save) shows it at once with no entrance; the pop-in only plays the first time.
+
+- No hover tooltips (5.0.3, fx.js `disableTitleTooltips`, called by recap and popup): any `title` is removed on
+  pointerover, before the browser's tooltip delay, so it never shows; a control without text gets it as aria-label.
+
+- Theme change (5.0.3, theme.js `setThemePref(pref, origin, { panel, panelParts, parts, cards })`): every pick
+  sends a wave, and waves follow each other without limit (light, dark, light… each rolls in behind the last; none is
+  cut short). No view transition (one at a time, two images, and it routes clicks to <html>). Instead:
+  - Surfaces: one fixed `.wave-layer[data-wave]` per wave (page background + the cards' shapes as `<i>`s), stacked
+    under the board, revealed by a soft diagonal mask from the top-right (`--wave-p` 0→130%, 1230 ms from 270 ms).
+    The first wave also lays a `base` layer of the old theme. While `:root.waving`, the board's cards are
+    transparent so the layers show through. With Settings open, `.wave-panel` (inside the panel, z-index -1) fills
+    in a soft circle from the clicked button (`--wave-r`, 840 ms).
+  - Content: theme tokens are scoped to `[data-wave="light|dark|pink"]` as well as `:root` (theme.css, recap.css),
+    so a single element can carry a theme. `blocksIn` splits the parts into small blocks (≤ 40 000 px², or leaves;
+    a small part such as the gear button switches whole). One rAF loop flips each block's `data-wave` when the middle
+    of a wave's soft edge reaches its centre (the times come from the easing curve inverted in JS). A block takes
+    the theme's `--label` unless it inherits another colour (`data-wave-keep`). On the frame a block switches it has
+    `data-wave-now`, holding its own transitions (e.g. heat cells' 0.5 s fill) so it stays with the surface.
+    There are no colour transitions; they made 1 000+ elements restyle every frame. A block carries its theme's
+    `--cursor` too, so the cursor-off override covers `[data-wave]` as well as `html`.
+  - Cursor: takes the theme of the newest wave that has reached the pointer (pointer tracked from events; reading
+    the cursor's box would force a restyle).
+  - Landing: the newest wave settles the page (`apply`). The layers stay one more frame, so the page restyles under
+    them with the cards' and panel's transitions still held (`waving`, then `wave-done`; `.morph-panel` drops its
+    background-colour transition while waving). Otherwise they'd fade from the old theme out from under the layers.
+    Blocks then lose `data-wave`, 60 per frame, each held still for that frame.
+  - Progress bar: the line under Appearance (`.theme-progress`, `themeProgress()` in recap.js, transform only,
+    cubic-bezier(0.83, 0, 0.17, 1), continuing from where it is).
+  - Measured (headless Edge, Settings open): a 4-click chase is mostly under 34 ms per frame. Ten clicks 70 ms
+    apart peak at 40–60 ms frames while ~10 waves overlap (~1 000 elements restyled per frame). Blocks stay in step
+    with the surface under them. Nothing fades after landing.
+  - Windows port: the `web/` copy needs the same `[data-wave]` token scoping.
 
 ## Possible next step
 A small one-time welcome touch in the popup the first time it opens (a line + pulse on Weekly Report).

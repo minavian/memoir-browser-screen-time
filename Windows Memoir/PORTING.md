@@ -67,7 +67,10 @@ Line endings: `web/` files use CRLF and the extension uses LF. Compare with `dif
 - "Track screen time" / "Pause any time from Today or the tray" (tracking switch), "Names only" (detail option), Never-track description in terms of apps and websites, footer "Your data never leaves this computer", empty-state text, `aria-label="Apps and websites in this category"`.
 
 ### `welcome.js`
-- Card text in terms of apps and screen time. Replace the "pin to toolbar" card with: "Minimize Memoir to keep tracking. Double-click its hourglass in the notification area to return." Use "Everything stays in this computer."
+- Extension 5.0.3 rewrote the welcome (one card, no feature cards). Windows wording: tagline "Screen Time" instead of
+  "Browser Screen Time"; "This app tracks your screen time and summarizes it."; "Everything stays on this computer."
+  Replace the "Keep it in reach" pin text with: "Minimize Memoir to keep tracking. Double-click its hourglass in the
+  notification area to return." (no arrow: there's no toolbar).
 
 ## Data contract
 

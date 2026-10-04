@@ -8,9 +8,9 @@ import {
 } from './shared/core.js';
 import {
   animateNumber, tween, reveal, createTooltip, faviconTile, reducedMotion, syncSegmented, slicePath, initPetals,
-  setOrigins, siteLinkHtml, morph, MorphPopover, replay, EASE_OUT, animateHeight, makeScroller, initSmoothScrolling,
+  setOrigins, siteLinkHtml, morph, MorphPopover, replay, EASE_OUT, animateHeight, makeScroller, initSmoothScrolling, disableTitleTooltips,
 } from './shared/fx.js';
-import { getThemePref, setThemePref, watchTheme } from './shared/theme.js';
+import { getThemePref, setThemePref, watchTheme, THEME_SWITCH_MS } from './shared/theme.js';
 import { createGoalRing, openPicker } from './shared/goal.js';
 import { TrendChart } from './trend.js';
 import { runGauntlet } from './gauntlet.js';
@@ -90,6 +90,7 @@ init();
 
 async function init() {
   initSmoothScrolling();
+  disableTitleTooltips();
   initCursor();
   initPetals(10);
   document.fonts.load('600 14px "Memoir Inter"').then(() => document.fonts.load('900 14px "Memoir Inter"')).then(measureSure, measureSure);
@@ -97,15 +98,16 @@ async function init() {
   if (m) state.weekStart = startOfWeek(dateFromKey(m[1]));
   if (state.weekStart > startOfWeek(new Date())) state.weekStart = startOfWeek(new Date());
 
-  const [settings, overrides, origins, history, keys, session, today, { onboarded }] = await Promise.all([
+  const [settings, overrides, origins, history, keys, session, today, { onboarded, goalTrial }] = await Promise.all([
     getSettings(), getCategoryOverrides(), getOrigins(), getGoalHistory(), listDayKeys(), getSession(),
-    getDays([state.todayKey]), chrome.storage.local.get('onboarded'),
+    getDays([state.todayKey]), chrome.storage.local.get(['onboarded', 'goalTrial']),
   ]);
   // first visit: the welcome covers the page while it gets ready
   const welcome = onboarded ? null : createWelcome();
   state.settings = settings;
   state.overrides = overrides;
   state.goalHistory = history;
+  state.goalTrial = goalTrial || null;
   state.earliestKey = keys[0] || null;
   state.session = session;
   state.todayRec = today[state.todayKey];
@@ -124,10 +126,26 @@ async function init() {
     updateGoal();
     reveal();
   };
+  // the board's first render happens once, whichever moment asks for it first
+  let shown = null;
+  const showOnce = () => shown || (shown = show());
   if (welcome) {
-    welcome.play({ markTarget: document.querySelector('.head .mark'), onLeave: show }).then(choice => {
-      // the tour waits for the board to finish filling in
-      if (choice === 'tour') setTimeout(() => startTour({ prepared: true }), reducedMotion() ? 0 : 900);
+    // The board fills in behind the welcome's dim as the welcome plays in (or as it
+    // leaves, if a choice comes first). Heading for the tour, the welcome card
+    // becomes the tour's first card (handoff); the sample week is drawn once it has
+    // landed, so no render ever competes with that animation.
+    welcome.play({
+      markTarget: document.querySelector('.head .mark'),
+      onShown: showOnce,
+      onLeave: choice => (choice === 'tour' ? useTourWeek() : showOnce()),
+      onHanded: async () => {
+        if (!shown) { await showOnce(); return; } // first render: the sample week already
+        await shown;
+        resetView({ instant: true });
+        await render({});
+      },
+    }).then(({ choice, handoff }) => {
+      if (choice === 'tour') startTour({ prepared: true, handoff });
       else chrome.storage.local.set({ onboarded: true });
     });
   } else {
@@ -1276,7 +1294,19 @@ function reuseStrip(cur, wrap) {
       else o.removeAttribute('aria-current');
       const ob = o.querySelector('.dbar, .hbar');
       const nb = n.querySelector('.dbar, .hbar');
-      if (sel === '.hstrip') ob.innerHTML = nb.innerHTML;
+      if (sel === '.hstrip') {
+        const before = [...ob.children].filter(c => c.tagName === 'I').map(c => c.outerHTML).join('');
+        ob.innerHTML = nb.innerHTML;
+        // the colours cross-fade too: the old stack rides on top (scaled with the bar) and fades away
+        if (before && before !== ob.innerHTML && !reducedMotion()) {
+          const ghost = document.createElement('span');
+          ghost.className = 'hbar-old';
+          ghost.innerHTML = before;
+          ob.appendChild(ghost);
+          ghost.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 520, delay: i * 12, easing: 'ease-in-out', fill: 'both' })
+            .finished.then(() => ghost.remove(), () => ghost.remove());
+        }
+      }
       morphBar(ob, parseFloat(ob.dataset.hh) || 0, parseFloat(nb.dataset.hh) || 0, i);
       ob.dataset.hh = nb.dataset.hh;
       const ot = o.querySelector('.dt');
@@ -2283,7 +2313,11 @@ async function openGoalPicker(btn) {
   const r = ringEl.getBoundingClientRect();
   const limit = limitOn(state.goalHistory, state.todayKey);
   const size = Math.round(Math.min(380, Math.max(310, r.width * 1.35)));
-  const result = await openPicker({
+  // in the tour, the tour (dim and card) fades out while the picker is up, so its
+  // scrim is the only layer: never two dims or blurs stacked
+  document.body.classList.add('picking');
+  let result = null;
+  try { result = await openPicker({
     fromEl: btn,
     returnTo: ringEl,
     center: { x: r.left + r.width / 2, y: r.top + r.height / 2 },
@@ -2292,6 +2326,11 @@ async function openGoalPicker(btn) {
     canRemove: !!limit,
     onCommit: async ms => {
       const saved = await commitLimit(ms);
+      // tried in the tour: Settings can undo it in one click for a day
+      if (touring) {
+        state.goalTrial = { from: dayKey(new Date()), until: Date.now() + 24 * 3600_000 };
+        await chrome.storage.local.set({ goalTrial: state.goalTrial });
+      }
       state.goalHistory = await getGoalHistory();
       updateGoal();
       return saved;
@@ -2301,9 +2340,11 @@ async function openGoalPicker(btn) {
       state.goalHistory = await getGoalHistory();
       updateGoal();
     },
-  });
+  }); } finally { document.body.classList.remove('picking'); }
   if (result === 'commit') {
-    toast(`Daily limit set: ${fmt(limitOn(state.goalHistory, state.todayKey))}. It’s locked in.`);
+    toast(touring
+      ? `Daily limit set: ${fmt(limitOn(state.goalHistory, state.todayKey))}. Settings can undo it in one click until tomorrow.`
+      : `Daily limit set: ${fmt(limitOn(state.goalHistory, state.todayKey))}. It’s locked in.`);
     render({ soft: true });
   } else if (result === 'remove') {
     toast('Daily limit removed');
@@ -2491,6 +2532,21 @@ function setPressed(groupId, match) {
   syncSegmented($(groupId));
 }
 
+// The line under Appearance fills as the theme change runs (transform only), then fades.
+function themeProgress() {
+  const fill = document.querySelector('.tp-fill');
+  if (!fill) return;
+  // a change that replaces one still running carries on from where the line had got to
+  const shown = +getComputedStyle(fill).opacity > 0.05 ? new DOMMatrix(getComputedStyle(fill).transform).a : 0;
+  fill.getAnimations().forEach(a => a.cancel());
+  // a strong ease in and out: it starts softly, travels, and settles softly
+  fill.animate([
+    { transform: `scaleX(${shown.toFixed(4)})`, opacity: 1, easing: 'cubic-bezier(0.83, 0, 0.17, 1)' },
+    { transform: 'scaleX(1)', opacity: 1, offset: 0.82, easing: 'cubic-bezier(0.4, 0, 0.2, 1)' },
+    { transform: 'scaleX(1)', opacity: 0 },
+  ], { duration: THEME_SWITCH_MS + 390, easing: 'linear' });
+}
+
 function updateAppearanceUI() {
   setPressed('appearance', b => b.dataset.pref === getThemePref());
 }
@@ -2609,9 +2665,33 @@ function flyIntoChip(from, li) {
   a.finished.then(land, land);
 }
 
+// A limit set during the tour can be undone in one click for 24 hours; after that
+// the access is gone and the usual questions apply.
+function trialActive() {
+  const t = state.goalTrial;
+  if (!t) return false;
+  const today = dayKey(new Date());
+  const current = state.goalHistory.filter(e => e.from <= today).at(-1);
+  if (Date.now() < t.until && current && current.from === t.from && current.limit != null) return true;
+  state.goalTrial = null;
+  chrome.storage.local.remove('goalTrial');
+  return false;
+}
+
 async function openResetGauntlet(btn) {
   if (!limitLocked(state.goalHistory, dayKey(new Date()))) return;
   tip.hide();
+  if (trialActive()) {
+    await resetLimit();
+    state.goalTrial = null;
+    await chrome.storage.local.remove('goalTrial');
+    state.goalHistory = await getGoalHistory();
+    updateGoal();
+    renderLimitRow();
+    render({ soft: true });
+    toast('Limit undone. Set one for real from Today’s limit.');
+    return;
+  }
   const ok = await runGauntlet({
     fromEl: btn,
     onReset: async () => {
@@ -2629,12 +2709,16 @@ function renderLimitRow() {
   const today = dayKey(new Date());
   const limit = limitOn(state.goalHistory, today);
   const locked = limitLocked(state.goalHistory, today);
-  const text = locked ? `${fmt(limit)} a day · locked` : 'No limit set';
+  const trial = locked && trialActive();
+  const text = !locked ? 'No limit set' : trial ? `${fmt(limit)} a day · set in the tour` : `${fmt(limit)} a day · locked`;
   const d = $('limit-desc');
   if (d.textContent !== text) swapText(d, text);
   const b = $('limit-reset');
   b.disabled = !locked;
-  b.title = locked ? 'Unlock your limit (if you really must)' : 'There’s no limit to reset';
+  swapText(b, trial ? 'Undo' : 'Reset…');
+  b.title = trial
+    ? `Set during the tour, so it can be undone in one click until ${new Intl.DateTimeFormat(undefined, { weekday: 'short', hour: 'numeric', minute: '2-digit' }).format(state.goalTrial.until)}`
+    : locked ? 'Unlock your limit (if you really must)' : 'There’s no limit to reset';
 }
 
 function renderReminder() {
@@ -2846,6 +2930,31 @@ function wire() {
     goToWeek(next, 'next');
   });
 
+  // The mouse's Back button steps back inside the report, the way Esc does: the tour's
+  // previous step, or whatever is open, or out of a day or hour. Only with nothing to
+  // step back from does the browser's own Back happen. The press is taken before any
+  // other handler sees it (window, capture), so exactly one step happens, on release.
+  let backPlan = null;
+  const backTarget = () => {
+    if (document.querySelector('.wel')) return null;
+    const tourBack = document.querySelector('.tour.on .tour-back');
+    if (tourBack) return () => { if (!tourBack.disabled && !tourBack.classList.contains('gone')) tourBack.click(); };
+    const open = document.querySelector('.pk-layer, .gx-layer, .context-menu:not([hidden])') || !$('cat-menu').hidden || catPop.isOpen
+      || importAnswer || authorPop.isOpen || $('settings').classList.contains('open') || state.view.type !== 'week';
+    return open ? () => (document.activeElement || document.body).dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true })) : null;
+  };
+  for (const type of ['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'auxclick']) {
+    addEventListener(type, e => {
+      if (e.button !== 3) return;
+      if (type === 'pointerdown') backPlan = backTarget();
+      if (!backPlan) return;
+      e.preventDefault();
+      e.stopPropagation();
+      // cancelling the press also cancels its mouseup, so the step happens on pointerup
+      if (type === 'pointerup') { const go = backPlan; backPlan = null; go(); }
+    }, true);
+  }
+
   document.addEventListener('keydown', e => {
     if (e.defaultPrevented) return;
     if (e.key === 'Escape') {
@@ -2958,8 +3067,14 @@ function wire() {
     const b = e.target.closest('button[data-pref]');
     if (!b) return;
     const r = b.getBoundingClientRect();
-    setThemePref(b.dataset.pref, { x: r.left + r.width / 2, y: r.top + r.height / 2 });
+    const t = setThemePref(b.dataset.pref, { x: r.left + r.width / 2, y: r.top + r.height / 2 }, {
+      panel: $('settings').classList.contains('open') ? $('settings-panel') : null,
+      panelParts: [document.querySelector('#settings-panel .panel-inner')],
+      parts: [...document.querySelectorAll('.board > .card, .head-left, .demo-pill, .morph-trigger, .tour')],
+      cards: [...document.querySelectorAll('.board > .card')],
+    });
     updateAppearanceUI();
+    if (t) t.ready.then(themeProgress, () => {});
   });
 
   // category menu
@@ -3420,7 +3535,7 @@ function useTourWeek() {
 }
 
 // prepared: the board already shows the tour's week (first visit, from the welcome)
-async function startTour({ prepared = false } = {}) {
+async function startTour({ prepared = false, handoff = null } = {}) {
   if (touring) return;
   touring = true;
   closeSettings();
@@ -3508,6 +3623,8 @@ async function startTour({ prepared = false } = {}) {
     if (t) t.scrollIntoView({ block: 'nearest', behavior: reducedMotion() ? 'auto' : 'smooth' });
   };
   const noSettings = async () => { tidy(); closeSettings(); };
+  // a limit can be tried in the tour only when none is locked in already
+  const canTryLimit = !limitLocked(state.goalHistory, dayKey(new Date()));
 
   const steps = [
     { kicker: 'Quick tour', title: 'This is Memoir', text: 'A quick look around, on a <b>sample week</b>, so nothing of yours is touched. When a step says <b>Try</b>, go ahead: everything in the light is live.', next: 'Start', before: toWeek, settle: 0 },
@@ -3522,7 +3639,9 @@ async function startTour({ prepared = false } = {}) {
       { text: 'Try a bold <b>day</b> or <b>hour</b> to open it', watch: onClick('#story [data-act="day"], #story [data-act="hour"]') },
       { text: 'Try a bold <b>category</b> to see its sites', watch: onClick('#story [data-act="cat"]') },
     ] },
-    { title: 'Today’s limit', text: 'Set a daily limit and commit to it. It stays locked, day after day; only a long talk in Settings undoes it. The ring turns yellow, orange, then red, with a nudge at 95% and another if you go over.', target: () => q('#goal-card'), before: tidy, settle: 0 },
+    { title: 'Today’s limit', text: 'Set a daily limit and commit to it. It stays locked, day after day; only a long talk in Settings undoes it. The ring turns yellow, orange, then red, with a nudge at 95% and another if you go over.' + (canTryLimit ? ' Trying it now is safe: for a day, Settings can undo it in one click.' : ''), target: () => q('#goal-card'), before: tidy, settle: 0, tasks: canTryLimit ? [
+      { text: 'Tap <b>Set limit</b> to try it out', watch: onClick('#goal-card .gr-set') },
+    ] : undefined },
     { title: 'Daily activity', text: 'Each day, stacked by category, with your average and limit lines.', target: chart, before: toWeek, tasks: [
       { text: 'Click a day to open it', watch: onClick('#chart-card', () => state.view.type === 'day'), advance: true },
     ] },
@@ -3530,7 +3649,7 @@ async function startTour({ prepared = false } = {}) {
       { text: 'Step to another day with <b>‹ ›</b>', watch: onClick('#step-prev, #step-next') },
       { text: 'Click an hour to open it', watch: onClick('#detail-view', () => state.view.type === 'hour'), advance: true },
     ] },
-    { title: 'An hour up close', text: 'Which sites filled the hour, and the same hour on the other days. <b>Back</b> goes one step; the round <b>«</b> goes all the way home.', target: chart, before: toHour, settle: 900, tasks: [
+    { title: 'An hour up close', text: 'Which sites filled the hour, and the same hour on the other days. <b>Back</b> goes one step; the round <b>«</b> goes all the way home.', target: chart, before: toHour, settle: 900, autoNext: true, tasks: [
       { text: 'Walk hour by hour with <b>‹ ›</b>', watch: onClick('#step-prev, #step-next', () => state.view.type === 'hour') },
       { text: 'Press <b>«</b> to go all the way home', watch: onClick('#chart-home') },
     ] },
@@ -3543,14 +3662,13 @@ async function startTour({ prepared = false } = {}) {
       { text: 'Click it to see its sites', watch: onClick('.donut-card .donut-seg, .donut-card .cat-legend button') },
       { text: 'Switch to <b>Week</b>, then back to <b>Day</b>', watch: onClick('#scope [data-scope="day"]', () => state.scope === 'day' && scopeTried) },
     ] },
-    { title: 'Most used', text: 'Every site, largest first, for the week or the day, following the switch on Categories. A site’s name opens it.', target: () => q('.sites-card'), before: tidy, settle: 0, tasks: [
-      { text: 'Scroll the list', watch: onScroll('.sites-card') },
+    { title: 'Most used', text: 'Every site, largest first, for the week or the day, following the switch on Categories. A site’s name opens it.', target: () => q('.sites-card'), before: noSettings, settle: 0, tasks: [
       { text: 'Click a site’s category to move it (or never track it)', watch: onClick('.sites-card .cat-btn') },
     ] },
     { title: 'Settings', text: 'Themes, the cursor, reminders, privacy and your data all live behind the gear.', target: () => ($('settings').classList.contains('open') ? q('#settings-panel') : q('#settings-btn')), before: noSettings, settle: 0, radius: 22, pad: 6, tasks: [
       { text: 'Click the gear to open Settings', watch: onClick('#settings-btn', () => $('settings').classList.contains('open')) },
     ] },
-    { title: 'Appearance', text: '<b>System</b> follows your computer. Or pick Light, Dark, or <b>Pink</b>, which is never picked for you.', target: () => block('#appearance'), before: toSettings('#appearance'), settle: 350, radius: 14, tasks: [
+    { title: 'Appearance', text: '<b>System</b> picks your theme automatically. Or pick Light, Dark, or <b>Pink</b>.', target: () => block('#appearance'), before: toSettings('#appearance'), settle: 350, radius: 14, tasks: [
       { text: 'Try another theme', watch: onClick('#appearance button') },
     ] },
     { title: 'Custom cursor', text: 'Memoir’s own animated pointer. Turning it off is recommended on low-end devices: everything stays the same, just lighter.', target: () => row('#set-cursor'), before: toSettings('#set-cursor'), settle: 350, radius: 14, tasks: [
@@ -3562,7 +3680,7 @@ async function startTour({ prepared = false } = {}) {
     { title: 'Sample week, tour and data', text: 'Look around with made-up data, replay this tour, and <b>Export</b> or <b>Import</b> your history. <b>Clear all</b> asks twice.', target: () => [block('#set-demo'), block('#data-row')], before: toSettings('#data-row'), settle: 350, radius: 14 },
     { kicker: 'All set', title: 'That’s the tour', text: 'Your own week fills in as you browse. The hourglass in your toolbar shows today at a glance.', before: async () => { await noSettings(); await toWeek(); }, settle: 300 },
   ];
-  await runTour(steps);
+  await runTour(steps, { handoff });
   chrome.storage.local.set({ onboarded: true });
   document.body.classList.remove('touring');
   catPop.z = popZ;
@@ -3713,6 +3831,7 @@ function onStorageChanged(changes, area) {
     else $('set-tracking').checked = !state.settings.paused;
   }
   if (changes.goal) getGoalHistory().then(h => { state.goalHistory = h; updateGoal(); renderLimitRow(); if (!state.demo) render({ soft: true }); });
+  if (changes.goalTrial) { state.goalTrial = changes.goalTrial.newValue || null; renderLimitRow(); }
   if (changes.origins) setOrigins(changes.origins.newValue || {});
   const todayKey = storageKeyForDay(state.todayKey);
   if (changes[todayKey]) { state.todayRec = normalizeDay(changes[todayKey].newValue); updateGoal(); }

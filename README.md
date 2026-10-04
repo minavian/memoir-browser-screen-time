@@ -45,6 +45,8 @@ limit is left. Press **Set limit** and a circle opens:
   smallest limit is 1 minute.
 - Press **✓** at the top, then **Commit**. The limit is then locked, and it stays
   locked on the days after too: it doesn't open up again at midnight.
+- Trying it during the tour is safe: for 24 hours, Settings shows **Undo**, which
+  removes that limit in one click. After that, the usual questions apply.
 
 The ring is green, turns yellow at 75%, orange at 90% and red at 95% (you get a
 notification). Past the limit it turns deep red with a flame, and you're
@@ -127,7 +129,9 @@ Everything is stored locally in this browser. Nothing is ever sent anywhere.
 
 **Keyboard:** ← / → switch weeks (or step through a day or hour) · arrow keys
 move around the hour grid and Enter opens a square · Esc closes menus, settings
-and detail views.
+and detail views. Your mouse's **Back** button does the same as Esc (and goes to
+the previous step in the tour); with nothing left to close, it's the browser's
+usual Back.
 
 Right-click anywhere for a menu that matches your theme; right-click again while
 it's open and it glides to the new spot. Site rows offer open,

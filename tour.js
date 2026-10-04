@@ -22,7 +22,9 @@ function unionRect(els) {
   return { left, top, width: right - left, height: bottom - top };
 }
 
-export function runTour(steps) {
+// handoff(card): called with the first card once it's placed, before it's seen, so a
+// welcome screen can turn into it (the tour's dim then appears at once, no fade).
+export function runTour(steps, { handoff = null } = {}) {
   return new Promise(resolve => {
     const root = document.createElement('div');
     root.className = 'tour';
@@ -204,21 +206,28 @@ export function runTour(steps) {
         if (ended || index !== i) return;
         const p = progressOf(i);
         setFill(p);
-        if (p >= 1) setTimeout(() => { if (!ended && index === i && progressOf(i) >= 1) setFull(true); }, reducedMotion() ? 0 : 420);
+        if (p >= 1) setTimeout(() => {
+          if (ended || index !== i || progressOf(i) < 1) return;
+          setFull(true);
+          // steps marked autoNext move on by themselves once Next has filled up
+          if (steps[i].autoNext && i < steps.length - 1) setTimeout(() => { if (!ended && index === i) go(i + 1, 1); }, reducedMotion() ? 0 : 900);
+        }, reducedMotion() ? 0 : 420);
       };
       if (reducedMotion() || !dot) { land(); return; }
-      // from the tick, along an arc above both, to where the fill is about to reach
+      // from the tick, along an arc above both, to where the fill is about to reach. It
+      // flies inside the card (card-relative), so it still lands on Next if the card moves.
+      const c = card.getBoundingClientRect();
       const a = dot.getBoundingClientRect();
       const b = next.getBoundingClientRect();
-      const x0 = a.left + a.width / 2;
-      const y0 = a.top + a.height / 2;
-      const x1 = b.left + Math.max(14, Math.min(b.width - 14, b.width * progressOf(i)));
-      const y1 = b.top + b.height / 2;
+      const x0 = a.left + a.width / 2 - c.left;
+      const y0 = a.top + a.height / 2 - c.top;
+      const x1 = b.left + Math.max(14, Math.min(b.width - 14, b.width * progressOf(i))) - c.left;
+      const y1 = b.top + b.height / 2 - c.top;
       const cx = (x0 + x1) / 2;
       const cy = Math.min(y0, y1) - 44;
       const spark = document.createElement('span');
       spark.className = 'tour-spark';
-      root.appendChild(spark);
+      card.appendChild(spark);
       const frames = [];
       const N = 30;
       for (let n = 0; n <= N; n++) {
@@ -269,6 +278,11 @@ export function runTour(steps) {
         void card.offsetWidth;
         card.classList.remove('instant');
         spot.classList.remove('instant');
+        if (handoff) {
+          root.classList.add('handoff');
+          handoff(card);
+          requestAnimationFrame(() => requestAnimationFrame(() => root.classList.remove('handoff')));
+        }
         root.classList.add('on');
       } else {
         place(step, finalH);

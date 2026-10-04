@@ -105,6 +105,10 @@ body { overflow: hidden; }
      colour and becomes the panel's on the way */
   transition: clip-path 0.7s cubic-bezier(0.7, 0, 0.12, 1), background-color 0.3s var(--ease), visibility 0s;
 }
+/* while theme waves run, layers paint the panel's surface; it takes the new colour at
+   once when they land (a fade from the old one would flash out from under them) */
+:root.waving .morph-panel { transition: clip-path 0.5s var(--sheet), visibility 0s linear 0.5s; }
+:root.waving .morph.open .morph-panel { transition: clip-path 0.7s cubic-bezier(0.7, 0, 0.12, 1), visibility 0s; }
 .panel-inner {
   padding: 18px 20px 14px;
   display: flex;
@@ -125,6 +129,28 @@ body { overflow: hidden; }
 .panel-col + .panel-col { border-left: 0.5px solid var(--sep); padding-left: 22px; }
 .panel-col > * + * { padding-top: 14px; border-top: 0.5px solid var(--sep); }
 .p-block { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+/* the line under Appearance doubles as the theme change's progress bar */
+.p-block:has(> .theme-progress) { position: relative; }
+.theme-progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 13px);
+  height: 2px;
+  border-radius: 1px;
+  overflow: hidden;
+  pointer-events: none;
+}
+.tp-fill {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(to right, color-mix(in srgb, var(--accent) 55%, transparent), var(--accent));
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  opacity: 0;
+  will-change: transform, opacity;
+}
 .p-label { font-size: 12px; font-weight: 500; color: var(--label-2); }
 .p-desc { margin: 0; font-size: 11.5px; line-height: 1.45; color: var(--label-2); }
 .p-desc.swap { animation: swap 0.35s var(--ease-out); }
@@ -858,6 +884,9 @@ body { overflow: hidden; }
 }
 .hbar.grown, .dcol .dbar.grown { transform: none; }
 .hbar i { display: block; flex: var(--f) 1 0; min-height: 1px; background: var(--c); }
+.hbar { position: relative; }
+/* stepping days: the old colours sit on top and fade while the bar morphs (reuseStrip) */
+.hbar-old { position: absolute; inset: 0; display: flex; flex-direction: column-reverse; gap: 1px; pointer-events: none; }
 .hbar i.unknown { background: var(--fill-3); }
 .hlab { grid-row: 2; padding-top: 4px; font-size: 10.5px; font-weight: 500; color: var(--label-3); white-space: nowrap; }
 
@@ -1413,10 +1442,10 @@ body { overflow: hidden; }
 .tr-note { position: absolute; inset: 0; margin: 0; display: grid; place-items: center; padding: 0 20px; text-align: center; font-size: 13px; color: var(--label-2); pointer-events: none; animation: fade-in 0.4s var(--ease) backwards; }
 
 /* ---------- settings sits on its own layer: a calm scrim behind, a lifted surface in front ---------- */
-:root { --panel: #ffffff; --scrim: rgba(24, 24, 32, 0.22); }
+:root, [data-wave="light"] { --panel: #ffffff; --scrim: rgba(24, 24, 32, 0.22); }
 @media (prefers-color-scheme: dark) { :root:not([data-theme]) { --panel: #2c2c2e; --scrim: rgba(0, 0, 0, 0.55); } }
-:root[data-theme="dark"] { --panel: #2c2c2e; --scrim: rgba(0, 0, 0, 0.55); }
-:root[data-theme="pink"] { --panel: #4a2c3d; --scrim: rgba(22, 6, 15, 0.52); }
+:root[data-theme="dark"], [data-wave="dark"] { --panel: #2c2c2e; --scrim: rgba(0, 0, 0, 0.55); }
+:root[data-theme="pink"], [data-wave="pink"] { --panel: #4a2c3d; --scrim: rgba(22, 6, 15, 0.52); }
 .morph-panel { background: var(--surface); }
 .morph.open .morph-panel { background: var(--panel); }
 .settings-scrim {
@@ -1428,9 +1457,9 @@ body { overflow: hidden; }
   backdrop-filter: blur(2px) saturate(0.92);
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.5s var(--sheet), visibility 0s linear 0.5s;
+  transition: opacity 0.5s var(--sheet), visibility 0s linear 0.5s, background-color 0.6s var(--ease);
 }
-.settings-scrim.on { opacity: 1; visibility: visible; transition: opacity 0.62s var(--sheet), visibility 0s; }
+.settings-scrim.on { opacity: 1; visibility: visible; transition: opacity 0.62s var(--sheet), visibility 0s, background-color 0.6s var(--ease); }
 .replay-btn svg { width: 10px; height: 10px; margin-right: 5px; transition: transform 0.3s var(--ease-out); }
 .replay-btn:hover svg { transform: scale(1.2); }
 #limit-reset:not(:disabled) { color: var(--danger); }
@@ -1510,10 +1539,10 @@ body { overflow: hidden; }
 }
 
 /* ---------- tour ---------- */
-:root { --tour-dim: rgba(12, 12, 18, 0.55); --heavy: cubic-bezier(0.16, 1, 0.3, 1); }
+:root, [data-wave="light"] { --tour-dim: rgba(12, 12, 18, 0.55); --heavy: cubic-bezier(0.16, 1, 0.3, 1); }
 @media (prefers-color-scheme: dark) { :root:not([data-theme]) { --tour-dim: rgba(0, 0, 0, 0.68); } }
-:root[data-theme="dark"] { --tour-dim: rgba(0, 0, 0, 0.68); }
-:root[data-theme="pink"] { --tour-dim: rgba(22, 5, 14, 0.64); }
+:root[data-theme="dark"], [data-wave="dark"] { --tour-dim: rgba(0, 0, 0, 0.68); }
+:root[data-theme="pink"], [data-wave="pink"] { --tour-dim: rgba(22, 5, 14, 0.64); }
 /* the tour layer itself lets clicks through; the blocker (with a hole over the
    light on hands-on steps) and the card take them */
 .tour { position: fixed; inset: 0; z-index: 5000; pointer-events: none; }
@@ -1528,6 +1557,8 @@ body { overflow: hidden; }
   transition: left 0.7s var(--heavy), top 0.7s var(--heavy), width 0.7s var(--heavy), height 0.7s var(--heavy), border-radius 0.7s var(--heavy), opacity 0.4s var(--ease);
 }
 .tour-spot.instant { transition: opacity 0.4s var(--ease); }
+/* taking over from the welcome, whose dim is the same: no fade, so there's no seam */
+.tour.handoff .tour-spot { transition: none; }
 .tour-spot::after {
   content: "";
   position: absolute;
@@ -1567,6 +1598,13 @@ body { overflow: hidden; }
 .tour-text b { color: var(--label); font-weight: 650; }
 .tour-foot { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 14px; }
 .tour-foot .btn { min-width: 76px; }
+/* the tour moves focus to Next itself; no focus ring on its buttons */
+.tour-card .btn:focus-visible { box-shadow: none; }
+/* a picker opened from the tour: the tour fades away while it's up, so only the
+   picker's scrim dims and blurs the page */
+.tour { transition: opacity 0.35s var(--ease); }
+.picking .tour { opacity: 0; }
+.picking .tour, .picking .tour * { pointer-events: none !important; }
 
 /* Next charges up with the tries (tour.js, chargeNext). The fill and the arrow
    sit on top of the button, so its size and place never change. */
@@ -1598,6 +1636,7 @@ body { overflow: hidden; }
 .tour-next.full .tn-label { transform: translateX(-6px); }
 .tour-next.full .tn-arrow { opacity: 1; transform: none; animation: tn-nudge 2.8s var(--ease-in-out) 1.4s infinite; }
 @keyframes tn-nudge { 0%, 32%, 100% { transform: none; } 16% { transform: translateX(3px); } }
+/* lives inside the tour card (position: fixed is relative to the card's transform) */
 .tour-spark {
   position: fixed;
   left: -4px;
@@ -1659,10 +1698,10 @@ body { overflow: hidden; }
 .ghost { position: fixed; z-index: 900; pointer-events: none; transform-origin: 0 0; will-change: transform, opacity; }
 
 /* the header's own words sit above the scrim, so they soften the same way */
-:root { --scrim-bright: 0.8; }
+:root, [data-wave="light"] { --scrim-bright: 0.8; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme]) { --scrim-bright: 0.45; } }
-:root[data-theme="dark"] { --scrim-bright: 0.45; }
-:root[data-theme="pink"] { --scrim-bright: 0.5; }
+:root[data-theme="dark"], [data-wave="dark"] { --scrim-bright: 0.45; }
+:root[data-theme="pink"], [data-wave="pink"] { --scrim-bright: 0.5; }
 .head-left, .demo-pill { transition: filter 0.5s var(--sheet); }
 .head.dimmed .head-left, .head.dimmed .demo-pill { transition-duration: 0.62s; }
 .head.dimmed .head-left, .head.dimmed .demo-pill { filter: blur(2px) saturate(0.92) brightness(var(--scrim-bright)); pointer-events: none; }
@@ -1686,32 +1725,37 @@ body { overflow: hidden; }
   color: var(--label);
   overscroll-behavior: contain;
 }
-.wel-bg { position: fixed; inset: 0; z-index: -1; background: var(--bg-art), var(--bg); overflow: hidden; }
-/* soft colour drifting slowly behind everything (transform only) */
-.wel-orb {
-  position: absolute;
-  width: 62vmax;
-  height: 62vmax;
-  border-radius: 50%;
-  opacity: 0;
-  will-change: transform;
-  transition: opacity 1.6s var(--ease);
-}
-.wel.on .wel-orb { opacity: var(--a, 0.5); }
-.wel-orb.o1 { left: -22vmax; top: -26vmax; background: radial-gradient(closest-side, color-mix(in srgb, var(--cat-work) 34%, transparent), transparent); animation: wel-drift-a 19s var(--ease-in-out) infinite alternate; }
-.wel-orb.o2 { right: -24vmax; bottom: -30vmax; background: radial-gradient(closest-side, color-mix(in srgb, var(--cat-social) 30%, transparent), transparent); animation: wel-drift-b 23s var(--ease-in-out) infinite alternate; }
-.wel-orb.o3 { left: 30%; top: 40%; width: 44vmax; height: 44vmax; --a: 0.32; background: radial-gradient(closest-side, color-mix(in srgb, var(--cat-learning) 30%, transparent), transparent); animation: wel-drift-c 17s var(--ease-in-out) infinite alternate; }
-@keyframes wel-drift-a { from { transform: translate(0, 0) scale(1); } to { transform: translate(9vmax, 7vmax) scale(1.12); } }
-@keyframes wel-drift-b { from { transform: translate(0, 0) scale(1.08); } to { transform: translate(-10vmax, -6vmax) scale(0.94); } }
-@keyframes wel-drift-c { from { transform: translate(-6vmax, 4vmax) scale(0.9); } to { transform: translate(8vmax, -8vmax) scale(1.1); } }
+/* the tour's own dim, so the welcome hands over to the tour without a seam */
+.wel-dim { position: fixed; inset: 0; z-index: -1; background: var(--tour-dim); opacity: 0; transition: opacity 0.5s var(--ease); }
+.wel.on .wel-dim { opacity: 1; }
 
-.wel-main {
+/* the card: its surface is a layer of its own (::before), so it can hand itself
+   over to the tour card while the hourglass inside flies off on its own */
+.wel-card {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: min(640px, 100%);
+  width: min(500px, 100%);
+  padding: 38px 40px 28px;
   text-align: center;
 }
+.wel-card p { text-wrap: balance; }
+.wel-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: 40px;
+  background: var(--panel);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.12);
+  opacity: 0;
+}
+.wel.on .wel-card::before { animation: wel-card-in 0.7s var(--ease-out) both; }
+@keyframes wel-card-in { from { opacity: 0; transform: translateY(12px) scale(0.97); } to { opacity: 1; transform: none; } }
+.wel.on .wel-card.handed::before { animation: none; opacity: 0; }
+.wel.on.closing .wel-card::before { animation: wel-card-out 0.45s var(--ease-out) 0.18s both; }
+@keyframes wel-card-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: scale(0.97); } }
 
 /* entrance: everything waits for .on, then arrives in a cascade (--d = delay in ms) */
 .wel-in, .wel-title span, .wel-mark, .wel-pin { opacity: 0; }
@@ -1721,7 +1765,7 @@ body { overflow: hidden; }
 @keyframes wel-letter { from { opacity: 0; transform: translateY(0.45em) scale(0.92); } to { opacity: 1; transform: none; } }
 
 /* the hourglass: pops up, then pours and turns over, again and again */
-.wel-mark { position: relative; width: 92px; height: 92px; margin-bottom: 22px; }
+.wel-mark { position: relative; z-index: 2; width: 84px; height: 84px; margin-bottom: 18px; }
 .wel.on .wel-mark { animation: wel-pop 0.9s var(--pop) both; }
 @keyframes wel-pop { from { opacity: 0; transform: scale(0.5) rotate(-8deg); } to { opacity: 1; transform: none; } }
 .wel-mark::before {
@@ -1739,6 +1783,9 @@ body { overflow: hidden; }
 .wg-bg { fill: #1d1d1f; }
 :root[data-theme="dark"] .wg-bg, :root[data-theme="pink"] .wg-bg { fill: #2c2c2e; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme]) .wg-bg { fill: #2c2c2e; } }
+/* on the dark and pink card, the icon keeps an edge */
+:root[data-theme="dark"] .wel-glass, :root[data-theme="pink"] .wel-glass { filter: drop-shadow(0 0 0.5px rgba(255, 255, 255, 0.35)) drop-shadow(0 14px 26px rgba(0, 0, 0, 0.3)); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme]) .wel-glass { filter: drop-shadow(0 0 0.5px rgba(255, 255, 255, 0.35)) drop-shadow(0 14px 26px rgba(0, 0, 0, 0.3)); } }
 .wg-line { fill: none; stroke: #fff; stroke-width: 6; stroke-linecap: round; stroke-linejoin: round; }
 .wg-bar { stroke-width: 7; }
 .wg-sand { fill: #fff; opacity: 0.88; transform-box: view-box; }
@@ -1756,42 +1803,25 @@ body { overflow: hidden; }
 @keyframes wg-stream { 0% { opacity: 0; } 4%, 66% { opacity: 0.88; } 70%, 100% { opacity: 0; } }
 
 .wel-kicker { margin: 0; font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--label-3); }
-.wel-title { margin: 2px 0 0; font-size: clamp(44px, 7vw, 68px); font-weight: 800; line-height: 1.05; letter-spacing: -0.045em; }
+.wel-title { margin: 2px 0 0; font-size: clamp(44px, 7vw, 64px); font-weight: 800; line-height: 1.05; letter-spacing: -0.045em; }
 .wel-title span { display: inline-block; }
-.wel-sub { max-width: 440px; margin: 12px 0 0; font-size: 15.5px; line-height: 1.5; color: var(--label-2); }
-
-.wel-feats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; width: 100%; margin: 30px 0 0; padding: 0; list-style: none; }
-.wel-feat {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
-  padding: 16px 16px 15px;
-  border-radius: var(--r-card);
-  background: var(--surface);
-  box-shadow: var(--shadow);
-  text-align: left;
-  transition: translate 0.35s var(--ease-out), box-shadow 0.35s var(--ease-out);
-}
-.wel-feat:hover { translate: 0 -3px; box-shadow: var(--shadow-hover); }
-.wel-feat b { margin-top: 6px; font-size: 14px; font-weight: 650; letter-spacing: -0.01em; }
-.wel-feat > span:last-child { font-size: 12.5px; line-height: 1.45; color: var(--label-2); }
-.wel-feat-ico { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 10px; background: var(--fill-1); color: var(--label); }
-.wel-feat-ico svg { width: 17px; height: 17px; }
-
-.wel-private { display: inline-flex; align-items: center; gap: 7px; margin: 18px 0 0; font-size: 12.5px; color: var(--label-2); }
-.wel-private svg { width: 14px; height: 14px; flex: none; }
-.wel-actions { display: flex; gap: 10px; margin-top: 26px; }
+.wel-tagline { margin: 4px 0 0; font-size: 15px; font-weight: 600; letter-spacing: -0.01em; color: var(--label-2); }
+.wel-sub { max-width: 340px; margin: 10px 0 0; font-size: 14px; line-height: 1.5; color: var(--label-2); }
+.wel-ask { margin: 26px 0 0; font-size: 14px; font-weight: 600; color: var(--label); }
+.wel-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 14px; }
 .wel-actions .btn { min-width: 150px; }
-.wel-by { margin: 22px 0 0; font-size: 11.5px; color: var(--label-3); }
+.wel-private { margin: 24px 0 0; font-size: 12.5px; line-height: 1.45; color: var(--label-2); }
+/* the lock rides along with the first word, wherever the line breaks */
+.wel-private svg { display: inline-block; width: 13px; height: 13px; margin-right: 6px; vertical-align: -2px; }
+.wel-by { margin: 16px 0 0; font-size: 11.5px; color: var(--label-3); }
 
-/* pin hint, pointing up at the toolbar */
-.wel-pin { position: fixed; top: 14px; right: 64px; display: flex; flex-direction: column; align-items: flex-end; pointer-events: none; }
+/* pin hint: a plain arrow straight up at the toolbar's Extensions (puzzle) button */
+.wel-pin { position: fixed; top: 12px; right: 72px; display: flex; flex-direction: column; align-items: flex-end; pointer-events: none; }
 .wel.on .wel-pin { animation: wel-pin-in 0.9s var(--ease-out) 1.5s both; }
 @keyframes wel-pin-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
-.wel-arrow { width: 46px; height: 46px; margin-right: -18px; color: var(--label-3); }
-.wel.on .wel-arrow { animation: wel-bob 1.6s var(--ease-in-out) 2.4s infinite alternate; }
-@keyframes wel-bob { from { transform: none; } to { transform: translate(4px, -6px); } }
+.wel-arrow { width: 24px; height: 56px; margin-right: 20px; color: rgba(255, 255, 255, 0.9); filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.25)); }
+.wel.on .wel-arrow { animation: wel-bob 1.4s var(--ease-in-out) 2.4s infinite alternate; }
+@keyframes wel-bob { from { transform: none; } to { transform: translateY(-7px); } }
 .wel-pin-card {
   display: flex;
   flex-direction: column;
@@ -1800,7 +1830,7 @@ body { overflow: hidden; }
   margin: 4px 0 0;
   padding: 10px 13px;
   border-radius: 14px;
-  background: var(--surface);
+  background: var(--panel);
   box-shadow: var(--shadow-pop);
   font-size: 12.5px;
   line-height: 1.45;
@@ -1814,18 +1844,18 @@ body { overflow: hidden; }
 .wel.leaving { pointer-events: none; }
 
 @media (max-width: 760px) {
-  .wel-feats { grid-template-columns: minmax(0, 1fr); max-width: 380px; }
   .wel-pin { display: none; }
 }
 @media (max-height: 700px) {
-  .wel-mark { width: 72px; height: 72px; margin-bottom: 14px; }
-  .wel-feats { margin-top: 20px; }
-  .wel-actions { margin-top: 18px; }
+  .wel-card { padding-top: 26px; padding-bottom: 20px; }
+  .wel-mark { width: 64px; height: 64px; margin-bottom: 12px; }
+  .wel-ask { margin-top: 18px; }
+  .wel-private { margin-top: 18px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .wel-in, .wel-title span, .wel-mark, .wel-pin { opacity: 1; }
-  .wel.on *, .wel.on .wel-mark::before { animation: none !important; }
-  .wel.on .wel-orb { transition: none; }
+  .wel-in, .wel-title span, .wel-mark, .wel-pin, .wel-card::before, .wel-dim { opacity: 1; }
+  .wel.on *, .wel.on .wel-mark::before, .wel.on .wel-card::before { animation: none !important; }
+  .wel-dim { transition: none; }
 }
 
 /* ---------- first load: one card after another ----------

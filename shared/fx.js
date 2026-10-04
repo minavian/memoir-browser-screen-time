@@ -183,15 +183,36 @@ export function reveal() {
   requestAnimationFrame(() => requestAnimationFrame(() => document.body.classList.add('ready')));
 }
 
+// ---------- no hover tooltips ----------
+// The browser's own tooltip (from a title) never shows: the title is taken away the
+// moment the pointer arrives, before the browser's delay is up, including titles the
+// page sets later. A control with no text of its own keeps it as its accessible name.
+
+let titlesOff = false;
+export function disableTitleTooltips() {
+  if (titlesOff) return;
+  titlesOff = true;
+  document.addEventListener('pointerover', e => {
+    const t = e.target instanceof Element ? e.target.closest('[title]') : null;
+    if (!t) return;
+    const text = t.getAttribute('title');
+    t.removeAttribute('title');
+    if (text && !t.hasAttribute('aria-label') && !t.textContent.trim()) t.setAttribute('aria-label', text);
+  }, true);
+}
+
 // ---------- sites: favicons & links ----------
 
 let ORIGINS = {};
 const iconCache = new Map();
+// icons already found (src, or null for none): a list drawn again shows them straight
+// away, so a refresh never makes them blink
+const iconKnown = new Map();
 
 export function setOrigins(map) {
   const next = map || {};
   for (const d of new Set([...Object.keys(ORIGINS), ...Object.keys(next)])) {
-    if (ORIGINS[d] !== next[d]) iconCache.delete(d);
+    if (ORIGINS[d] !== next[d]) { iconCache.delete(d); iconKnown.delete(d); }
   }
   ORIGINS = next;
 }
@@ -299,6 +320,7 @@ export function resolveFavicon(domain) {
     return null;
   });
   iconCache.set(domain, p);
+  p.then(src => { if (iconCache.get(domain) === p) iconKnown.set(domain, src); });
   return p;
 }
 
@@ -339,14 +361,13 @@ export function faviconTile(domain, color) {
     tile.innerHTML = LOCK_GLYPH;
     return tile;
   }
-  whenSeen(tile, () => resolveFavicon(domain).then(src => {
-    if (!tile.isConnected) return;
+  const fill = (src, animate) => {
     if (src) {
       const img = document.createElement('img');
       img.alt = '';
       img.src = src;
       tile.appendChild(img);
-      if (!reducedMotion()) img.animate([{ opacity: 0, transform: 'scale(0.7)' }, { opacity: 1, transform: 'none' }], { duration: 260, easing: EASE_OUT });
+      if (animate && !reducedMotion()) img.animate([{ opacity: 0, transform: 'scale(0.7)' }, { opacity: 1, transform: 'none' }], { duration: 260, easing: EASE_OUT });
     } else {
       tile.style.background = color || 'var(--label-3)';
       const letter = document.createElement('span');
@@ -354,7 +375,10 @@ export function faviconTile(domain, color) {
       letter.textContent = (domain || '?').charAt(0).toUpperCase();
       tile.appendChild(letter);
     }
-  }));
+  };
+  // known already: in place at once, no entrance (redrawn lists would otherwise blink)
+  if (iconKnown.has(domain)) { fill(iconKnown.get(domain), false); return tile; }
+  whenSeen(tile, () => resolveFavicon(domain).then(src => { if (tile.isConnected) fill(src, true); }));
   return tile;
 }
 
