@@ -75,14 +75,15 @@
                     </div>
                   </div>
 
-                  <div class="p-row">
-                    <span><b>Track browsing</b><small>Pause any time from the popup too</small></span>
-                    <label class="switch"><input type="checkbox" id="set-tracking" aria-label="Track browsing"><span class="track"></span><span class="knob"></span></label>
-                  </div>
-
-                  <div class="p-row">
-                    <span><b>Custom cursor</b><small>Use the animated pointer. Turning it off is recommended on low-end devices</small></span>
-                    <label class="switch"><input type="checkbox" id="set-cursor" aria-label="Custom cursor"><span class="track"></span><span class="knob"></span></label>
+                  <div class="p-block">
+                    <div class="p-row">
+                      <span><b>Custom cursor</b><small>Use the animated cursor. Turning it off is highly recommended on low-end devices</small></span>
+                      <label class="switch"><input type="checkbox" id="set-cursor" aria-label="Custom cursor"><span class="track"></span><span class="knob"></span></label>
+                    </div>
+                    <div class="p-row" id="smooth-row">
+                      <span><b>Smooth cursor</b><small id="smooth-desc">Glides after your mouse, a touch behind it</small></span>
+                      <label class="switch"><input type="checkbox" id="set-smooth" aria-label="Smooth cursor" aria-describedby="smooth-desc"><span class="track"></span><span class="knob"></span></label>
+                    </div>
                   </div>
 
                   <div class="p-block">
@@ -100,11 +101,35 @@
                         <button class="btn btn-danger btn-xs" id="detail-erase" type="button">Erase</button>
                       </div>
                     </div></div>
+                    <div class="reveal" id="tw-more"><div class="reveal-inner">
+                      <div class="tw-block">
+                        <span class="p-label" id="tw-label">Keep page titles and links</span>
+                        <div class="segmented" id="title-weeks" role="group" aria-labelledby="tw-label">
+                          <span class="thumb"></span>
+                          <button type="button" data-weeks="4" aria-pressed="false">4 weeks</button>
+                          <button type="button" data-weeks="8" aria-pressed="false">8 weeks</button>
+                          <button type="button" data-weeks="12" aria-pressed="false">12 weeks</button>
+                          <button type="button" data-weeks="16" aria-pressed="false">16 weeks</button>
+                        </div>
+                        <p class="p-desc" id="tw-desc">Older days keep their time; only their page titles and links go.</p>
+                        <div class="reveal" id="tw-confirm"><div class="reveal-inner">
+                          <div class="inline-confirm">
+                            <span id="tw-msg"></span>
+                            <button class="btn btn-secondary btn-xs" id="tw-keep" type="button">Keep</button>
+                            <button class="btn btn-danger btn-xs" id="tw-remove" type="button">Remove</button>
+                          </div>
+                        </div></div>
+                      </div>
+                    </div></div>
+                    <div class="p-row p-row-gap">
+                      <span><b>Track browsing</b><small>Pause tracking</small></span>
+                      <label class="switch"><input type="checkbox" id="set-tracking" aria-label="Track browsing"><span class="track"></span><span class="knob"></span></label>
+                    </div>
                   </div>
 
                   <div class="p-block">
                     <span class="p-label">Never track</span>
-                    <p class="p-desc">Time on these sites still counts toward your totals and limit, filed as Private — their names are never saved or shown. Past time on a site you add is made Private too.</p>
+                    <p class="p-desc">These websites you add won’t be tracked, but their time still counts. Past time on them is made private too.</p>
                     <form class="ex-form" id="ex-form" autocomplete="off">
                       <input id="ex-input" type="text" placeholder="Add a site, like youtube.com" aria-label="Site to never track" spellcheck="false">
                       <button class="btn btn-primary btn-xs ex-add" id="ex-add" type="submit" aria-label="Add site"><svg><use href="#i-plus"/></svg><span>Add</span></button>
@@ -288,6 +313,7 @@
           <span class="caption" id="sites-cap">This week · click a category to change it</span>
         </header>
         <ol class="sites" id="sites"></ol>
+        <div class="sites-page" id="page-pop" role="region" aria-label="Time on each page" hidden></div>
       </section>
 
       <section class="card empty" id="empty" data-anim style="--i:2" hidden>

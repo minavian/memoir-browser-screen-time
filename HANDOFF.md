@@ -90,9 +90,16 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
   surface until it lands); `MorphPopover` does the same at 150 ms for every popover, so nothing waits on the shell.
   Hint under the time is just "a day" (only animates when its text changes); above 8 h it shows one of 12
   remarks (`SASS` in goal.js), a new one per hour value, no repeats until all have been used.
-- Custom cursor: smoothed follow (`SMOOTH_MS = 22` in cursor.js), whole-pixel free, hover = tilt/shrink on
-  `.cc-inner`, press = extra squeeze on `.cc-arrow` (same everywhere), popup edge guard hides it when the
-  pointer leaves fast. Off setting works in all themes.
+- Custom cursor (5.1.2): drawn exactly at the pointer on every move (`pointerrawupdate`), no catch-up.
+  Smooth cursor (`bst-cursor-smooth`, off by default) brings back the glide (`SMOOTH_MS = 22`). Hover =
+  tilt/shrink on `.cc-inner`, press = extra squeeze on `.cc-arrow` (same everywhere); popup edge guard hides it
+  when the pointer leaves fast. Off setting works in all themes. The system draws the same arrow (theme.css
+  `--cursor`, `.cc.is-native`, no `html.cc-live`) until the page has settled after opening (load, then an idle
+  callback), and whenever moves arrive late (handled > 40 ms after the mouse sent them: a busy page, a slow
+  device); the animated one takes over again on a move after 900 ms on time, at full strength in that frame.
+  Settings: Custom + Smooth cursor share a section; with Custom cursor off, Smooth cursor's row fades
+  (`#smooth-row.locked`) and its switch is `aria-disabled` (a press nudges the switch only, nothing changes).
+  Tracking detail and Track browsing share a section.
 
 - First load is queued (4.3.0): cards enter 110 ms apart, row by row (`--i`: header 0, summary 1, chart 2,
   categories 3, limit 4, by hour 5, most used 6). While `body.intro` is on (first render + 2.6 s), everything
@@ -187,6 +194,48 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
 - No hover tooltips (5.1.2, fx.js `disableTitleTooltips`, called by recap and popup): any `title` is removed on
   pointerover, before the browser's tooltip delay, so it never shows; a control without text gets it as aria-label.
 
+- A site's pages (5.1.2). Data, per day: `ti` (title → ms), `th` (hour → site → title → ms, so an hour has its
+  own pages), `tu` (title → its latest link, cleaned by core.js `cleanUrl`: http(s) only, on that site, no login
+  or #part, tracking tags dropped, at most 500 chars), `tp` (sites whose titles were deleted as they got old).
+  Links are only saved with a title (Page titles on), never for Private, excluded or incognito time; the 30-titles
+  cap is unchanged ("other pages" has no link). Titles, hours and links are kept `settings.titleWeeks` (4, 8, 12,
+  16; `pruneTitles`/`dropTitles`, run by the tracker at start, daily, and when the setting changes, and by
+  Settings when you pick a shorter time, after a confirm). Never track, Erase titles, merge/replace imports and
+  Clear all cover `th`/`tu`/`tp`.
+  UI (recap.js `openPagePop`, `pagesFor`, `pagesWhen`): rows with pages (`.has-pages`) in Most used and in the
+  day/hour views hint "Click to see each page's time …" and open `#page-pop`, a second page of the Most used card
+  (`.sites-page`, absolute over the card: its own surface, corners and padding, no shadow, so it's the card turning
+  into the pages). From a Most used row it grows out of that row (`.drop`: a clip-path inset from the row to the
+  whole card, the popovers' timing and spring, POP 160 + 300 ms; the pages fade in with it, `.unfold`) and folds
+  back into it (EASE_OUT 120 + 180 ms). From the day/hour view the card cross-fades to the pages exactly like
+  Daily activity's `.view`s (out 0.34 s, in 0.42 s + slight scale/lift; CSS transitions, so they reverse from
+  wherever they are); Most used scrolls into view first where it's below the window. Another site while they're up
+  cross-fades `.sp-body`s the same way. Closing goes into the row when it grew from one still in the card, else the
+  reverse cross-fade. State: `pages` (state, mode, anim); `openPagePop`, `buildPages`, `closePagePop`. The card's
+  own content is `inert` while the pages are over it. A back button (`.pp-back`), Escape, the mouse's Back button or
+  a click elsewhere close them. Page rows show the site-link ↗ on hover; "Open URL" waits for a 1 s rest the first
+  time, then morphs from page to page like every tip (gone over a row without a link). An hour saved before `th`
+  existed shows that day's pages with a note. Titles gone: a message, with Open Settings when a longer time could
+  have kept them (within 16 weeks and the setting is shorter than 16). The pages close when their rows are rebuilt.
+  A popover on its way out (`.pop[data-state="closing"]`) lets clicks through.
+  Live refreshes (`refreshSoon`) now wait while a menu or popover is shown or still animating (they used to be
+  dropped while one was open, leaving stale numbers until the next save).
+  Export carries `format: 2`; files without it are announced as older, brought up to date (titles past the
+  setting dropped) and imported. Toasts that change while showing cross-fade and ease to the new width.
+
+- Tour (5.1.2): steps marked `autoNext` ("An hour up close") move on the moment Next has filled, without
+  the full-arrow pause. The Cursor step covers Custom and Smooth cursor (a task each; a press on the locked
+  Smooth cursor doesn't count).
+
+- Limit clock inside the tour (5.1.2, recap.js `openGoalPicker`, goal.js `onClosing` / `focusBack`): while the clock
+  is up the tour's dim and card are hidden (`picking`). Coming back, in turn: the dim crossfades in under the clock's
+  scrim as it closes (`tour-return`), the card pops in (`scale`) once the clock has landed, then the outline
+  (`tour-return-ring`). Focus goes back to the tour's Next, not the page: from the page, ← → change the week.
+
+- Categories legend (5.1.2, recap.js `renderDonut`): on short windows the legend sets the card's height, so a
+  Week/Day switch (or a week with more categories) changes it. The rebuild runs inside `animateHeight`: the card
+  glides to its new height and Most used below follows, picking up mid-glide on quick clicks (not during the intro).
+
 - Hour grid entrance (5.1.2, recap.css `.heat-veil`, added by `buildHeat`): one card-coloured veil with a long
   slanted soft edge slides off the cells (transform only), then hides. It replaces 168 per-cell opacity fades: each
   got a compositing layer and a page-wide layout (40–70 ms) as it began, which stalled the categories ring and
@@ -208,6 +257,10 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
     `data-wave-now`, holding its own transitions (e.g. heat cells' 0.5 s fill) so it stays with the surface.
     There are no colour transitions; they made 1 000+ elements restyle every frame. A block carries its theme's
     `--cursor` too, so the cursor-off override covers `[data-wave]` as well as `html`.
+  - Floating surfaces (`panels`: the Settings panel and, in the tour, the tour card) share one circle from the
+    button; each gets a `.wave-panel` layer and always switches by its blocks (`split`), whose few descendants are
+    held still for that frame too (`data-wave-deep`). The tour's dim (`fades`) switches as the sweep passes it and
+    fades by its own box-shadow transition.
   - Cursor: takes the theme of the newest wave that has reached the pointer (pointer tracked from events; reading
     the cursor's box would force a restyle).
   - Landing: the newest wave settles the page (`apply`). The layers stay one more frame, so the page restyles under

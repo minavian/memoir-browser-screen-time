@@ -208,9 +208,9 @@ export function runTour(steps, { handoff = null } = {}) {
         setFill(p);
         if (p >= 1) setTimeout(() => {
           if (ended || index !== i || progressOf(i) < 1) return;
+          // steps marked autoNext move on by themselves the moment Next has filled up
+          if (steps[i].autoNext && i < steps.length - 1) { go(i + 1, 1); return; }
           setFull(true);
-          // steps marked autoNext move on by themselves once Next has filled up
-          if (steps[i].autoNext && i < steps.length - 1) setTimeout(() => { if (!ended && index === i) go(i + 1, 1); }, reducedMotion() ? 0 : 900);
         }, reducedMotion() ? 0 : 420);
       };
       if (reducedMotion() || !dot) { land(); return; }

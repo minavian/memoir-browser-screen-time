@@ -314,6 +314,9 @@ button, input { font: inherit; color: inherit; letter-spacing: inherit; }
 /* the frame a block switches, its own transitions wait (they come back the next frame;
    only the block's own: holding its whole subtree would restyle it all a second time) */
 [data-wave-now], [data-wave-now]::before, [data-wave-now]::after { transition: none !important; }
+/* on a floating surface (Settings, the tour card) its few descendants too; a separate
+   attribute, so the board's blocks never invalidate their subtrees */
+[data-wave-deep] *, [data-wave-deep] *::before, [data-wave-deep] *::after { transition: none !important; }
 /* the layers that paint the page and the cards' surfaces, one per wave, under the board */
 @property --wave-p { syntax: '<percentage>'; inherits: false; initial-value: 0%; }
 @property --wave-r { syntax: '<length>'; inherits: false; initial-value: 0px; }
@@ -334,6 +337,7 @@ button, input { font: inherit; color: inherit; letter-spacing: inherit; }
 /* in the Settings panel: a soft circle from the button */
 .wave-panel {
   position: absolute;
+  border-radius: inherit;
   left: 0;
   top: 0;
   right: 0;
@@ -500,6 +504,9 @@ button, input { font: inherit; color: inherit; letter-spacing: inherit; }
 .switch input:active + .track + .knob { width: 27px; }
 .switch input:checked:active + .track + .knob { left: -3px; }
 .switch input:focus-visible + .track { box-shadow: var(--ring); }
+/* locked (aria-disabled): it doesn't give under a press; the row says why (recap.js) */
+.switch:has(input[aria-disabled="true"]), .switch input[aria-disabled="true"] { cursor: var(--cursor); }
+.switch input[aria-disabled="true"]:active + .track + .knob { width: 22px; left: 2px; }
 
 /* ---------- segmented control ---------- */
 
@@ -840,4 +847,6 @@ html.cc-live :is(input[type="text"], input[type="search"], input:not([type]), in
 .cc-arrow .body { fill: var(--cur-fill); stroke: var(--cur-stroke); stroke-width: 2; stroke-linejoin: round; transition: fill 0.35s var(--ease), stroke 0.35s var(--ease); }
 .cc.is-hover .cc-inner { transform: scale(0.86) rotate(-12deg); }
 .cc.is-text .cc-inner, .cc.is-out .cc-inner { opacity: 0; }
+/* the system draws the arrow meanwhile (cursor.js): gone at once, no fade */
+.cc.is-native { visibility: hidden; }
 @media (prefers-reduced-motion: reduce) { .cc-inner { transition: opacity 0.1s linear; } .cc-arrow { transition: none; } }

@@ -6,13 +6,14 @@
 // and when tracking is paused. Progress is saved every minute.
 //
 // Each day stores total time per site, per hour, per site per hour, and (only when
-// "Page titles" is on) time per page title. Sites on the "Never track" list are
+// "Page titles" is on) time per page title with the page's latest address; those
+// are kept for the weeks chosen in Settings (4 to 16). Sites on the "Never track" list are
 // saved as anonymous Private time: it counts toward totals and the daily limit,
 // but no name is ever written.
 
 import {
   APP_NAME, IDLE_SECONDS, HEARTBEAT_MINUTES, MAX_GAP_MS, SLEEP_CREDIT_MS, PRIVATE_KEY, MAX_TITLES_PER_SITE,
-  domainFromUrl, isExcluded, isPrivate, cleanTitle, dayKey, storageKeyForDay, normalizeDay, dayTotal,
+  domainFromUrl, isExcluded, isPrivate, cleanTitle, cleanUrl, pruneTitles, dayKey, storageKeyForDay, normalizeDay, dayTotal,
   getSettings, getSession, getDays, startOfWeek, weekDayKeys, addDays, formatDuration,
   getGoalHistory, limitOn, retentionCutoffKey, listDayKeys, withData,
 } from './shared/core.js';
@@ -59,11 +60,13 @@ async function currentTarget(settings) {
   if (idle === 'idle' && !tab.audible) return null;
 
   // Private windows (when Memoir is allowed in them) count, but only as Private time.
-  if (tab.incognito || isExcluded(domain, settings.excluded)) return { domain: PRIVATE_KEY, origin: null, title: null };
+  if (tab.incognito || isExcluded(domain, settings.excluded)) return { domain: PRIVATE_KEY, origin: null, title: null, url: null };
   let origin = null;
   try { origin = new URL(url).origin; } catch { /* ignore */ }
   const title = settings.titles ? cleanTitle(tab.title, domain) : null;
-  return { domain, origin, title };
+  // the page's address goes with its title (never on its own)
+  const link = title ? cleanUrl(url, domain) : null;
+  return { domain, origin, title, url: link };
 }
 
 async function syncNow() {
@@ -130,6 +133,16 @@ async function commit(session, start, end, settings) {
       const pages = rec.ti[domain] || (rec.ti[domain] = {});
       const k = Object.hasOwn(pages, title) || Object.keys(pages).length < MAX_TITLES_PER_SITE ? title : '';
       pages[k] = (Object.hasOwn(pages, k) ? pages[k] : 0) + added;
+      // the latest address of that page (none for the "other pages" share)
+      if (k && session.url) (rec.tu[domain] || (rec.tu[domain] = {}))[k] = session.url;
+      // and the same time hour by hour, so an hour can show its own pages
+      for (const [h, ms] of hours) {
+        const whole = Math.round(ms);
+        if (whole <= 0) continue;
+        const slot = rec.th[h] || (rec.th[h] = {});
+        const byHour = slot[domain] || (slot[domain] = {});
+        byHour[k] = (Object.hasOwn(byHour, k) ? byHour[k] : 0) + whole;
+      }
     }
     patch[storageKeyForDay(key)] = rec;
   }
@@ -251,17 +264,24 @@ async function pruneOldDays() {
   if (old.length) await chrome.storage.local.remove(old);
 }
 
+// page titles and their links older than the chosen weeks
+async function pruneOldTitles() {
+  const settings = await getSettings();
+  await pruneTitles(settings.titleWeeks);
+}
+
 async function dailyHousekeeping() {
   const today = dayKey(new Date());
   const { lastPrune } = await chrome.storage.session.get('lastPrune');
   if (lastPrune === today) return;
   await chrome.storage.session.set({ lastPrune: today });
   await pruneOldDays();
+  await pruneOldTitles();
 }
 
 async function boot() {
   await ensureAlarms();
-  await pruneOldDays();
+  await enqueue(async () => { await pruneOldDays(); await pruneOldTitles(); });
   sync();
 }
 
@@ -293,6 +313,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
     titlesOn = !!n.titles;
     if (o.reminderDay !== n.reminderDay || o.reminderMinutes !== n.reminderMinutes) enqueue(() => scheduleWeekly(true));
     if (o.retention !== n.retention) enqueue(pruneOldDays);
+    if (o.titleWeeks !== n.titleWeeks) enqueue(pruneOldTitles);
   }
   if (changes.goal) enqueue(() => checkGoal(Date.now()));
 });

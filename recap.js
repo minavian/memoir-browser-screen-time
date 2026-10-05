@@ -4,11 +4,13 @@ import {
   setCategoryOverride, getOrigins, formatDuration, formatBytes, formatTimeOfDay, hourLabel, hourRange, escapeHtml,
   storageKeyForDay, normalizeDay, cloneDay, dayTotal, listDayKeys, normalizeSite, isExcluded, uses24h,
   getGoalHistory, limitOn, limitLocked, commitLimit, removeLimit, goalLevel, retentionCutoffKey, resetLimit,
-  withData, domainFromUrl, safeKey,
+  withData, domainFromUrl, safeKey, cleanUrl, dropTitles, pruneTitles, titleCutoffKey, TITLE_WEEKS_OPTIONS,
+  MAX_TITLE_WEEKS, EXPORT_FORMAT,
 } from './shared/core.js';
 import {
   animateNumber, tween, reveal, createTooltip, faviconTile, reducedMotion, syncSegmented, slicePath, initPetals,
   setOrigins, siteLinkHtml, morph, MorphPopover, replay, EASE_OUT, animateHeight, makeScroller, initSmoothScrolling, disableTitleTooltips,
+  ARROW_SVG, POP,
 } from './shared/fx.js';
 import { getThemePref, setThemePref, watchTheme, THEME_SWITCH_MS } from './shared/theme.js';
 import { createGoalRing, openPicker } from './shared/goal.js';
@@ -16,7 +18,7 @@ import { TrendChart } from './trend.js';
 import { runGauntlet } from './gauntlet.js';
 import { runTour } from './tour.js';
 import { createWelcome } from './welcome.js';
-import { initCursor, setCursorPref, cursorEnabled } from './shared/cursor.js';
+import { initCursor, setCursorPref, cursorEnabled, cursorSmooth, setCursorSmooth } from './shared/cursor.js';
 import { initContextMenu } from './shared/context-menu.js';
 
 const $ = id => document.getElementById(id);
@@ -64,6 +66,13 @@ const state = {
 
 const tip = createTooltip();
 const catPop = new MorphPopover($('cat-pop'), { radius: 16 });
+// A site's pages, as a second page of the Most used card (see openPagePop)
+const pages = {
+  state: 'closed', // opening · open · closing · closed
+  mode: null,      // 'drop': grown out of its row in the card · 'fade': cross-faded in
+  anim: null,
+  get isOpen() { return this.state === 'opening' || this.state === 'open'; },
+};
 const importPop = new MorphPopover($('import-pop'), { radius: 16 });
 const authorPop = new MorphPopover($('author-pop'), { radius: 16, onClose: () => $('author').setAttribute('aria-expanded', 'false') });
 
@@ -1217,6 +1226,7 @@ function showDetail(after = null, dir = null, { back = false } = {}) {
 
 let detailSeq = 0;
 function buildDetailWrap(soft) {
+  if (pages.isOpen && popAnchor && popAnchor.closest('#detail-view')) closePagePop();
   const v = state.view;
   const wrap = document.createElement('div');
   wrap.className = `dv dv-${v.type}${soft ? ' soft' : ''}`;
@@ -1439,7 +1449,7 @@ function buildDayView(wrap, i, soft) {
     strip.appendChild(l);
   }
 
-  const list = siteRows(Object.entries(d.s), soft, [i]);
+  const list = siteRows(Object.entries(d.s), soft, [i], { hour: null });
   list.style.setProperty('--i', 2);
   wrap.append(top, strip, list);
   if (!list.children.length) wrap.appendChild(emptyNote(total > 0 ? 'Only private browsing on this day.' : 'No browsing on this day.'));
@@ -1507,7 +1517,7 @@ function buildHourView(wrap, dayIdx, h, soft) {
     wrap.appendChild(strip);
   }
 
-  const list = siteRows(Object.entries(agg), soft, idxs);
+  const list = siteRows(Object.entries(agg), soft, idxs, { hour: h });
   list.style.setProperty('--i', 2);
   wrap.appendChild(list);
   if (!list.children.length) {
@@ -1659,13 +1669,25 @@ function privateNote(ms) {
 }
 
 // Horizontal bars, one per site; the list scrolls when there are many.
-function siteRows(entries, soft, dayIdxs) {
+// pages: { hour } when a click on a row shows its pages (the day and hour views)
+function siteRows(entries, soft, dayIdxs, pages = null) {
   const ol = document.createElement('ol');
   ol.className = `rows${soft ? ' soft' : ''}`;
   ol._days = dayIdxs;
+  ol._hour = pages ? pages.hour : null;
   const list = entries.filter(([dom, ms]) => !isPrivate(dom) && ms >= 1000).sort((a, b) => b[1] - a[1]).slice(0, 80);
   const max = list.length ? list[0][1] : 1;
-  list.forEach(([domain, ms], i) => ol.appendChild(siteRow(domain, ms, max, i, soft)));
+  list.forEach(([domain, ms], i) => {
+    const li = siteRow(domain, ms, max, i, soft);
+    if (pages && hasPages(domain, dayIdxs, pages.hour)) {
+      li.classList.add('has-pages');
+      const time = li.querySelector('.row-time');
+      time.tabIndex = 0;
+      time.setAttribute('role', 'button');
+      time.setAttribute('aria-label', `${time.textContent}. See each page’s time on ${domain}`);
+    }
+    ol.appendChild(li);
+  });
   return ol;
 }
 
@@ -1838,17 +1860,24 @@ function renderDonut(s, soft) {
     $('donut-sub').textContent = sc.sub;
   }
 
-  const ul = $('cat-legend');
-  ul.classList.toggle('soft', soft);
-  ul.textContent = '';
-  CATEGORIES.filter(c => sc.cats[c.id]).sort((a, b) => sc.cats[b.id] - sc.cats[a.id]).forEach((c, i) => {
-    const li = document.createElement('li');
-    li.dataset.cat = c.id;
-    li.style.setProperty('--i', i);
-    if (c.id === focusCat) li.classList.add('on');
-    li.innerHTML = `<button type="button" data-cat="${c.id}" title="${c.label} — see its sites"><span class="dot" style="--c:${c.color}"></span><span class="name">${c.short}</span><span class="time">${fmt(sc.cats[c.id])}</span></button>`;
-    ul.appendChild(li);
-  });
+  // a legend with more or fewer rows changes the card's height: it glides there, and
+  // Most used below it follows, instead of both jumping (on short windows the legend
+  // decides the card's height)
+  const buildLegend = () => {
+    const ul = $('cat-legend');
+    ul.classList.toggle('soft', soft);
+    ul.textContent = '';
+    CATEGORIES.filter(c => sc.cats[c.id]).sort((a, b) => sc.cats[b.id] - sc.cats[a.id]).forEach((c, i) => {
+      const li = document.createElement('li');
+      li.dataset.cat = c.id;
+      li.style.setProperty('--i', i);
+      if (c.id === focusCat) li.classList.add('on');
+      li.innerHTML = `<button type="button" data-cat="${c.id}" title="${c.label} — see its sites"><span class="dot" style="--c:${c.color}"></span><span class="name">${c.short}</span><span class="time">${fmt(sc.cats[c.id])}</span></button>`;
+      ul.appendChild(li);
+    });
+  };
+  if (state.queue) buildLegend();
+  else animateHeight(document.querySelector('.donut-card'), buildLegend, { duration: 520 });
 }
 
 let centerTimer = 0;
@@ -1921,9 +1950,335 @@ function closeCatPop(instant = false) {
   catPop.close({ instant });
 }
 
+// ----- a site's pages: grows out of its row in Most used -----
+
+// Its pages over the days given (all of the week when none), or over one hour of
+// them, with each page's latest link, and the newest of those days whose titles were
+// deleted as they got old. An hour from before pages were kept hour by hour shows its
+// whole day's pages instead (wholeDay), and says so.
+function pagesFor(domain, dayIdxs, hour = null) {
+  const s = state.summary;
+  const idxs = dayIdxs || s.keys.map((_, j) => j);
+  const agg = {};
+  const links = {};
+  let gone = null;
+  let dayOnly = false;
+  const add = t => { for (const [k, v] of Object.entries(t)) agg[k] = (agg[k] || 0) + v; };
+  for (const i of idxs) {
+    const d = s.days[i];
+    const u = d.tu && d.tu[domain];
+    if (u) Object.assign(links, u);
+    if (d.tp && d.tp.includes(domain)) gone = s.keys[i];
+    if (hour == null) { if (d.ti[domain]) add(d.ti[domain]); continue; }
+    const byHour = d.th && d.th[hour] && d.th[hour][domain];
+    if (byHour) add(byHour);
+    else if (d.ti[domain] && (d.hs[hour] || {})[domain]) dayOnly = true;
+  }
+  if (hour != null && !Object.keys(agg).length && dayOnly) {
+    // only whole days to go on: those days' pages (the days this site was on in this hour)
+    const days = idxs.filter(i => s.days[i].ti[domain] && (s.days[i].hs[hour] || {})[domain]);
+    return { ...pagesFor(domain, days), wholeDay: true };
+  }
+  // the share of "other pages" goes last, whatever its time
+  const list = Object.entries(agg).filter(([, ms]) => ms >= 1000).sort((a, b) => (!a[0]) - (!b[0]) || b[1] - a[1]);
+  return { list, links, gone, wholeDay: false };
+}
+function hasPages(domain, dayIdxs, hour = null) {
+  if (isPrivate(domain)) return false;
+  const p = pagesFor(domain, dayIdxs, hour);
+  return p.list.length > 0 || !!p.gone;
+}
+// "today", "on Monday", "this week"; with an hour, "9 – 10 PM on Monday"
+function pagesWhen(dayIdxs, hour = null) {
+  const s = state.summary;
+  const one = dayIdxs && dayIdxs.length === 1 ? dayIdxs[0] : null;
+  const day = one == null ? null : !state.demo && s.keys[one] === dayKey(new Date()) ? 'today' : `on ${longDay.format(dateFromKey(s.keys[one]))}`;
+  if (hour == null) return day || 'this week';
+  return `${hourRange(hour)} ${day || 'on each day this week'}`;
+}
+// the time a site had in that scope
+function timeIn(domain, dayIdxs, hour = null) {
+  const s = state.summary;
+  let t = 0;
+  for (const i of dayIdxs || s.keys.map((_, j) => j)) t += hour == null ? s.days[i].s[domain] || 0 : (s.days[i].hs[hour] || {})[domain] || 0;
+  return t;
+}
+const shortUrl = url => { try { const u = new URL(url); return `${u.hostname.replace(/^www\./, '')}${u.pathname === '/' ? '' : u.pathname}${u.search}`; } catch { return url; } };
+
+let popSite = null;
+let popAnchor = null;
+// scope: { days, hour } for a row in the day or hour view; Most used's Week / Day otherwise.
+// From a row of Most used the row grows down into the whole card (the same timing and
+// spring as every popover); from the day or hour view the card cross-fades to the pages
+// the way Daily activity changes views. Another site while they're up cross-fades the
+// same way. Everything reverses from wherever it has got to.
+function openPagePop(domain, anchor, scope = null) {
+  const s = state.summary;
+  if (!s) return;
+  if (popAnchor === anchor && pages.isOpen) { closePagePop(); return; }
+  tip.hide();
+  resetPageTip();
+  closeCatMenu(true);
+  closeCatPop(true);
+  let days = scope ? scope.days : null;
+  const hour = scope ? scope.hour : null;
+  if (!scope) { const sc = scoped(s); days = sc.day == null ? null : [sc.day]; }
+  const layer = $('page-pop');
+  const card = layer.parentElement;
+  const body = buildPages(domain, days, hour);
+  for (const r of document.querySelectorAll('.site.active, .row.active')) r.classList.remove('active');
+  anchor.classList.add('active');
+  popSite = domain;
+  popAnchor = anchor;
+  ++pageSwap;
+  setCardInert(card, true);
+  layer.classList.remove('closing');
+
+  // up already: the new site's pages cross-fade over the old ones
+  if (pages.isOpen) {
+    for (const b of layer.querySelectorAll('.sp-body.leaving')) b.remove();
+    for (const b of layer.querySelectorAll('.sp-body')) {
+      b.classList.add('leaving');
+      b.inert = true;
+      setTimeout(() => b.remove(), 600);
+    }
+    body.classList.add('entering');
+    layer.appendChild(body);
+    getComputedStyle(body).opacity;
+    body.classList.remove('entering');
+    growBars(body);
+    return;
+  }
+
+  layer.textContent = '';
+  layer.appendChild(body);
+  layer.hidden = false;
+  const drop = card.contains(anchor) && !reducedMotion();
+  const was = pages.state;
+  const wasMode = pages.mode;
+  pages.state = 'opening';
+  pages.mode = drop ? 'drop' : 'fade';
+  const done = () => { if (pages.state === 'opening') pages.state = 'open'; };
+
+  if (drop) {
+    // the row's own rectangle, in the card, grows to fill it
+    const R = parseFloat(getComputedStyle(card).borderTopLeftRadius) || 20;
+    const row = insetsOf(card, anchor);
+    let from = row;
+    let opacity = 1;
+    if (was === 'closing' && wasMode === 'drop' && pages.anim) {
+      // reopened on its way back in: from where it is now
+      from = parseInsets(getComputedStyle(layer).clipPath) || row;
+      opacity = +getComputedStyle(layer).opacity;
+    }
+    if (pages.anim) pages.anim.cancel();
+    layer.style.clipPath = '';
+    card.classList.add('paged', 'drop');
+    const left = Math.min(1, sum(from) / Math.max(1, sum(row)));
+    pages.anim = layer.animate([
+      { clipPath: insetCss(from, 12), opacity },
+      { clipPath: insetCss([0, 0, 0, 0], R), opacity: 1 },
+    ], { duration: 200 + 400 * left, easing: POP, fill: 'forwards' });
+    // the pages come with the surface (no empty card on the way), their rows a beat behind
+    body.classList.add('unfold');
+    body.animate([{ opacity: 0, transform: 'translateY(4px)' }, { opacity: 1, transform: 'none' }], { duration: 420, delay: 60 * left, easing: EASE_OUT, fill: 'backwards' });
+    pages.anim.finished.then(() => { done(); growBars(body); }, () => {});
+    return;
+  }
+
+  // cross-fading in (CSS, like Daily activity's views): from wherever it is
+  if (pages.anim) { pages.anim.cancel(); pages.anim = null; }
+  if (card.classList.contains('drop')) {
+    // it was growing or shrinking from a row: carry on from its look now, as a fade
+    card.classList.remove('drop');
+  }
+  getComputedStyle(layer).opacity;
+  card.classList.add('paged');
+  // where Most used is below the window (narrow layouts), it comes into view first
+  const r = card.getBoundingClientRect();
+  if (r.top < 0 || r.bottom > innerHeight) card.scrollIntoView({ block: 'nearest', behavior: reducedMotion() ? 'auto' : 'smooth' });
+  setTimeout(() => { growBars(body); }, reducedMotion() ? 0 : 160);
+  setTimeout(done, reducedMotion() ? 0 : 700);
+}
+let pageSwap = 0;
+
+// the card's own content (header, list) can't be reached while the pages are over it
+function setCardInert(card, on) {
+  for (const c of card.children) if (c.id !== 'page-pop') c.inert = on;
+}
+// a row's place in the card, as clip-path insets: [top, right, bottom, left]
+function insetsOf(card, row) {
+  const c = card.getBoundingClientRect();
+  const a = row.getBoundingClientRect();
+  const clamp = v => Math.max(0, Math.round(v));
+  return [clamp(a.top - c.top), clamp(c.right - a.right), clamp(c.bottom - a.bottom), clamp(a.left - c.left)];
+}
+const insetCss = (v, r) => `inset(${v.map(n => `${n}px`).join(' ')} round ${r}px)`;
+function parseInsets(clip) {
+  const m = /inset\(([^)]*?)(?: round [^)]*)?\)/.exec(clip || '');
+  if (!m) return null;
+  const n = m[1].trim().split(/\s+/).map(parseFloat);
+  if (n.some(x => !Number.isFinite(x))) return null;
+  return n.length === 1 ? [n[0], n[0], n[0], n[0]] : n.length === 2 ? [n[0], n[1], n[0], n[1]] : n.length === 3 ? [n[0], n[1], n[2], n[1]] : n.slice(0, 4);
+}
+
+// What the pages show: the site, its time and when, then each page (or why there are none).
+function buildPages(domain, days, hour) {
+  const { list, links, gone, wholeDay } = pagesFor(domain, days, hour);
+  const cat = CATEGORY_BY_ID[categorize(domain, activeOverrides())];
+  const total = timeIn(domain, days, hour);
+  const body = document.createElement('div');
+  body.className = 'sp-body';
+  body.innerHTML = `<header class="panel-head sp-head"><h2 class="section-title sp-title"><button class="pp-back" type="button" aria-label="Back to Most used"><svg><use href="#i-chev-l"/></svg></button><span class="dot" style="--c:${cat.color}"></span><span class="sp-name">${escapeHtml(domain)}</span></h2><span class="caption sp-meta num">${fmt(total, { seconds: hour != null })} · ${pagesWhen(days, hour)}</span></header>`;
+  if (list.length) {
+    const ol = document.createElement('ol');
+    ol.className = 'rows page-rows';
+    const max = Math.max(...list.map(([, ms]) => ms));
+    list.forEach(([t, ms], i) => {
+      const li = document.createElement('li');
+      li.className = `row page-row${t ? '' : ' other'}`;
+      li.style.setProperty('--i', Math.min(i, 12));
+      const url = t && links[t];
+      const w = Math.max(2, (ms / max) * 100).toFixed(2);
+      const name = !t ? 'Other pages'
+        : url ? `<a class="site-link page-link" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer"><span class="sl-text">${escapeHtml(t)}</span>${ARROW_SVG}</a>`
+        : `<span class="sl-text">${escapeHtml(t)}</span>`;
+      if (url) li.dataset.url = url;
+      li.innerHTML = `<div class="row-main"><span class="row-name">${name}</span></div><span class="row-time">${fmt(ms, { seconds: true })}</span><div class="row-bar"><i style="--c:${cat.color};--d:${260 + Math.min(i, 12) * 45}ms" data-w="${w}"></i></div>`;
+      ol.appendChild(li);
+    });
+    body.appendChild(ol);
+    makeScroller(ol);
+    if (wholeDay) body.insertAdjacentHTML('beforeend', `<p class="pp-foot">Pages for the whole ${days && days.length > 1 ? 'days' : 'day'}: this hour was saved before pages were kept hour by hour.</p>`);
+    else if (gone) body.insertAdjacentHTML('beforeend', '<p class="pp-foot">Pages from earlier days were deleted as they got old.</p>');
+  } else {
+    // its titles were deleted: say so, and where to keep them longer (when that's possible)
+    const canKeepLonger = gone >= titleCutoffKey(MAX_TITLE_WEEKS) && state.settings.titleWeeks < MAX_TITLE_WEEKS;
+    body.insertAdjacentHTML('beforeend', `<div class="pp-gone-box">${canKeepLonger
+      ? '<p class="pp-gone">The page titles and links for this site were deleted. To keep them longer, choose a longer time for page titles in Settings.</p><button class="btn btn-secondary btn-xs" type="button" data-act="title-weeks">Open Settings</button>'
+      : '<p class="pp-gone">The page titles and links for this site were deleted.</p>'}</div>`);
+  }
+  return body;
+}
+
+// Back to Most used: into the row it grew from (when that row is in the card), or a
+// cross-fade back to the list.
+function closePagePop(instant = false) {
+  const layer = $('page-pop');
+  if (layer.hidden || (pages.state === 'closing' && !instant)) return;
+  const card = layer.parentElement;
+  const anchor = popAnchor;
+  ++pageSwap;
+  popSite = null;
+  if (pageTipShown) tip.hide();
+  resetPageTip();
+  if (anchor) anchor.classList.remove('active');
+  popAnchor = null;
+  setCardInert(card, false);
+  pages.state = 'closing';
+  layer.classList.add('closing');
+  const token = pageSwap;
+  const finish = () => {
+    if (token !== pageSwap || pages.state !== 'closing') return;
+    if (pages.anim) { pages.anim.cancel(); pages.anim = null; }
+    card.classList.remove('paged', 'drop');
+    layer.classList.remove('closing');
+    layer.hidden = true;
+    layer.textContent = '';
+    pages.state = 'closed';
+    pages.mode = null;
+  };
+  if (instant || reducedMotion()) { finish(); return; }
+  const intoRow = pages.mode === 'drop' && anchor && anchor.isConnected && card.contains(anchor) && card.classList.contains('drop');
+  if (intoRow) {
+    const row = insetsOf(card, anchor);
+    const now = parseInsets(getComputedStyle(layer).clipPath) || [0, 0, 0, 0];
+    const opacity = +getComputedStyle(layer).opacity;
+    if (pages.anim) pages.anim.cancel();
+    const left = Math.min(1, row.reduce((t, v, i) => t + Math.abs(v - now[i]), 0) / Math.max(1, sum(row)));
+    for (const b of layer.querySelectorAll('.sp-body')) b.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 240, easing: 'ease-out', fill: 'forwards' });
+    pages.anim = layer.animate([
+      { clipPath: insetCss(now, 12), opacity },
+      { clipPath: insetCss(row, 12), opacity: 0 },
+    ], { duration: 150 + 400 * left, easing: EASE_OUT, fill: 'forwards' });
+    pages.anim.finished.then(finish, () => {});
+    return;
+  }
+  // a cross-fade back (also for pages that grew from a row now gone, or now from elsewhere)
+  if (pages.anim) { pages.anim.cancel(); pages.anim = null; }
+  if (card.classList.contains('drop')) { card.classList.remove('drop'); getComputedStyle(layer).opacity; }
+  card.classList.remove('paged');
+  setTimeout(finish, 600);
+}
+
+// over a page: its arrow shows; resting on it a second says where it goes
+let pageTipTimer = 0;
+let pageTipRow = null;
+let pageTipShown = false;
+function resetPageTip() {
+  clearTimeout(pageTipTimer);
+  pageTipShown = false;
+  pageTipRow = null;
+}
+function wirePagePop() {
+  const pop = $('page-pop');
+  const hideTip = () => { clearTimeout(pageTipTimer); if (pageTipShown) tip.hide(); pageTipShown = false; };
+  const tipFor = row => `<div class="tip-title">Open URL</div><div class="tip-note">${escapeHtml(shortUrl(row.dataset.url))}</div>`;
+  // The first time, it waits for a second's rest on a page. Once it's up it behaves like
+  // every other tip: it morphs from page to page and stays up between two rows; a row
+  // without a link, or leaving the list, puts it away.
+  pop.addEventListener('pointermove', e => {
+    const row = e.target.closest('.page-row');
+    const link = row && row.dataset.url ? row : null;
+    if (pageTipShown) {
+      if (link && link !== pageTipRow) { pageTipRow = link; tip.show(tipFor(link), e.clientX, e.clientY); return; }
+      if (link || (!row && e.target.closest('.page-rows'))) { tip.move(e.clientX, e.clientY); return; }
+      hideTip();
+      pageTipRow = null;
+      return;
+    }
+    clearTimeout(pageTipTimer);
+    pageTipRow = link;
+    if (!link) return;
+    const x = e.clientX;
+    const y = e.clientY;
+    pageTipTimer = setTimeout(() => {
+      if (!link.isConnected || pages.state !== 'open') return;
+      pageTipShown = true;
+      tip.show(tipFor(link), x, y);
+    }, 1000);
+  });
+  pop.addEventListener('pointerleave', () => { hideTip(); pageTipRow = null; });
+  pop.addEventListener('click', e => {
+    if (e.target.closest('.pp-back')) {
+      const back = popAnchor;
+      closePagePop();
+      back?.querySelector('[role="button"]')?.focus({ preventScroll: true });
+      return;
+    }
+    if (e.target.closest('[data-act="title-weeks"]')) {
+      closePagePop();
+      openSettings();
+      setTimeout(() => {
+        const t = $('title-weeks');
+        const target = $('tw-more').classList.contains('open') ? t : $('detail');
+        target.scrollIntoView({ block: 'center', behavior: reducedMotion() ? 'auto' : 'smooth' });
+      }, reducedMotion() ? 0 : 450);
+      return;
+    }
+    const row = e.target.closest('.page-row[data-url]');
+    if (!row) return;
+    hideTip();
+    // the link itself opens the page; anywhere else on the row does the same
+    if (!e.target.closest('a')) row.querySelector('a').click();
+  });
+}
+
 // ----- most used -----
 
 function renderSites(s, soft) {
+  // the rows are about to be rebuilt: a site's pages close back into their row first
+  if (pages.isOpen) closePagePop();
   const ol = $('sites');
   ol.classList.toggle('soft', soft);
   ol.textContent = '';
@@ -1935,6 +2290,7 @@ function renderSites(s, soft) {
   if ($('sites-cap').textContent !== cap) swapText($('sites-cap'), cap);
   const top = sc.siteList.slice(0, 60);
   const max = top.length ? top[0][1] : 1;
+  const idxs = sc.day == null ? null : [sc.day];
   // only the rows you can see make an entrance; the rest are simply there
   const onScreen = Math.ceil((ol.clientHeight || 600) / 50) + 1;
   const grow = [];
@@ -1960,6 +2316,13 @@ function renderSites(s, soft) {
     time.className = 'site-time';
     time.textContent = fmt(ms);
     time.title = `${pct(ms, sc.total)}% ${sc.of}`;
+    // a site with page titles (or titles that were deleted): the row opens its pages
+    if (hasPages(domain, idxs)) {
+      li.classList.add('has-pages');
+      time.tabIndex = 0;
+      time.setAttribute('role', 'button');
+      time.setAttribute('aria-label', `${fmt(ms)}. See each page’s time on ${domain}`);
+    }
     const bar = document.createElement('div');
     bar.className = 'site-bar';
     const fill = document.createElement('i');
@@ -2320,10 +2683,16 @@ async function openGoalPicker(btn) {
   const limit = limitOn(state.goalHistory, state.todayKey);
   const size = Math.round(Math.min(380, Math.max(310, r.width * 1.35)));
   // in the tour, the tour (dim and card) fades out while the picker is up, so its
-  // scrim is the only layer: never two dims or blurs stacked
-  document.body.classList.add('picking');
+  // scrim is the only layer: never two dims or blurs stacked. On the way back, in turn:
+  // the tour's dim takes over from the picker's as the clock closes, the card comes
+  // back once the clock has landed in the ring, then the outline around it
+  const body = document.body;
+  body.classList.add('picking');
   let result = null;
   try { result = await openPicker({
+    onClosing: () => { body.classList.add('tour-return', 'tour-return-ring'); body.classList.remove('picking'); },
+    // the keys (← →) belong to the tour again: focus goes back to its card, not the page
+    focusBack: () => (touring && document.querySelector('.tour.on .tour-next')) || btn,
     fromEl: btn,
     returnTo: ringEl,
     center: { x: r.left + r.width / 2, y: r.top + r.height / 2 },
@@ -2346,7 +2715,13 @@ async function openGoalPicker(btn) {
       state.goalHistory = await getGoalHistory();
       updateGoal();
     },
-  }); } finally { document.body.classList.remove('picking'); }
+  }); } finally {
+    body.classList.remove('picking');
+    if (body.classList.contains('tour-return')) {
+      requestAnimationFrame(() => body.classList.remove('tour-return'));
+      setTimeout(() => body.classList.remove('tour-return-ring'), 300);
+    }
+  }
   if (result === 'commit') {
     toast(touring
       ? `Daily limit set: ${fmt(limitOn(state.goalHistory, state.todayKey))}. Settings can undo it in one click until tomorrow.`
@@ -2459,6 +2834,9 @@ async function anonymizeSites(list) {
       }
     }
     for (const dom of Object.keys(rec.ti)) if (isExcluded(dom, list)) { delete rec.ti[dom]; changed = true; }
+    for (const dom of Object.keys(rec.tu)) if (isExcluded(dom, list)) { delete rec.tu[dom]; changed = true; }
+    for (const slot of Object.values(rec.th)) for (const dom of Object.keys(slot)) if (isExcluded(dom, list)) { delete slot[dom]; changed = true; }
+    if (rec.tp.some(d => isExcluded(d, list))) { rec.tp = rec.tp.filter(d => !isExcluded(d, list)); changed = true; }
     if (changed) { patch[storageKeyForDay(k)] = rec; touched++; }
   }
   const origins = raw.origins || {};
@@ -2477,7 +2855,8 @@ async function eraseTitles() {
   const patch = {};
   for (const k of keys) {
     const r = raw[storageKeyForDay(k)];
-    if (r && r.ti && Object.keys(r.ti).length) patch[storageKeyForDay(k)] = { ...r, ti: {} };
+    const has = o => o && typeof o === 'object' && Object.keys(o).length;
+    if (r && (has(r.ti) || has(r.th) || has(r.tu) || has(r.tp))) patch[storageKeyForDay(k)] = { ...r, ti: {}, th: {}, tu: {}, tp: [] };
   }
   if (Object.keys(patch).length) await chrome.storage.local.set(patch);
   return Object.keys(patch).length;
@@ -2561,6 +2940,15 @@ const DAY_ORDER = [1, 2, 3, 4, 5, 6, 0];
 const dayLetter = new Intl.DateTimeFormat(undefined, { weekday: 'narrow' });
 const dayLong = d => longDay.format(new Date(2024, 0, 7 + d)); // 2024-01-07 was a Sunday
 
+// Smooth cursor only means something with the custom cursor on: otherwise its row
+// fades and the switch stays put (a press just nudges it)
+function lockSmooth() {
+  const locked = !$('set-cursor').checked;
+  $('smooth-row').classList.toggle('locked', locked);
+  if (locked) $('set-smooth').setAttribute('aria-disabled', 'true');
+  else $('set-smooth').removeAttribute('aria-disabled');
+}
+
 function renderSettings() {
   const st = state.settings;
   $('set-tracking').checked = !st.paused;
@@ -2570,11 +2958,15 @@ function renderSettings() {
   setPressed('detail', b => (b.dataset.val === 'titles') === !!st.titles);
   setPressed('retention', b => +b.dataset.days === st.retention);
   const desc = st.titles
-    ? 'Page titles are saved so you can see which pages took your time. Switching back to Domains only stops saving them.'
-    : 'Only site names and time are saved — never full addresses or page content.';
+    ? 'Saves page titles and their links, like a specific video you watched on YouTube.'
+    : 'Only domains are saved, not titles, like youtube.com or minavian.com.';
   const dd = $('detail-desc');
   if (dd.textContent !== desc) animateHeight(dd, () => swapText(dd, desc));
+  setReveal('tw-more', !!st.titles);
+  if (pendingTitleWeeks == null) setPressed('title-weeks', b => +b.dataset.weeks === st.titleWeeks);
   $('set-cursor').checked = cursorEnabled();
+  $('set-smooth').checked = cursorSmooth();
+  lockSmooth();
   $('set-demo').checked = state.demo;
   renderLimitRow();
   renderExcluded();
@@ -2776,7 +3168,18 @@ async function refreshStats() {
   const keys = await listDayKeys();
   const dayBytes = keys.length ? await chrome.storage.local.getBytesInUse(keys.map(storageKeyForDay)) : 0;
   const all = await chrome.storage.local.getBytesInUse(null);
-  state.stats = { keys, days: keys.length, dayBytes, all };
+  // page titles and links: what they take now, and per day on the recent days that have them
+  const recent = keys.slice(-28);
+  const raw = recent.length ? await chrome.storage.local.get(recent.map(storageKeyForDay)) : {};
+  let titleBytes = 0;
+  let titleDays = 0;
+  for (const r of Object.values(raw)) {
+    if (!r || !r.ti || !Object.keys(r.ti).length) continue;
+    titleBytes += JSON.stringify(r.ti).length + JSON.stringify(r.th || {}).length + JSON.stringify(r.tu || {}).length;
+    titleDays++;
+  }
+  state.stats = { keys, days: keys.length, dayBytes, all, titleBytes, titleDays };
+  renderTitleWeeksDesc();
   state.earliestKey = keys[0] || null;
   const d = $('ret-desc');
   const text = keys.length ? `Used ${formatBytes(all)} so far.` : 'Nothing saved yet.';
@@ -2789,6 +3192,52 @@ function estimateFor(days) {
   if (days === 0) return `Grows about ${formatBytes(perDay * 365)} a year`;
   const label = days === 365 ? 'a year' : days === 182 ? '6 months' : '3 months';
   return `About ${formatBytes(perDay * days)} for ${label} of history`;
+}
+
+// ----- how long page titles and links are kept -----
+
+let pendingTitleWeeks = null;
+function titleEstimate(weeks) {
+  const st = state.stats;
+  const perDay = st && st.titleDays >= 2 ? st.titleBytes / st.titleDays : 18000;
+  return `About ${formatBytes(perDay * weeks * 7)} for ${weeks} weeks of page titles and links`;
+}
+function renderTitleWeeksDesc() {
+  const st = state.stats;
+  const base = 'Older days keep their time; only their page titles and links go.';
+  const text = st && st.titleDays ? `${base} They use about ${formatBytes(st.titleBytes)} now.` : base;
+  const d = $('tw-desc');
+  if (d.textContent !== text) swapText(d, text);
+}
+async function chooseTitleWeeks(weeks) {
+  if (weeks === state.settings.titleWeeks) {
+    pendingTitleWeeks = null;
+    setReveal('tw-confirm', false);
+    setPressed('title-weeks', b => +b.dataset.weeks === weeks);
+    return;
+  }
+  const cutoff = titleCutoffKey(weeks);
+  const keys = (await listDayKeys()).filter(k => k < cutoff);
+  const raw = keys.length ? await chrome.storage.local.get(keys.map(storageKeyForDay)) : {};
+  const doomed = Object.values(raw).filter(r => r && r.ti && Object.keys(r.ti).length).length;
+  if (doomed) {
+    pendingTitleWeeks = weeks;
+    setPressed('title-weeks', b => +b.dataset.weeks === weeks);
+    $('tw-msg').textContent = `This removes the page titles and links of ${doomed} older day${doomed === 1 ? '' : 's'}. Their time stays.`;
+    setReveal('tw-confirm', true);
+    return;
+  }
+  await applyTitleWeeks(weeks);
+}
+async function applyTitleWeeks(weeks) {
+  pendingTitleWeeks = null;
+  setReveal('tw-confirm', false);
+  await withData(() => pruneTitles(weeks));
+  state.settings = await updateSettings({ titleWeeks: weeks });
+  setPressed('title-weeks', b => +b.dataset.weeks === weeks);
+  await refreshStats();
+  render({ soft: true });
+  toast(`Page titles and links are kept for ${weeks} weeks`);
 }
 
 let pendingRetention = null;
@@ -2945,7 +3394,7 @@ function wire() {
     if (document.querySelector('.wel')) return null;
     const tourBack = document.querySelector('.tour.on .tour-back');
     if (tourBack) return () => { if (!tourBack.disabled && !tourBack.classList.contains('gone')) tourBack.click(); };
-    const open = document.querySelector('.pk-layer, .gx-layer, .context-menu:not([hidden])') || !$('cat-menu').hidden || catPop.isOpen
+    const open = document.querySelector('.pk-layer, .gx-layer, .context-menu:not([hidden])') || !$('cat-menu').hidden || catPop.isOpen || pages.isOpen
       || importAnswer || authorPop.isOpen || $('settings').classList.contains('open') || state.view.type !== 'week';
     return open ? () => (document.activeElement || document.body).dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true })) : null;
   };
@@ -2966,6 +3415,7 @@ function wire() {
     if (e.key === 'Escape') {
       if (!$('cat-menu').hidden) closeCatMenu();
       else if (catPop.isOpen) closeCatPop();
+      else if (pages.isOpen) { const back = popAnchor; closePagePop(); back?.querySelector('[role="button"]')?.focus({ preventScroll: true }); }
       else if (importAnswer) { answerImport(null); $('import').focus({ preventScroll: true }); }
       else if (authorPop.isOpen) { closeAuthor(); focusAuthor(); }
       else if ($('settings').classList.contains('open')) {
@@ -3031,23 +3481,67 @@ function wire() {
       tip.show(`<div class="tip-title">${hourRange(h)}</div><div class="tip-row"><span>Browsing</span><b>${d.h[h] > 0 ? fmt(d.h[h], { seconds: true }) : 'No activity'}</b></div>${rows}`, e.clientX, e.clientY);
       return;
     }
+    // the gaps between columns and their hour labels: the tip stays, so moving from one
+    // column to the next morphs it (as on the week chart) instead of closing and reopening
+    if (e.target.closest('.hstrip')) return;
     rowTip(e);
   });
   $('detail-view').addEventListener('pointermove', e => tip.move(e.clientX, e.clientY));
   $('detail-view').addEventListener('pointerout', e => {
     if (!e.relatedTarget || !$('detail-view').contains(e.relatedTarget)) tip.hide();
-    else if (!e.relatedTarget.closest('.hcol, .row')) tip.hide();
+    else if (!e.relatedTarget.closest('.hstrip, .rows')) tip.hide();
   });
 
   // page titles on hover (only when titles are recorded)
   function rowTip(e) {
     const row = e.target.closest('.row, .site');
+    // between two rows of a list the tip stays, so it morphs from one row to the next
+    if (!row && e.target.closest('.rows, .sites')) return;
     if (!row || !row.dataset.domain || e.target.closest('.cat-btn')) { tip.hide(); return; }
+    // Most used, and the day and hour views: a click on the row shows each page's time
+    // (the name itself opens the site)
+    const inDetail = !!row.closest('#detail-view');
+    if (row.classList.contains('site') || inDetail) {
+      if (!row.classList.contains('has-pages') || e.target.closest('.site-link') || (pages.isOpen && popAnchor === row)) { tip.hide(); return; }
+      const ol = row.parentElement;
+      const when = inDetail ? pagesWhen(ol._days, ol._hour) : scoped().when;
+      tip.show(`<div class="tip-row"><span>Click to see each page’s time ${when}</span></div>`, e.clientX, e.clientY);
+      return;
+    }
     const scope = row.parentElement && row.parentElement._days;
     const html = titlesTip(row.dataset.domain, scope || null);
     if (html) tip.show(html, e.clientX, e.clientY);
     else tip.hide();
   }
+  // a row with pages (not its name or its category) opens them
+  const openRowPages = row => { tip.hide(); openPagePop(row.dataset.domain, row); };
+  $('sites').addEventListener('click', e => {
+    if (e.target.closest('.site-link, .cat-btn')) return;
+    const row = e.target.closest('.site.has-pages');
+    if (row) openRowPages(row);
+  });
+  $('sites').addEventListener('keydown', e => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const time = e.target.closest('.site-time[role="button"]');
+    if (!time) return;
+    e.preventDefault();
+    openRowPages(time.closest('.site'));
+  });
+  // the same from a row in the day or hour view, for that day or hour
+  const detailPages = row => { tip.hide(); openPagePop(row.dataset.domain, row, { days: row.parentElement._days, hour: row.parentElement._hour }); };
+  $('detail-view').addEventListener('click', e => {
+    if (e.target.closest('.site-link')) return;
+    const row = e.target.closest('.row.has-pages');
+    if (row && !row.closest('.leaving')) detailPages(row);
+  });
+  $('detail-view').addEventListener('keydown', e => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const time = e.target.closest('.row-time[role="button"]');
+    if (!time) return;
+    e.preventDefault();
+    detailPages(time.closest('.row'));
+  });
+  wirePagePop();
   for (const id of ['sites', 'cat-pop']) {
     $(id).addEventListener('pointerover', rowTip);
     $(id).addEventListener('pointermove', e => tip.move(e.clientX, e.clientY));
@@ -3066,6 +3560,8 @@ function wire() {
     if (authorPop.isOpen && !e.target.closest('#author-pop, #author')) closeAuthor();
     if (!$('cat-menu').hidden && !e.target.closest('#cat-menu') && !e.target.closest('.cat-btn')) closeCatMenu();
     if (catPop.isOpen && !e.target.closest('#cat-pop') && !e.target.closest('[data-act="cat"]') && !e.target.closest('.cat-legend') && !e.target.closest('.donut-seg')) closeCatPop();
+    // another row with pages opens its own (the click does that); anywhere else closes it
+    if (pages.isOpen && !e.target.closest('#page-pop') && !(e.target.closest('.site.has-pages, #detail-view .row.has-pages') && !e.target.closest('.site-link, .cat-btn'))) closePagePop();
   });
 
   // appearance
@@ -3074,9 +3570,14 @@ function wire() {
     if (!b) return;
     const r = b.getBoundingClientRect();
     const t = setThemePref(b.dataset.pref, { x: r.left + r.width / 2, y: r.top + r.height / 2 }, {
-      panel: $('settings').classList.contains('open') ? $('settings-panel') : null,
-      panelParts: [document.querySelector('#settings-panel .panel-inner')],
-      parts: [...document.querySelectorAll('.board > .card, .head-left, .demo-pill, .morph-trigger, .tour')],
+      // the Settings panel and, in the tour, its card fill in with one circle from the button
+      panels: [
+        { el: $('settings').classList.contains('open') ? $('settings-panel') : null, parts: [document.querySelector('#settings-panel .panel-inner')] },
+        { el: document.querySelector('.tour.on .tour-card'), parts: [document.querySelector('.tour.on .tour-card')] },
+      ],
+      parts: [...document.querySelectorAll('.board > .card, .head-left, .demo-pill, .morph-trigger')],
+      // the tour's dim fades to the new theme's as the sweep passes it
+      fades: [document.querySelector('.tour.on .tour-spot')],
       cards: [...document.querySelectorAll('.board > .card')],
     });
     updateAppearanceUI();
@@ -3103,7 +3604,7 @@ function wire() {
     const i = items.indexOf(document.activeElement);
     items[(i + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length].focus();
   });
-  window.addEventListener('resize', () => { closeCatMenu(true); closeCatPop(true); tip.hide(); });
+  window.addEventListener('resize', () => { closeCatMenu(true); closeCatPop(true); closePagePop(true); tip.hide(); });
 
   // tracking
   $('set-tracking').addEventListener('change', async e => {
@@ -3224,6 +3725,24 @@ function wire() {
   $('rem-ampm').addEventListener('click', () => saveReminder({ reminderMinutes: (state.settings.reminderMinutes + 720) % 1440 }));
 
   // keep history
+  const tw = $('title-weeks');
+  tw.addEventListener('click', e => {
+    const b = e.target.closest('button[data-weeks]');
+    if (b) chooseTitleWeeks(+b.dataset.weeks);
+  });
+  tw.addEventListener('pointerover', e => {
+    const b = e.target.closest('button[data-weeks]');
+    if (!b) return;
+    const r = b.getBoundingClientRect();
+    tip.show(`<div class="tip-row"><span>${titleEstimate(+b.dataset.weeks)}</span></div>`, r.left + r.width / 2, r.top);
+  });
+  tw.addEventListener('pointerleave', () => tip.hide());
+  $('tw-keep').addEventListener('click', () => {
+    pendingTitleWeeks = null;
+    setReveal('tw-confirm', false);
+    setPressed('title-weeks', b => +b.dataset.weeks === state.settings.titleWeeks);
+  });
+  $('tw-remove').addEventListener('click', () => { if (pendingTitleWeeks != null) applyTitleWeeks(pendingTitleWeeks); });
   const ret = $('retention');
   ret.addEventListener('click', e => {
     const b = e.target.closest('button[data-days]');
@@ -3252,7 +3771,7 @@ function wire() {
   // your data
   $('export').addEventListener('click', async () => {
     const all = await chrome.storage.local.get(null);
-    const blob = new Blob([JSON.stringify({ app: 'Memoir: Browser Screen Time', exportedAt: new Date().toISOString(), data: all }, null, 2)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify({ app: 'Memoir: Browser Screen Time', format: EXPORT_FORMAT, exportedAt: new Date().toISOString(), data: all }, null, 2)], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = `memoir-screen-time-${dayKey(new Date())}.json`;
@@ -3269,6 +3788,11 @@ function wire() {
     if (!file) return;
     const parsed = await readImport(file);
     if (!parsed) { toast('That file isn’t a Memoir export'); return; }
+    // an export from before page links: say so, while it's brought up to date
+    if (parsed.old) {
+      toast('This export is from an older version of Memoir. Updating it to the new format…', 4000);
+      await new Promise(r => setTimeout(r, reducedMotion() ? 0 : 1500));
+    }
     // days that already hold time here: ask before touching them
     const here = await chrome.storage.local.get(Object.keys(parsed.days));
     const overlap = Object.keys(parsed.days).filter(k => here[k] && dayTotal(normalizeDay(here[k])) > 0).length;
@@ -3287,7 +3811,7 @@ function wire() {
       await render({});
       updateGoal();
       refreshStats();
-      const days = `Imported ${n} day${n === 1 ? '' : 's'}`;
+      const days = `${parsed.old ? 'Updated and imported' : 'Imported'} ${n} day${n === 1 ? '' : 's'}`;
       toast(overlap ? `${days} · ${overlap} ${mode === 'merge' ? 'merged' : 'replaced'}` : days);
     }
   });
@@ -3320,7 +3844,23 @@ function wire() {
   // settings: cursor, sample week, tutorial, and the way out of a locked limit
   $('set-cursor').addEventListener('change', e => {
     setCursorPref(e.target.checked);
+    lockSmooth();
     toast(e.target.checked ? 'Custom cursor on' : 'Using your system cursor');
+  });
+  // locked: the switch doesn't move, it shakes its head (only the switch, not the row)
+  $('set-smooth').addEventListener('click', e => {
+    if (e.target.getAttribute('aria-disabled') !== 'true') return;
+    e.preventDefault();
+    const sw = e.target.closest('.switch');
+    if (reducedMotion() || sw._nudge?.playState === 'running') return;
+    sw._nudge = sw.animate([
+      { transform: 'translateX(0)' }, { transform: 'translateX(-5px)' }, { transform: 'translateX(4px)' },
+      { transform: 'translateX(-3px)' }, { transform: 'translateX(1.5px)' }, { transform: 'translateX(0)' },
+    ], { duration: 420, easing: 'cubic-bezier(0.36, 0.07, 0.19, 0.97)' });
+  });
+  $('set-smooth').addEventListener('change', e => {
+    setCursorSmooth(e.target.checked);
+    toast(e.target.checked ? 'Smooth cursor on' : 'Smooth cursor off');
   });
   $('set-demo').addEventListener('change', e => {
     if (e.target.checked) enterDemo();
@@ -3346,12 +3886,29 @@ async function addExcluded(site) {
 }
 
 let toastTimer = 0;
-function toast(text) {
+// A message at the bottom. One already showing doesn't blink: its words cross-fade
+// and the pill eases to its new width.
+function toast(text, hold = 2600) {
   const t = $('toast');
-  t.textContent = text;
+  const showing = t.classList.contains('on') && t.textContent && !reducedMotion();
+  if (showing && t.textContent !== text) {
+    const w0 = t.getBoundingClientRect().width;
+    t._resize?.cancel();
+    t.innerHTML = '';
+    const words = document.createElement('span');
+    words.textContent = text;
+    t.appendChild(words);
+    const w1 = t.getBoundingClientRect().width;
+    t.style.overflow = 'hidden';
+    t._resize = t.animate([{ width: `${w0}px` }, { width: `${w1}px` }], { duration: 380, easing: EASE_OUT });
+    t._resize.finished.then(() => { t.style.overflow = ''; }, () => {});
+    words.animate([{ opacity: 0, transform: 'translateY(5px)' }, { opacity: 1, transform: 'none' }], { duration: 300, delay: 60, easing: EASE_OUT, fill: 'backwards' });
+  } else {
+    t.textContent = text;
+  }
   t.classList.add('on');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('on'), 2600);
+  toastTimer = setTimeout(() => t.classList.remove('on'), hold);
 }
 
 // Accepts an export from any version of Browser Screen Time or Memoir.
@@ -3394,14 +3951,36 @@ async function readImport(file) {
         const clean = times(pages, titleKey);
         if (Object.keys(clean).length) ti[d] = clean;
       }
-      days[k] = { s: times(v.s, siteKey), h: v.h.map(x => ms(x) ?? 0), hs, ti };
+      // a page's link only for a title that's there, and only to a web page on that site
+      const tu = {};
+      for (const [d, links] of Object.entries(v.tu && typeof v.tu === 'object' ? v.tu : {})) {
+        if (!ti[d] || !links || typeof links !== 'object') continue;
+        for (const [t, url] of Object.entries(links)) {
+          const clean = titleKey(t) !== null && Object.hasOwn(ti[d], t) ? cleanUrl(url, d) : null;
+          if (clean) (tu[d] || (tu[d] = {}))[t] = clean;
+        }
+      }
+      const th = {};
+      for (const [h, slot] of Object.entries(v.th && typeof v.th === 'object' ? v.th : {})) {
+        if (!/^([0-9]|1[0-9]|2[0-3])$/.test(h) || !slot || typeof slot !== 'object') continue;
+        for (const [d, pages] of Object.entries(slot)) {
+          if (!ti[d]) continue;
+          const clean = times(pages, t => (titleKey(t) !== null && Object.hasOwn(ti[d], t) ? t : null));
+          if (Object.keys(clean).length) (th[h] || (th[h] = {}))[d] = clean;
+        }
+      }
+      const tp = Array.isArray(v.tp) ? [...new Set(v.tp.filter(d => typeof d === 'string' && !isPrivate(d) && siteKey(d) !== null))] : [];
+      days[k] = { s: times(v.s, siteKey), h: v.h.map(x => ms(x) ?? 0), hs, ti, th, tu, tp };
     } else if (k === 'categories' && v && typeof v === 'object') {
       for (const [d, cat] of Object.entries(v)) if (CATEGORY_BY_ID[cat] && !isPrivate(d) && siteKey(d) !== null) categories[d] = cat;
     } else if (k === 'origins' && v && typeof v === 'object') {
       for (const [d, origin] of Object.entries(v)) if (typeof origin === 'string' && /^https?:\/\/[^/]+$/.test(origin) && !isPrivate(d) && siteKey(d) !== null) origins[d] = origin;
     }
   }
-  return Object.keys(days).length ? { days, categories, origins } : null;
+  if (!Object.keys(days).length) return null;
+  // files from before page links were saved (no format number) are brought up to date
+  const format = json && Number.isInteger(json.format) ? json.format : 1;
+  return { days, categories, origins, old: format < EXPORT_FORMAT };
 }
 
 // A day in both: the larger time for each site in each hour, so nothing is ever
@@ -3410,7 +3989,7 @@ async function readImport(file) {
 const hourlyTotal = d => Object.values(d.hs).reduce((t, slot) => t + sum(Object.values(slot)), 0);
 function mergeDay(a, b) {
   if (Math.abs(hourlyTotal(a) - dayTotal(a)) > 1000 || Math.abs(hourlyTotal(b) - dayTotal(b)) > 1000) return dayTotal(b) > dayTotal(a) ? b : a;
-  const out = { s: {}, h: new Array(24).fill(0), hs: {}, ti: {} };
+  const out = { s: {}, h: new Array(24).fill(0), hs: {}, ti: {}, th: {}, tu: {}, tp: [...new Set([...(a.tp || []), ...(b.tp || [])])] };
   for (let h = 0; h < 24; h++) {
     const slot = {};
     for (const from of [a.hs[h], b.hs[h]]) for (const [d, ms] of Object.entries(from || {})) slot[d] = Math.max(slot[d] || 0, ms);
@@ -3424,6 +4003,18 @@ function mergeDay(a, b) {
       for (const [t, ms] of Object.entries(pages)) into[t] = Math.max(into[t] || 0, ms);
     }
   }
+  for (const from of [a.th || {}, b.th || {}]) {
+    for (const [h, slot] of Object.entries(from)) {
+      for (const [d, pages] of Object.entries(slot)) {
+        const into = (out.th[h] || (out.th[h] = {}))[d] || (out.th[h][d] = {});
+        for (const [t, ms] of Object.entries(pages)) into[t] = Math.max(into[t] || 0, ms);
+      }
+    }
+  }
+  // the file's link for a page wins (it's the one being brought in)
+  for (const from of [a.tu || {}, b.tu || {}]) {
+    for (const [d, links] of Object.entries(from)) Object.assign(out.tu[d] || (out.tu[d] = {}), links);
+  }
   return out;
 }
 
@@ -3432,7 +4023,11 @@ async function writeImport({ days, categories, origins }, mode) {
   const keys = Object.keys(days);
   const raw = await chrome.storage.local.get([...keys, 'categories', 'origins']);
   const patch = {};
-  for (const k of keys) patch[k] = mode === 'merge' && raw[k] ? mergeDay(normalizeDay(raw[k]), days[k]) : days[k];
+  const cutoff = titleCutoffKey(state.settings.titleWeeks);
+  for (const k of keys) {
+    const day = mode === 'merge' && raw[k] ? mergeDay(normalizeDay(raw[k]), days[k]) : days[k];
+    patch[k] = k.slice(4) < cutoff ? dropTitles(day) || day : day;
+  }
   if (Object.keys(categories).length) patch.categories = { ...(raw.categories || {}), ...categories };
   if (Object.keys(origins).length) patch.origins = { ...(raw.origins || {}), ...origins };
   await chrome.storage.local.set(patch);
@@ -3617,7 +4212,7 @@ async function startTour({ prepared = false, handoff = null } = {}) {
     const h = busiestHour(d);
     openView({ type: 'hour', day: d, hour: h, origin: { kind: 'hcol', h } }, q(`#detail-view .dv:not(.leaving) .hcol[data-h="${h}"]`));
   };
-  const tidy = () => { closeCatPop(true); closeCatMenu(true); tip.hide(); };
+  const tidy = () => { closeCatPop(true); closePagePop(true); closeCatMenu(true); tip.hide(); };
   // a part of Settings: open the panel and bring that part into view
   const toSettings = sel => async () => {
     tidy();
@@ -3668,8 +4263,9 @@ async function startTour({ prepared = false, handoff = null } = {}) {
       { text: 'Click it to see its sites', watch: onClick('.donut-card .donut-seg, .donut-card .cat-legend button') },
       { text: 'Switch to <b>Week</b>, then back to <b>Day</b>', watch: onClick('#scope [data-scope="day"]', () => state.scope === 'day' && scopeTried) },
     ] },
-    { title: 'Most used', text: 'Every site, largest first, for the week or the day, following the switch on Categories. A site’s name opens it.', target: () => q('.sites-card'), before: noSettings, settle: 0, tasks: [
+    { title: 'Most used', text: 'Every site, largest first, for the week or the day, following the switch on Categories. A site’s name opens it; the rest of its row shows the time on each of its pages.', target: () => q('.sites-card'), before: noSettings, settle: 0, tasks: [
       { text: 'Click a site’s category to move it (or never track it)', watch: onClick('.sites-card .cat-btn') },
+      { text: 'Click a site’s row to see each page’s time', watch: onClick('.sites-card .site.has-pages', () => pages.isOpen) },
     ] },
     { title: 'Settings', text: 'Themes, the cursor, reminders, privacy and your data all live behind the gear.', target: () => ($('settings').classList.contains('open') ? q('#settings-panel') : q('#settings-btn')), before: noSettings, settle: 0, radius: 22, pad: 6, tasks: [
       { text: 'Click the gear to open Settings', watch: onClick('#settings-btn', () => $('settings').classList.contains('open')) },
@@ -3677,10 +4273,11 @@ async function startTour({ prepared = false, handoff = null } = {}) {
     { title: 'Appearance', text: '<b>System</b> picks your theme automatically. Or pick Light, Dark, or <b>Pink</b>.', target: () => block('#appearance'), before: toSettings('#appearance'), settle: 350, radius: 14, tasks: [
       { text: 'Try another theme', watch: onClick('#appearance button') },
     ] },
-    { title: 'Custom cursor', text: 'Memoir’s own animated pointer. Turning it off is recommended on low-end devices: everything stays the same, just lighter.', target: () => row('#set-cursor'), before: toSettings('#set-cursor'), settle: 350, radius: 14, tasks: [
-      { text: 'Switch it off, then on again, to compare', watch: onChange('#set-cursor') },
+    { title: 'Cursor', text: 'Memoir’s own animated cursor. Turning it off is highly recommended on low-end devices: everything stays the same, just lighter. <b>Smooth cursor</b> lets it glide after your mouse, a touch behind it; it needs the custom cursor on.', target: () => block('#set-cursor'), before: toSettings('#set-smooth'), settle: 350, radius: 14, tasks: [
+      { text: 'Switch <b>Custom cursor</b> off, then on again, to compare', watch: onChange('#set-cursor') },
+      { text: 'Try <b>Smooth cursor</b>', watch: onChange('#set-smooth') },
     ] },
-    { title: 'What gets tracked', text: '<b>Track browsing</b> pauses and resumes (the popup has it too). <b>Tracking detail</b> can also keep page titles. Sites under <b>Never track</b> still count toward your totals, but only as Private.', target: () => [row('#set-tracking'), block('#detail'), block('#ex-form')], before: toSettings('#set-tracking'), settle: 350, radius: 14 },
+    { title: 'What gets tracked', text: '<b>Tracking detail</b> can also keep page titles. <b>Track browsing</b> pauses and resumes (the popup has it too). Sites under <b>Never track</b> still count toward your totals, but only as Private.', target: () => [block('#detail'), block('#ex-form')], before: toSettings('#ex-form'), settle: 350, radius: 14 },
     { title: 'Weekly recap', text: 'A reminder on the day and at the time you choose, with your week ready to look at.', target: () => block('#set-reminder'), before: toSettings('#set-reminder'), settle: 350, radius: 14 },
     { title: 'Your limit and history', text: 'A committed limit can only be undone here, after a long run of increasingly pointed questions. <b>Keep history</b> sets how long days are kept; a shorter option asks twice before removing anything.', target: () => [row('#limit-reset'), block('#retention')], before: toSettings('#retention'), settle: 350, radius: 14 },
     { title: 'Sample week, tour and data', text: 'Look around with made-up data, replay this tour, and <b>Export</b> or <b>Import</b> your history. <b>Clear all</b> asks twice.', target: () => [block('#set-demo'), block('#data-row')], before: toSettings('#data-row'), settle: 350, radius: 14 },
@@ -3843,12 +4440,19 @@ function onStorageChanged(changes, area) {
   if (changes[todayKey]) { state.todayRec = normalizeDay(changes[todayKey].newValue); updateGoal(); }
   if (state.demo) return;
   const keys = weekDayKeys(state.weekStart).map(storageKeyForDay);
-  if (Object.keys(changes).some(k => keys.includes(k))) {
-    clearTimeout(state.refreshTimer);
-    state.refreshTimer = setTimeout(() => {
-      if (!document.hidden && $('cat-menu').hidden && !catPop.isOpen) render({ soft: true });
-    }, 1500);
-  }
+  if (Object.keys(changes).some(k => keys.includes(k))) refreshSoon();
+}
+
+// New time saved for the week shown: redraw in a moment, but never under a menu or a
+// popover (shown, or still on its way in or out), which it would rebuild from under
+// them; it waits until they've gone instead.
+function refreshSoon(ms = 1500) {
+  clearTimeout(state.refreshTimer);
+  state.refreshTimer = setTimeout(() => {
+    if (document.hidden) return;
+    if (!$('cat-menu').hidden || !$('cat-pop').hidden || !$('page-pop').hidden) { refreshSoon(1000); return; }
+    render({ soft: true });
+  }, ms);
 }
 
 // ---------- sample week ----------
@@ -3884,6 +4488,14 @@ const SAMPLE_TITLES = {
   'netflix.com': ['Home', 'Watching: a mystery series'],
   'wikipedia.org': ['Hourglass', 'Cherry blossom', 'Memoir'],
 };
+// where a sample page title leads: a search for it, an article, or the site itself
+function sampleUrl(domain, title) {
+  const q = encodeURIComponent(title);
+  if (domain === 'youtube.com') return `https://www.youtube.com/results?search_query=${q}`;
+  if (domain === 'wikipedia.org') return `https://en.wikipedia.org/wiki/${encodeURIComponent(title.replace(/ /g, '_'))}`;
+  if (domain === 'reddit.com' && title.startsWith('r/')) return `https://www.reddit.com/${title}/`;
+  return `https://${domain}/`;
+}
 const WEEKDAY_HOURS = [0.15, 0.05, 0, 0, 0, 0, 0.05, 0.3, 0.6, 0.9, 1, 0.9, 0.6, 0.8, 0.9, 0.85, 0.7, 0.5, 0.45, 0.7, 0.95, 1, 0.8, 0.4];
 const WEEKEND_HOURS = [0.4, 0.2, 0.05, 0, 0, 0, 0, 0.05, 0.2, 0.5, 0.8, 0.9, 0.8, 0.7, 0.6, 0.6, 0.5, 0.5, 0.6, 0.9, 1, 1, 0.9, 0.6];
 function boost(cat, hour, weekend) {
@@ -3906,7 +4518,7 @@ function sampleDay(key) {
   const totalMin = weekend ? 190 + rnd() * 150 : 140 + rnd() * 140;
   const weights = (weekend ? WEEKEND_HOURS : WEEKDAY_HOURS).map(p => p * (0.55 + rnd() * 0.9));
   const wsum = sum(weights);
-  const day = { s: {}, h: new Array(24).fill(0), hs: {}, ti: {} };
+  const day = { s: {}, h: new Array(24).fill(0), hs: {}, ti: {}, th: {}, tu: {}, tp: [] };
   weights.forEach((w, hour) => {
     const minutes = (totalMin * w) / wsum;
     if (minutes < 1) return;
@@ -3935,6 +4547,9 @@ function sampleDay(key) {
         const t = titles[Math.floor(rnd() * titles.length)];
         const pages = day.ti[d] || (day.ti[d] = {});
         pages[t] = (pages[t] || 0) + part;
+        (day.tu[d] || (day.tu[d] = {}))[t] = sampleUrl(d, t);
+        const byHour = (day.th[hour] || (day.th[hour] = {}))[d] || (day.th[hour][d] = {});
+        byHour[t] = (byHour[t] || 0) + part;
       }
     });
     day.h[hour] = ms;

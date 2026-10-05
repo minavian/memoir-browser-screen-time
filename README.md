@@ -70,7 +70,11 @@ notified once more.
   sites. **Week / Day** starts on **Day**: today, or whichever day you have open
   in Daily activity. Switch to **Week** for the whole week.
 - **Most used** follows the same switch.
-- **Most used:** click a site's category to move it, or to never track it.
+- **Most used:** click a site's category to move it, or to never track it. With
+  page titles on, click the rest of a site's row and the card turns into that site's
+  pages, with the time on each (for the week or the day); a page opens again with a
+  click, and ‹ goes back. Sites in a day or an hour
+  of Daily activity do the same, for that day or hour.
   Long lists scroll.
 
 In a day or an hour, **‹ ›** (or the ← → keys) step to the previous or next one.
@@ -87,11 +91,16 @@ Open the gear in the top-right corner of the report.
 
 - **Appearance:** System (default, follows your computer), Light, Dark or Pink.
   Pink is never picked automatically.
-- **Track browsing:** pause and resume. Also in the popup.
-- **Custom cursor:** the animated pointer. Turning it off is recommended on
+- **Custom cursor:** the animated cursor. Turning it off is highly recommended on
   low-end devices; you get your system's pointer instead.
+- **Smooth cursor:** off by default. The custom cursor glides after your mouse, a
+  touch behind it, instead of sitting exactly on it. Needs Custom cursor on.
 - **Tracking detail:** *Domains only* (default) or *Page titles*, which saves the
-  titles of pages so you can hover a site and see which pages took your time.
+  titles of pages and their links, so you can see which pages took your time (click
+  a site in Most used, or in a day or an hour) and open them again.
+- **Keep page titles and links:** 4 (default), 8, 12 or 16 weeks. Older days keep
+  their time; only their page titles and links go. Hover an option for an estimate.
+- **Track browsing:** pause and resume. Also in the popup.
 - **Never track:** sites you add are still timed and still count toward your
   totals and limit, but only as *Private*. Their names are never saved or shown,
   and their past time is made Private too.

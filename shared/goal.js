@@ -191,7 +191,7 @@ const GLIDE = 11;    // switching between hours and minutes
  * center: {x, y} where the circle should sit (clamped to the window).
  * Resolves with 'commit' | 'remove' | 'cancel'.
  */
-export function openPicker({ fromEl, returnTo = null, center, size = 320, initialMs = 0, canRemove = false, onCommit, onRemove }) {
+export function openPicker({ fromEl, returnTo = null, center, size = 320, initialMs = 0, canRemove = false, onCommit, onRemove, onClosing = null, focusBack = null }) {
   return new Promise(resolve => {
     const vw = innerWidth;
     const vh = innerHeight;
@@ -727,10 +727,12 @@ export function openPicker({ fromEl, returnTo = null, center, size = 320, initia
       stopKnob();
       const finish = () => {
         layer.remove();
-        if (fromEl && fromEl.isConnected) fromEl.focus({ preventScroll: true });
+        const to = focusBack ? focusBack() : fromEl;
+        if (to && to.isConnected) to.focus({ preventScroll: true });
         resolve(result);
       };
       layer.classList.add('closing');
+      if (onClosing) onClosing(result);
       // shrink back into the ring when there is one, otherwise into the button
       const back = returnTo && returnTo.isConnected ? returnTo : fromEl && fromEl.isConnected && !fromEl.hidden ? fromEl : null;
       const to = back ? back.getBoundingClientRect() : null;

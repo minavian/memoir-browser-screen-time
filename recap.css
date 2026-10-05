@@ -158,6 +158,13 @@ body { overflow: hidden; }
 .p-row b { display: block; font-size: 13.5px; font-weight: 500; }
 .p-row small { display: block; font-size: 12px; color: var(--label-2); }
 .p-foot { margin: 2px 0 0; font-size: 11.5px; color: var(--label-3); text-align: center; }
+/* page titles' weeks: only while titles are saved (inside Tracking detail) */
+.tw-block { display: flex; flex-direction: column; gap: 8px; padding-top: 10px; }
+/* a row that follows a description inside its section */
+.p-row-gap { margin-top: 4px; }
+/* Smooth cursor only works with Custom cursor on: otherwise it fades and is locked */
+#smooth-row > * { transition: opacity 0.3s var(--ease); }
+#smooth-row.locked > * { opacity: 0.4; }
 .segmented.wide { display: grid; }
 
 /* collapsible rows (reminder details, confirmations) */
@@ -1268,6 +1275,97 @@ body { overflow: hidden; }
 .pop-foot { padding: 6px 2px 0; font-size: 11.5px; color: var(--label-3); }
 /* popover lists stay in their popover: the page behind them never scrolls */
 .pop .scroll-area { overscroll-behavior: contain; }
+/* on its way out it's already gone for clicks: they reach what's under it */
+.pop[data-state="closing"] { pointer-events: none; }
+
+/* ---------- a site's pages: a second page of the Most used card ---------- */
+/* Its own surface, corners and padding, exactly over the card: the card turning into
+   the pages, not something on top of it. Cross-fading in, it moves like the views of
+   Daily activity (.view); grown out of a row, the script shapes it (.drop). */
+.sites-page {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: grid;
+  padding: 18px 20px 12px;
+  border-radius: inherit;
+  background: var(--surface);
+  opacity: 0;
+  visibility: hidden;
+  transform: scale(0.985) translateY(6px);
+  transition: opacity 0.34s var(--ease), transform 0.55s var(--ease-out), visibility 0s linear 0.55s;
+}
+.sites-card.paged > .sites-page {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  transition: opacity 0.42s var(--ease) 0.1s, transform 0.6s var(--ease-out) 0.06s, visibility 0s;
+}
+.sites-card.drop > .sites-page { opacity: 1; visibility: visible; transform: none; transition: none; }
+.sites-page.closing { pointer-events: none; }
+/* the list steps back as the pages come in (and returns the same way) */
+.sites-card > :not(.sites-page) { transition: opacity 0.42s var(--ease) 0.1s, transform 0.6s var(--ease-out) 0.06s; }
+.sites-card.paged:not(.drop) > :not(.sites-page) { opacity: 0; transform: scale(0.985) translateY(6px); transition: opacity 0.34s var(--ease), transform 0.55s var(--ease-out); }
+/* one site's pages; another site's cross-fade over them the same way */
+.sp-body {
+  grid-area: 1 / 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  transition: opacity 0.42s var(--ease) 0.1s, transform 0.6s var(--ease-out) 0.06s;
+}
+.sp-body.entering, .sp-body.leaving { opacity: 0; transform: scale(0.985) translateY(6px); }
+.sp-body.leaving { pointer-events: none; transition: opacity 0.34s var(--ease), transform 0.55s var(--ease-out); }
+.sp-head { align-items: center; }
+.sp-title { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.sp-title .dot { width: 8px; height: 8px; flex: none; }
+.sp-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sp-meta { flex: none; white-space: nowrap; }
+.sp-body > .scroller { flex: 1 1 auto; min-height: 0; margin: -4px -10px -8px; }
+.sp-body .scroll-area { overscroll-behavior: contain; }
+.sp-body .row { height: 42px; }
+/* grown out of a row, the pages' rows follow the surface closely */
+.sp-body.unfold .row { animation-duration: 0.45s; animation-delay: calc(var(--i, 0) * 40ms + 100ms); }
+/* back to the list it came from */
+.pp-back {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  margin: -4px 0 -4px -4px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: var(--fill-1);
+  color: var(--label);
+  transition: background-color 0.2s var(--ease);
+}
+.pp-back svg { width: 13px; height: 13px; transition: transform 0.3s var(--ease-out); }
+.pp-back:hover { background: var(--fill-2); }
+.pp-back:hover svg { transform: translateX(-2px); }
+.pp-back:focus-visible { outline: none; box-shadow: var(--ring); }
+.page-row { grid-template-columns: minmax(0, 1fr) auto; }
+.page-row .row-bar { left: 10px; }
+/* room for the arrow after a long title */
+.page-row .row-name { padding-right: 16px; font-weight: 500; }
+/* one line, ending in … (with or without a link) */
+.page-row .row-name > .sl-text, .page-row .sl-text { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.page-row.other .row-name { color: var(--label-2); }
+.page-row[data-url] { cursor: var(--cursor-hand); }
+/* the same arrow as a site's name, on the whole row */
+.page-row[data-url]:hover .ext, .page-row[data-url]:focus-within .ext { opacity: 1; transform: none; }
+.pp-gone-box { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding: 4px 2px 8px; animation: context-row-in 0.32s var(--ease-out) 150ms backwards; }
+/* in the middle of the card */
+.sp-body .pp-gone-box { margin: auto 0; padding-bottom: 28px; }
+.pp-gone { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--label-2); }
+.pp-foot { padding: 6px 2px 0; font-size: 11.5px; color: var(--label-3); }
+/* a site whose pages can be seen: the row opens them */
+.site.has-pages, .row.has-pages { cursor: var(--cursor-hand); }
+.site.has-pages.active, .row.has-pages.active { background: var(--fill-1); }
+:is(.site-time, .row-time)[role="button"] { border-radius: 6px; outline: none; }
+:is(.site-time, .row-time)[role="button"]:focus-visible { box-shadow: var(--ring); }
 
 /* ---------- import: merge or replace, grown out of the Import button ---------- */
 .import-pop { width: 300px; padding: 14px 12px 8px; }
@@ -1583,9 +1681,9 @@ body { overflow: hidden; }
   box-shadow: 0 0 0 200vmax var(--tour-dim);
   pointer-events: none;
   opacity: 0;
-  transition: left 0.7s var(--heavy), top 0.7s var(--heavy), width 0.7s var(--heavy), height 0.7s var(--heavy), border-radius 0.7s var(--heavy), opacity 0.4s var(--ease);
+  transition: left 0.7s var(--heavy), top 0.7s var(--heavy), width 0.7s var(--heavy), height 0.7s var(--heavy), border-radius 0.7s var(--heavy), opacity 0.4s var(--ease), box-shadow 0.9s var(--ease);
 }
-.tour-spot.instant { transition: opacity 0.4s var(--ease); }
+.tour-spot.instant { transition: opacity 0.4s var(--ease), box-shadow 0.9s var(--ease); }
 /* taking over from the welcome, whose dim is the same: no fade, so there's no seam */
 .tour.handoff .tour-spot { transition: none; }
 .tour-spot::after {
@@ -1595,7 +1693,7 @@ body { overflow: hidden; }
   border-radius: inherit;
   border: 2px solid color-mix(in srgb, var(--accent) 55%, transparent);
   opacity: 0;
-  transition: opacity 0.3s var(--ease);
+  transition: opacity 0.3s var(--ease), scale 0.5s var(--heavy), border-color 0.9s var(--ease);
   animation: tour-halo 1.8s var(--ease-in-out) infinite alternate;
 }
 .tour-spot:not(.none)::after { opacity: 1; }
@@ -1612,9 +1710,9 @@ body { overflow: hidden; }
   color: var(--label);
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.12);
   opacity: 0;
-  transition: transform 0.7s var(--heavy), opacity 0.35s var(--ease);
+  transition: transform 0.7s var(--heavy), opacity 0.35s var(--ease), scale 0.5s var(--heavy);
 }
-.tour-card.instant { transition: opacity 0.35s var(--ease); }
+.tour-card.instant { transition: opacity 0.35s var(--ease), scale 0.5s var(--heavy); }
 .tour-card .gone { display: none; }
 .tour-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: -2px -6px 10px 0; }
 .tour-content.out { position: absolute; left: 0; right: 0; top: 0; pointer-events: none; }
@@ -1630,10 +1728,15 @@ body { overflow: hidden; }
 /* the tour moves focus to Next itself; no focus ring on its buttons */
 .tour-card .btn:focus-visible { box-shadow: none; }
 /* a picker opened from the tour: the tour fades away while it's up, so only the
-   picker's scrim dims and blurs the page */
-.tour { transition: opacity 0.35s var(--ease); }
-.picking .tour { opacity: 0; }
-.picking .tour, .picking .tour * { pointer-events: none !important; }
+   picker's scrim dims and blurs the page. Coming back (recap.js openGoalPicker), in
+   turn: the dim (as the clock closes), the card (once it has landed), the outline. */
+.picking .tour.on :is(.tour-spot, .tour-card),
+.tour-return .tour.on .tour-card { opacity: 0; }
+.tour-card { scale: 1; }
+.tour-return .tour-card { scale: 0.94; }
+.tour-return-ring .tour-spot::after { opacity: 0; scale: 1.04; }
+.tour-spot::after { scale: 1; }
+:is(.picking, .tour-return) .tour, :is(.picking, .tour-return) .tour * { pointer-events: none !important; }
 
 /* Next charges up with the tries (tour.js, chargeNext). The fill and the arrow
    sit on top of the button, so its size and place never change. */
