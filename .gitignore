@@ -23,3 +23,7 @@ Windows Memoir/tests/native-final/
 Windows Memoir/tests/native-diagnostics.json
 Windows Memoir/tests/native-final.json
 Windows Memoir/tests/*.png
+
+# Release archives
+*.7z
+*.zip
