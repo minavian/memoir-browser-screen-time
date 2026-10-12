@@ -8,8 +8,7 @@
 
 import { reducedMotion, morph, dropShell, EASE_OUT, EASE_IN_OUT } from './shared/fx.js';
 import { LOGO, playLogo } from './shared/logo.js';
-import { createIntro } from './welcome-intro.js';
-import { TIMES } from './shared/intro-score.js';
+import { createIntro, TIMES } from './welcome-intro.js';
 
 // the card reshapes from rest and settles softly (it's still when the words have gone)
 const RESHAPE = 'cubic-bezier(0.45, 0, 0.15, 1)';
@@ -99,25 +98,18 @@ export function createWelcome() {
         setTimeout(() => { if (!leaving) onShown(); }, reducedMotion() ? 0 : 120);
       }));
 
-      // during the opening a click or a key skips ahead to the card, and does nothing else
-      let swallow = false;
-      root.addEventListener('pointerdown', e => {
+      // during the opening, clicks and keys wait: nothing unseen gets pressed
+      const hold = e => {
         if (!intro?.busy) return;
         e.preventDefault();
         e.stopPropagation();
-        swallow = true;
-        intro.skip();
-      }, true);
-      root.addEventListener('click', e => {
-        if (!swallow && !intro?.busy) return;
-        swallow = false;
-        e.preventDefault();
-        e.stopPropagation();
-      }, true);
+      };
+      root.addEventListener('pointerdown', hold, true);
+      root.addEventListener('click', hold, true);
 
       root.addEventListener('keydown', e => {
         e.stopPropagation();
-        if (intro?.busy) { e.preventDefault(); intro.skip(); return; }
+        if (intro?.busy) { e.preventDefault(); return; }
         if (e.key === 'Escape') { e.preventDefault(); leave('skip'); }
         else if (e.key === 'Tab') {
           e.preventDefault();

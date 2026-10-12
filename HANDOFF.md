@@ -40,8 +40,7 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
 - `recap.html/css/js` — the weekly report (main orchestrator, ~3000 lines).
 - `trend.js` — Trend over time line chart. `tour.js` — guided tutorial. `gauntlet.js` — "reset the limit" questions.
 - `welcome.js` — first-run welcome screen (styles at the end of `recap.css`). `welcome-intro.js` — its opening;
-  `shared/intro-score.js` — the opening's timing, bloom plan and synthesised sound; `sound.html/js` — the
-  offscreen page the sound plays from; `fonts/Unbounded-subset.woff2` — the thumbnail's face, MEMOIR/WELCOME TO only.
+  `fonts/Unbounded-subset.woff2` — the trailer's face, MEMOIR/WELCOME TO only.
 - `fonts/` — Inter variable subset (OFL) used by the Clear-all label.
 
 ### Data model (chrome.storage.local)
@@ -328,24 +327,17 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
   or the tab is hidden. Specks are white; `--dust-ink` (a CSS filter token, recap.css) tints them per theme.
   Reduced motion: a still frame, instant reveal/hide.
 
-- The opening (5.1.5, `welcome-intro.js`): before the welcome card, on black: grain blooms pop up at random
-  places (a fixed seed, `plan()`) and drift off slowly, each with a soft crackle over a low hiss; WELCOME TO
-  and a big MEMOIR (the wordmark, a slice of the platinum per letter, a light drifting in behind) arrive
-  letter by letter from left to right; the clock takes the O's place as heavy as the O (playLogo `thick`:
-  ring inner edge 0.4 of its radius, Unbounded 900's O) and slowly thins to its own weight as it sets itself,
-  hands growing with it, the knob landing early over the seam; at 5 s it all becomes the card: each letter
-  flies onto its own in the card's MEMOIR (the same face, so it lands exactly; furthest first), which then
-  takes over, WELCOME TO onto the kicker, the clock (the card's own `.wel-mark`, moved onto the O from the
-  start) into its spot as its disc fades in, and the black lifts off the page. Everything is scheduled at
-  once, transform and opacity on layers painted once: the grain clouds are canvases with their soft edge
-  drawn in (no masks), the glow is a text-shadow (no filters), the ring thins by scaling a holed disc under a
-  round clip (`.logo.thick`, only while it thins; the plain masked band otherwise, cheaper). On one CPU core
-  the clock/morph part runs a little under the old one; on two it's ~115 fps either way (the owner plans a
-  performance setting). The card's own entrance waits for it (`--intro`), and a click or key skips ahead to
-  the card (`intro.skip`, the click doesn't reach the buttons). `.wel.landed` marks the end. Sound: a fresh
-  tab can't start audio before a click, so it plays from an offscreen document (`offscreen` permission,
-  reason AUDIO_PLAYBACK) scheduled from the opening's start time; the score is synthesised (Web Audio, no
-  files) from the same plan. Reduced motion: no opening, the card as before.
+- The opening (5.1.5, `welcome-intro.js`): before the welcome card, on black with a light drifting in behind, WELCOME TO
+  and a big MEMOIR (the wordmark, a slice of the platinum per letter) arrive letter by letter from left to right; the O
+  thins (wght 900 to 200) and gives way to the clock, which sets itself in its place (playLogo); at 3.8 s it all becomes
+  the card: the letters fly one after another, left to right, onto their own in the card's MEMOIR (the same face, so
+  they land exactly), the clock in the O's turn into the card's logo (the card's own `.wel-mark`, moved onto the O
+  from the start) as its disc fades in, WELCOME TO onto the kicker; once the R has landed the card's MEMOIR takes over,
+  and the black lifts off the page as they fly. Everything is scheduled at once (WAAPI, transform/opacity on layers
+  painted once; the O's weight is the one repaint, after the page has rendered), and the card's own entrance waits for
+  it (`--intro`). Clicks and keys during it do nothing (owner: a click must not make it jump), so nothing unseen gets
+  pressed; `.wel.landed` marks the end. Reduced motion: no opening, the card as before. Tried and dropped by the owner:
+  sound (an offscreen document) and grain clouds popping up; a clock ring starting as heavy as the O.
 - The MEMOIR wordmark (5.1.5, `shared/theme.css`): wherever the name shows (popup header, welcome title and pin
   hint, tour, right-click menu title) it's the trailer's: Unbounded 900 capitals (`fonts/Unbounded-subset.woff2`,
   preloaded), platinum on Dark and graphite on Light (`--wm-fill`), a fine grain (soft-light tile), a tight glow
@@ -360,9 +352,9 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
   white, for dark backgrounds; `... for light backgrounds.svg` ink). In the report it's HTML, not an image
   (`.logo`, recap.css): white on a black disc in every theme (the owner asked for a round black background
   there, not a square), a conic-gradient ring masked to a band. Entrance (`playLogo`, compositor only): the
-  disc pops in, the band turns into place under a fixed slot at 12, the hands sweep from 9:00 round to 10:10,
-  and the knob pops into the slot. The header clock (40 px with its disc) plays it with the
-  page; on a first visit it's held (`.hold`) until the welcome's clock flies into it. Toolbar: `icons/iconN.png`
+  disc pops in, the band grows in as its fade turns into place, the hands sweep from 9:00 round to 10:10, and
+  the knob pops onto the seam (its middle is the disc's black). The header clock (40 px with its disc) plays it
+  with the page, and so does the "No activity yet" card's (56 px, in place of the old hourglass) as it comes in; on a first visit it's held (`.hold`) until the welcome's clock flies into it. Toolbar: `icons/iconN.png`
   is the ink clock (light toolbars, the Web Store, the manifest default), `iconN-on-dark.png` the white one;
   the popup and report set the one for the browser's look (`prefers-color-scheme`) and store it as
   `toolbarLook`, which the worker restores at start-up and uses for notification icons. Small sizes are drawn

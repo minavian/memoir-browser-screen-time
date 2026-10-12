@@ -1,65 +1,33 @@
-// The welcome's opening, before the card. On black, grain blooms up here and there and
-// drifts off slowly, each bloom with a soft crackle; then WELCOME TO and a big MEMOIR
-// (the trailer's wordmark, with a light behind it) arrive letter by letter from left to
-// right; the clock takes the O's place, as heavy as the O at first and slowly thinning
-// to its own weight as it sets itself; then it all becomes the welcome card. The
-// letters fly onto the card's own MEMOIR, WELCOME TO into its kicker and the clock into
-// its logo, while the black lifts off the page.
-// Made to stay smooth on a slow device: everything is scheduled at once from one start,
-// almost all of it transform and opacity on layers painted once (the letters' glow is a
-// text-shadow, the grain clouds are drawn with their soft edge in them: no filters, no
-// masks moving; the clock's ring thins by scaling). A click or a key skips ahead to the card.
+// The welcome's opening, before the card. On black, with a light drifting in behind,
+// WELCOME TO and a big MEMOIR (the trailer's wordmark) arrive letter by letter from left
+// to right; the O thins out into the clock, which sets itself; then it all becomes the
+// welcome card: the letters fly one after another, left to right (the clock in the O's
+// turn), onto the card's own MEMOIR, WELCOME TO into its kicker and the clock into its
+// logo, while the black lifts off the page.
+// Everything is scheduled at once from one start, on transform and opacity on layers
+// painted once (the glow is a text-shadow, no filters); the O's weight is the one thing
+// that repaints, and it comes after the page behind has rendered. Clicks and keys wait
+// until the card has landed, so nothing unseen is pressed.
 
 import { EASE_OUT } from './shared/fx.js';
 import { playLogo } from './shared/logo.js';
-import { TIMES as T, plan, rng } from './shared/intro-score.js';
 
+// ms from the start
+export const TIMES = {
+  light: 250,     // the light behind the word starts drifting in
+  kicker: 300,    // WELCOME TO, letter by letter
+  word: 600,      // MEMOIR, the same
+  thin: 2300,     // the O thins out…
+  clock: 2400,    // …into the clock, which sets itself (shared/logo.js)
+  morph: 3800,    // everything turns into the card…
+  step: 75,       // …a letter at a time
+  morphMs: 950,
+};
+const T = TIMES;
 const MORPH = 'cubic-bezier(0.5, 0, 0.15, 1)';
-const POPIN = 'cubic-bezier(0.2, 0.7, 0.3, 1)';
 const FONT = '"Memoir Unbounded"';
-const TILE = 160;
-const CLOUD = 384;
-// the heavy O's hole is about 0.4 of its outer radius (Unbounded 900: its stroke is 238
-// of 393 units), so the clock's ring starts with its inner edge there
-const O_INNER = 0.4;
-
-// A tile of fine light specks, for the faint grain over the whole black.
-function specks(seed) {
-  const c = document.createElement('canvas');
-  c.width = c.height = TILE;
-  const g = c.getContext('2d');
-  const img = g.createImageData(TILE, TILE);
-  const r = rng(seed);
-  for (let i = 0; i < img.data.length; i += 4) {
-    const v = r();
-    img.data[i] = img.data[i + 1] = img.data[i + 2] = 205 + r() * 50;
-    img.data[i + 3] = v * v * v * 255;
-  }
-  g.putImageData(img, 0, 0);
-  return `url(${c.toDataURL()})`;
-}
-
-// A cloud of grain with its soft round edge drawn in (so it needs no mask): full to a
-// fifth of the way out, under half by three fifths, gone at the rim; a faint haze under it.
-function cloud(seed) {
-  const c = document.createElement('canvas');
-  c.width = c.height = CLOUD;
-  const g = c.getContext('2d');
-  const img = g.createImageData(CLOUD, CLOUD);
-  const r = rng(seed), h = CLOUD / 2;
-  for (let y = 0; y < CLOUD; y++) {
-    for (let x = 0; x < CLOUD; x++) {
-      const d = Math.hypot(x + 0.5 - h, y + 0.5 - h) / h;
-      if (d >= 1) continue;
-      const fall = d < 0.22 ? 1 : d < 0.62 ? 1 - ((d - 0.22) / 0.4) * 0.55 : 0.45 * (1 - (d - 0.62) / 0.38);
-      const v = r(), i = (y * CLOUD + x) * 4;
-      img.data[i] = img.data[i + 1] = img.data[i + 2] = 205 + r() * 50;
-      img.data[i + 3] = (v * v * v + 0.05 * (1 - d)) * fall * 255;
-    }
-  }
-  g.putImageData(img, 0, 0);
-  return c;
-}
+// when the last letter (the R) has landed
+const LANDED = T.morph + 5 * T.step + T.morphMs;
 
 // where a line of text sits: a zero-size probe on its baseline
 function baseline(el) {
@@ -76,18 +44,6 @@ function capHeight(el, ch) {
   const c = document.createElement('canvas').getContext('2d');
   c.font = `${s.fontWeight} ${s.fontSize} ${s.fontFamily}`;
   return c.measureText(ch).actualBoundingBoxAscent;
-}
-
-// The sounds play from an offscreen document (sound.js): a fresh tab can't start audio.
-async function sound(startedAt) {
-  try {
-    if (!chrome.offscreen) return;
-    if (!(await chrome.offscreen.hasDocument())) {
-      await chrome.offscreen.createDocument({ url: 'sound.html', reasons: ['AUDIO_PLAYBACK'], justification: 'The first-run welcome plays a few soft sounds.' });
-    }
-    await chrome.runtime.sendMessage({ to: 'sound', play: 'intro', startedAt });
-    setTimeout(() => chrome.offscreen.closeDocument().catch(() => {}), 10_000);
-  } catch { /* no sound, then */ }
 }
 
 /**
@@ -110,7 +66,6 @@ export function createIntro(root) {
   root.style.setProperty('--intro', `${T.morph}ms`);
 
   const run = [];
-  const elapsed = () => (run.length ? run[0].currentTime ?? 0 : 0);
 
   /**
    * Plays it, into the card's own MEMOIR, kicker and logo (they're found at rest).
@@ -124,6 +79,7 @@ export function createIntro(root) {
     const kicker = type.querySelector('.wi-kicker');
     const big = [...wordEl.children];
     const O = big[3];
+    O.style.width = `${O.getBoundingClientRect().width}px`;   // so it can thin without moving the I and R
     const F = parseFloat(getComputedStyle(wordEl).fontSize);
     const cap = F * 0.75;                                      // Unbounded's cap height
     const wr = wordEl.getBoundingClientRect();
@@ -156,7 +112,7 @@ export function createIntro(root) {
 
     // the clock sits where the O is, its ring on the O's outline (the ring is 0.76 of the disc)
     const m = mark.getBoundingClientRect(), o = O.getBoundingClientRect();
-    const markAt = `translate(${o.left + o.width / 2 - (m.left + m.width / 2)}px, ${base - F * 0.375 - (m.top + m.height / 2)}px) scale(${(F * 0.786) / (m.width * 0.76)})`;
+    const markAt = `translate(${o.left + o.width / 2 - (m.left + m.width / 2)}px, ${base - F * 0.375 - (m.top + m.height / 2)}px) scale(${(F * 0.78) / (m.width * 0.76)})`;
 
     // the light behind the word drifts in from the left and settles between the M and the O
     const light = document.createElement('div');
@@ -165,20 +121,7 @@ export function createIntro(root) {
       left: `${wr.left + wr.width * 0.6 - wr.width * 0.55}px`, top: `${base - cap * 0.92 - cap * 1.1}px`,
       width: `${wr.width * 1.1}px`, height: `${cap * 2.2}px`,
     });
-    const field = document.createElement('div');
-    field.className = 'wi-grain';
-    field.style.backgroundImage = specks(11);
-    const { blooms } = plan();
-    const clouds = [cloud(23), cloud(31), cloud(47)];
-    const puffs = blooms.map((b, i) => {
-      const el = document.createElement('canvas');
-      el.className = 'wi-bloom';
-      el.width = el.height = CLOUD;
-      el.getContext('2d').drawImage(clouds[i % 3], 0, 0);
-      Object.assign(el.style, { left: `${b.x * 100}vw`, top: `${b.y * 100}vh`, width: `${b.size}vmin`, height: `${b.size}vmin` });
-      return el;
-    });
-    bg.append(field, ...puffs, light);
+    bg.append(light);
 
     // ---- the schedule, all from now
     const go = (el, kf, opts) => {
@@ -186,16 +129,9 @@ export function createIntro(root) {
       run.push(a);
       return a;
     };
-    // a faint grain over the whole black, drifting the whole time
-    go(field, [{ opacity: 0, transform: 'none' }, { opacity: 0.3, offset: 0.25 }, { opacity: 0.3, offset: 0.8 }, { opacity: 0.2, transform: 'translate(-56px, -34px)' }],
-      { duration: T.end + 400 });
-    // the blooms: each pops up, then drifts, turns and fades, slowly
-    blooms.forEach((b, i) => go(puffs[i], [
-      { opacity: 0, transform: 'translate(-50%, -50%) scale(0.5)', easing: POPIN },
-      { opacity: 1, transform: `translate(-50%, -50%) scale(1) rotate(${b.turn * 0.15}deg)`, offset: 0.13 },
-      { opacity: 0.6, offset: 0.55 },
-      { opacity: 0, transform: `translate(calc(-50% + ${b.dx}vmin), calc(-50% + ${b.dy}vmin)) scale(1.16) rotate(${b.turn}deg)` },
-    ], { duration: b.life, delay: b.at }));
+    // the black, from the start until it lifts off the page (the opening's clock: run[0])
+    const lift = T.morph + 60;
+    go(bg, [{ opacity: 1 }, { opacity: 1, offset: lift / (lift + 750), easing: 'cubic-bezier(0.4, 0, 0.2, 1)' }, { opacity: 0 }], { duration: lift + 750, fill: 'forwards' });
     go(light, [{ opacity: 0, transform: `translateX(${-wr.width * 0.5}px)`, easing: 'cubic-bezier(0.3, 0, 0.2, 1)' }, { opacity: 1, offset: 0.35 }, { opacity: 1, transform: 'none' }],
       { duration: 2600, delay: T.light });
     // WELCOME TO, then MEMOIR, letter by letter from the left
@@ -203,37 +139,35 @@ export function createIntro(root) {
       { duration: 800, delay: T.kicker + i * 40, easing: EASE_OUT }));
     big.forEach((L, i) => go(L, [{ opacity: 0, transform: 'translateX(-0.16em) scale(0.96)' }, { opacity: 1, transform: 'none' }],
       { duration: 1000, delay: T.word + i * 105, easing: EASE_OUT }));
-
-    // the clock takes the O's place, as heavy as the O, and slowly thins to its own weight
-    go(O, [{ opacity: 1 }, { opacity: 0 }], { duration: 380, delay: T.clock + 60, fill: 'forwards' });
+    // the O thins out to the clock's ring and gives way to it
+    go(O, [{ fontVariationSettings: '"wght" 900' }, { fontVariationSettings: '"wght" 200' }], { duration: 900, delay: T.thin, easing: 'cubic-bezier(0.45, 0, 0.2, 1)' });
+    go(O, [{ opacity: 1 }, { opacity: 0 }], { duration: 420, delay: T.thin + 480, fill: 'forwards' });
     const logo = mark.querySelector('.logo');
-    go(mark, [
-      { opacity: 1, transform: markAt },
-      { opacity: 1, transform: markAt, offset: T.morph / (T.morph + T.morphMs), easing: MORPH },
-      { opacity: 1, transform: 'none' },
-    ], { duration: T.morph + T.morphMs });
-    playLogo(logo, { delay: T.clock, face: false, thick: O_INNER });
-    go(logo, [{ opacity: 0 }, { opacity: 1 }], { duration: 500, delay: T.morph + 250, pseudoElement: '::before', fill: 'forwards' });
+    playLogo(logo, { delay: T.clock, face: false });
 
-    // into the card: each letter onto its own (the furthest set off first, so they land
-    // together), then the card's MEMOIR takes over where they've landed
-    const far = Math.max(...flights.map(f => Math.hypot(f.dx, f.dy)));
+    // into the card, a letter at a time from the left: the clock goes in the O's turn,
+    // into the card's logo; when the R has landed, the card's MEMOIR takes over
     big.forEach((L, i) => {
-      if (i === 3) return;   // the O became the clock
+      const start = T.morph + i * T.step;
+      if (i === 3) {
+        go(mark, [
+          { opacity: 1, transform: markAt },
+          { opacity: 1, transform: markAt, offset: start / (start + T.morphMs), easing: MORPH },
+          { opacity: 1, transform: 'none' },
+        ], { duration: start + T.morphMs });
+        go(logo, [{ opacity: 0 }, { opacity: 1 }], { duration: 500, delay: start + 250, pseudoElement: '::before', fill: 'forwards' });
+        return;
+      }
       const { dx, dy } = flights[i];
-      const start = T.morph + (1 - Math.hypot(dx, dy) / far) * 160;
       go(L, [{ transform: 'none' }, { transform: `translate(${dx}px, ${dy}px) scale(${k})` }], { duration: T.morphMs, delay: start, easing: MORPH, fill: 'forwards' });
-      go(L, [{ opacity: 1 }, { opacity: 0 }], { duration: T.morphMs * 0.2, delay: start + T.morphMs * 0.86, fill: 'forwards' });
+      go(L, [{ opacity: 1 }, { opacity: 0 }], { duration: 220, delay: LANDED - 120, fill: 'forwards' });
     });
-    go(title, [{ opacity: 0 }, { opacity: 1 }], { duration: T.morphMs * 0.24, delay: T.morph + 160 + T.morphMs * 0.8 });
+    go(title, [{ opacity: 0 }, { opacity: 1 }], { duration: 240, delay: LANDED - 160 });
     go(kicker, [{ opacity: 1, transform: 'none' }, { opacity: 1, offset: 0.25 }, { opacity: 0, offset: 0.7 }, { opacity: 0, transform: `translate(${kdx}px, ${kdy}px) scale(${kk})` }],
       { duration: T.morphMs, delay: T.morph, easing: MORPH, fill: 'forwards' });
     go(kick, [{ opacity: 0, transform: `translate(${-kdx}px, ${-kdy}px) scale(${1 / kk})` }, { opacity: 0, offset: 0.3 }, { opacity: 1, offset: 0.8 }, { opacity: 1, transform: 'none' }],
       { duration: T.morphMs, delay: T.morph, easing: MORPH });
-    // the black lifts off the page
-    go(bg, [{ opacity: 1 }, { opacity: 0 }], { duration: 750, delay: T.morph + 60, easing: 'cubic-bezier(0.4, 0, 0.2, 1)', fill: 'forwards' });
 
-    sound(performance.timeOrigin + document.timeline.currentTime);
     Promise.all(run.map(a => a.finished)).catch(() => {}).then(() => {
       bg.remove();
       type.remove();
@@ -243,14 +177,7 @@ export function createIntro(root) {
 
   return {
     play,
-    // until the card has landed, a click or a key is for the opening (it skips ahead)
-    get busy() { return run.length > 0 && elapsed() < T.morph + T.morphMs; },
-    // skips to the moment it all turns into the card: everything moves on together
-    skip() {
-      const jump = T.morph - elapsed();
-      if (!run.length || jump <= 0) return;
-      for (const a of root.getAnimations({ subtree: true })) if (a.currentTime != null) a.currentTime += jump;
-      chrome.runtime.sendMessage({ to: 'sound', stop: true }).catch(() => {});
-    },
+    // until the card has landed, a click or a key is for the opening (it does nothing)
+    get busy() { return !root.classList.contains('landed') && (!run.length || (run[0].currentTime ?? 0) < LANDED); },
   };
 }

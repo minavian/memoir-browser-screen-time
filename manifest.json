@@ -6,7 +6,7 @@
   "version_name": "5.1.5",
   "description": "Quietly logs where your browsing time goes, keeps you to a daily limit, and shows your whole week at a glance.",
   "minimum_chrome_version": "116",
-  "permissions": ["tabs", "storage", "unlimitedStorage", "idle", "alarms", "notifications", "favicon", "offscreen"],
+  "permissions": ["tabs", "storage", "unlimitedStorage", "idle", "alarms", "notifications", "favicon"],
   "background": {
     "service_worker": "background.js",
     "type": "module"

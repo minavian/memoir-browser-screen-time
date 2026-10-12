@@ -41,11 +41,7 @@ body { overflow: hidden; }
 .lg-clock > i { position: absolute; display: block; }
 .logo.hold::before, .logo.hold .lg-clock > i { opacity: 0; }
 /* The ring: its box (radius 76 about (84, 84) in the 168 box), the clockwise fade masked
-   to the band, 59 to 76 (77.632%). While it thins from heavy (playLogo's `thick`, the
-   opening) it's built another way for that while: a round clip for the outer edge over a
-   disc twice the clock's size with a hole in it (59 of its 168, 35.119%), so the ring
-   thinning is that disc scaling up, with no repaint; the fade is angular, so scaling
-   leaves it as it is. At rest the two look the same, and the plain one is cheaper. */
+   to the band, 59 to 76 (77.632%). */
 .lg-ring { inset: 4.762%; border-radius: 50%; }
 .lg-ring::before {
   content: "";
@@ -55,8 +51,6 @@ body { overflow: hidden; }
     rgb(var(--lg-ink) / 0.5) 205deg, rgb(var(--lg-ink) / 0.332) 285deg, rgb(var(--lg-ink) / 0.181));
   -webkit-mask-image: radial-gradient(circle closest-side, transparent calc(77.632% - 0.3px), #000 calc(77.632% + 0.3px), #000 calc(100% - 0.6px), transparent);
 }
-.logo.thick .lg-ring { overflow: hidden; }
-.logo.thick .lg-ring::before { inset: -60.526%; -webkit-mask-image: radial-gradient(circle closest-side, transparent calc(35.119% - 0.3px), #000 calc(35.119% + 0.3px)); }
 /* the knob covers the ring's seam; its middle is the disc's black */
 .lg-knob { left: 40.774%; top: 0.595%; width: 18.452%; height: 18.452%; border-radius: 50%; background: radial-gradient(circle closest-side, #111114 calc(45.161% - 0.4px), rgb(var(--lg-ink)) calc(45.161% + 0.4px)); }
 .lg-min, .lg-hour { left: 46.726%; top: 51.488%; height: 6.548%; border-radius: 99px; }
@@ -1265,12 +1259,11 @@ body { overflow: hidden; }
 .board > .empty { align-items: center; justify-content: center; text-align: center; padding: 40px 24px; animation: enter 0.5s var(--ease-out) backwards; }
 /* the card arrives (250 ms, it's --i 2), then its parts one by one: the hourglass
    pops in and tips over, the title, the line and the button rise after it */
-.empty-icon { width: 40px; height: 40px; color: var(--label-3); animation: pop-in 0.55s var(--pop) 0.33s backwards, tip-over 2.4s var(--ease-in-out) 1s both; }
+.empty-icon { width: 56px; height: 56px; }
 .board > .empty > h2, .board > .empty > p, .board > .empty > .btn { animation: enter 0.55s var(--ease-out) backwards; }
 .board > .empty > h2 { animation-delay: 0.41s; }
 .board > .empty > p { animation-delay: 0.48s; }
 .board > .empty > .btn { animation-delay: 0.56s; }
-@keyframes tip-over { 0%, 40% { rotate: 0deg; } 60%, 100% { rotate: 180deg; } }
 .empty h2 { margin: 14px 0 6px; font-size: 21px; font-weight: 600; }
 .empty p { margin: 0 0 20px; max-width: 360px; color: var(--label-2); line-height: 1.5; }
 
@@ -2021,13 +2014,10 @@ body { overflow: hidden; }
 .wel.leaving { pointer-events: none; }
 
 /* ---------- welcome: the opening (welcome-intro.js) ---------- */
-/* Black with a faint drifting grain, clouds of grain (canvases with their soft edge drawn
-   in), a light behind the word; WELCOME TO, and MEMOIR as the wordmark (theme.css). The
-   card's kicker, title and logo are where they all land, so the card's own entrance for
-   those is off, and the rest of it waits (--intro). */
+/* Black, a light behind the word; WELCOME TO, and MEMOIR as the wordmark (theme.css).
+   The card's kicker, title and logo are where they all land, so the card's own entrance
+   for those is off, and the rest of it waits (--intro). */
 .wi-bg { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; background: radial-gradient(130% 100% at 50% 46%, #0d0d0f, #040405 62%, #000); }
-.wi-grain { position: absolute; inset: -80px; background-size: 160px 160px; opacity: 0; }
-.wi-bloom { position: absolute; opacity: 0; }
 .wi-light { position: absolute; background: radial-gradient(closest-side, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.04) 45%, transparent); opacity: 0; }
 .wi-type {
   --wi-f: min(14.2vw, 27vh, 214px);
@@ -2055,8 +2045,8 @@ body { overflow: hidden; }
 .wi-kicker span, .wi-word span { display: inline-block; opacity: 0; }
 .wel.intro .wel-mark, .wel.intro .wel-title span, .wel.intro .wel-kicker { animation: none; }
 .wel.intro .wel-mark .logo::before { opacity: 0; }
-.wel.intro.on .wel-in { animation-delay: calc(var(--d) * 1ms + var(--intro) - 100ms); }
-.wel.intro.on .wel-card::before { animation-delay: calc(var(--intro) + 320ms); }
+.wel.intro.on .wel-in { animation-delay: calc(var(--d) * 1ms + var(--intro) + 150ms); }
+.wel.intro.on .wel-card::before { animation-delay: calc(var(--intro) + 380ms); }
 .wel.intro.on .wel-pin { animation-delay: calc(var(--intro) + 1.4s); }
 .wel.intro.on .wel-arrow { animation-delay: calc(var(--intro) + 2.4s); }
 

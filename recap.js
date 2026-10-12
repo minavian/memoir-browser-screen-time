@@ -705,6 +705,10 @@ function toggleEmpty(empty) {
       clearLeave([card]);
       card.hidden = false;
       clearLeave(cards());
+      // the clock sets itself as the card comes in (on the first render, once the page shows)
+      const logo = card.querySelector('.logo');
+      logo.getAnimations({ subtree: true }).forEach(a => a.cancel());
+      playLogo(logo, { delay: still ? 300 : 600 });
     };
     if (!still || wasEmpty) { show(); return; }
     Promise.all(cards().map(leave)).then(show);
