@@ -7,6 +7,8 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
 
 ## What the owner cares about (apply to every change)
 - **Themes:** Light / Dark / Pink. Default follows the system and is never Pink.
+  **From 2026-10-12 on, work on Light and Dark only.** Leave Pink as it is: don't test, tune or
+  screenshot it (it burns tokens for nothing); it will be replaced with a new theme soon.
 - **One screen, no scrolling** on large windows (cards stack and the page scrolls only under ~1100 px wide).
 - Minimal, clean, borderless look; **everything interactive is animated**; morph animations wherever possible.
 - Hovers use `--ease-out` and must **never shake or overshoot**. `--pop` only for deliberate pops.
@@ -29,6 +31,8 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
 - `shared/theme.css` — tokens per theme, buttons, switches, cursor styles. `shared/theme-boot.js` sets theme/cursor before paint.
 - `shared/cursor.js` — custom animated cursor (toggle in Settings).
 - `shared/goal.js` / `goal.css` — limit ring and circular limit picker.
+- `shared/dust.js`, `shared/dust-engine.js`, `shared/dust-worker.js` — the dust that hides the Never track
+  sites (see "Never track, hidden" below).
 - `popup.*` — 380×600 "today" popup.
 - `recap.html/css/js` — the weekly report (main orchestrator, ~3000 lines).
 - `trend.js` — Trend over time line chart. `tour.js` — guided tutorial. `gauntlet.js` — "reset the limit" questions.
@@ -273,6 +277,50 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
     apart peak at 40–60 ms frames while ~10 waves overlap (~1 000 elements restyled per frame). Blocks stay in step
     with the surface under them. Nothing fades after landing.
   - Windows port: the `web/` copy needs the same `[data-wave]` token scoping.
+
+- Back from an hour (2026-10-12, recap.js `zoomBack`): going back to a day (or from any detail view to
+  another) no longer fades out, leaves the card blank and shrinks a grey ghost into a column that isn't drawn
+  yet. The day is drawn at once (soft: bars in place, no entrances) under the leaving hour; the hour shrinks
+  toward its column (scale 0.9, gone in 170 ms) while the day zooms out of the same point (scale 1.05 → 1,
+  from 130 ms), then that column glows for a moment (`.came-from`, a `::after` on `.hcol`/`.dcol`).
+  Transform and opacity only. Back to the week is unchanged (ghost into the day label, bars rise again).
+  Opening an hour is unchanged too.
+
+- A site's pages, motion (2026-10-12): grown out of a Most used row, the row is what turns into the pages.
+  The surface starts as the row's highlight (`.sites-page::before`, `pages.tint`, fades as it grows); the
+  row's name rides up to become the title (`.sp-head` translate + `.sp-name` scale, measured by
+  `headOffset`: baselines and word widths matched, so it lands exactly on the row's name and back); the rest
+  of the list fades at once (`.lifted`), and the pages' rows come in under the title once it has passed
+  (210 ms). The clip's top edge keeps pace with the title (sampled keyframes, `dropFrames`: sides spring
+  with POP, the top eases with the title), so the title is never clipped. Closing reverses it: rows go,
+  the title rides back down onto the row's name as the surface folds in (`--sheet` curve), the list comes
+  back around it, and the surface lets the row show only as it lands (`pages.fade`). Interrupted either
+  way, title and surface carry on from where they are (`headPose`, `tintNow`).
+  Every cross-fade in this card (from a day/hour row, between sites, closing) is now a fade-through: the
+  outgoing side is gone (0.16 s) before the incoming one shows (from 0.13 s), so two lists never read on top
+  of each other. The "Click to see each page's time" hint vanishes on the click itself (`tip.hide(true)`).
+
+- Tour placement (2026-10-12, tour.js `cardSpot`): a step's `follow()` adds what its tries opened elsewhere
+  to the light (Daily average: the trend graph; Highlights and Activity by hour: the day or hour they open
+  in Daily activity), so it's lit, usable and the card moves off it; `avoid()` (runTour option) keeps the
+  card off open popovers and menus. Places beside the light are scored (covering the light, then what's
+  up, then distance; right, left, below, above break ties), which gives the old placement when nothing is
+  open. Settings steps keep their old placement: the owner tried the card beside the Settings panel and
+  disliked it (it sat far from the light); keep the card next to the light. Highlights starts on the week.
+
+- Never track, hidden (2026-10-12): the sites under Never track are hidden under dust, a shimmer of fine
+  specks over a soft haze, filling the whole pill (thinning towards its rounded edge, clear round the ×).
+  One click stirs it and asks "Click again to show it" (2.6 s); the second blows the dust away from where it
+  landed while the name clears up from there (clip-path circle + unblur). A click on a shown name, or closing
+  Settings, hides it again (fresh dust settles in). Enter twice works too. Removing a hidden site says
+  "That site will be tracked again" (no name). The newest site is first; a typed site lifts off the field the
+  moment you add it (the field empties under it in the same frame, `liftTyped`), glides into the first slot
+  (the others make room, FLIP) and lands exactly on the chip's name, then turns to dust after a beat.
+  Drawing: `shared/dust-engine.js` (`Dust` per pill, `Runner` loop) runs in a worker (`dust-worker.js`) on
+  transferred OffscreenCanvases, so it costs the page nothing; `shared/dust.js` sizes them (ResizeObserver),
+  skips pills off screen (IntersectionObserver) and pauses everything when Settings is closed (900 ms after)
+  or the tab is hidden. Specks are white; `--dust-ink` (a CSS filter token, recap.css) tints them per theme.
+  Reduced motion: a still frame, instant reveal/hide.
 
 ## Possible next step
 A small one-time welcome touch in the popup the first time it opens (a line + pulse on Weekly Report).

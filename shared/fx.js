@@ -171,8 +171,16 @@ export function createTooltip() {
       py = cy;
       kick();
     },
-    hide() {
+    // instant: gone in this frame (a click that starts something bigger), no fade
+    hide(instant = false) {
       visible = false;
+      if (instant && el.classList.contains('on')) {
+        el.style.transition = 'none';
+        el.classList.remove('on');
+        void el.offsetWidth;
+        el.style.transition = '';
+        return;
+      }
       el.classList.remove('on');
     },
     get visible() { return visible; },

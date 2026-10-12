@@ -19,6 +19,7 @@ import { runGauntlet } from './gauntlet.js';
 import { runTour } from './tour.js';
 import { createWelcome } from './welcome.js';
 import { initCursor, setCursorPref, cursorEnabled, cursorSmooth, setCursorSmooth } from './shared/cursor.js';
+import { createDust } from './shared/dust.js';
 import { initContextMenu } from './shared/context-menu.js';
 
 const $ = id => document.getElementById(id);
@@ -70,7 +71,10 @@ const catPop = new MorphPopover($('cat-pop'), { radius: 16 });
 const pages = {
   state: 'closed', // opening · open · closing · closed
   mode: null,      // 'drop': grown out of its row in the card · 'fade': cross-faded in
-  anim: null,
+  anim: null,      // the surface (drop)
+  tint: null,      // its row highlight (drop)
+  head: null,      // the title riding between the row and its place (drop)
+  fade: null,      // the surface letting the row through as it lands (drop, closing)
   get isOpen() { return this.state === 'opening' || this.state === 'open'; },
 };
 const importPop = new MorphPopover($('import-pop'), { radius: 16 });
@@ -1114,16 +1118,14 @@ function goBack() {
   const leaving = state.view;
   const prev = state.viewStack.pop() || { type: 'week' };
   state.view = prev;
-  // shrink back into what opened it, once that is on screen again
-  const shrinkBack = () => {
-    const target = originElement(leaving.origin);
-    if (target) ghost(target, $('chart-card').querySelector('.views'), { reverse: true });
-  };
   if (prev.type === 'week') {
     returnToWeek();
-    shrinkBack();
+    // shrink back into what opened it, now on screen again
+    const target = originElement(leaving.origin);
+    if (target) ghost(target, $('chart-card').querySelector('.views'), { reverse: true });
   } else {
-    showDetail(shrinkBack, null, { back: true });
+    // back to a day (or an hour): it zooms out of what opened the view you're leaving
+    showDetail(null, null, { back: leaving.origin || {} });
   }
 }
 
@@ -1201,6 +1203,11 @@ function showDetail(after = null, dir = null, { back = false } = {}) {
   followDay();
   if (cur && dir && !reducedMotion()) {
     slideDetail(cur, dir);
+    if (after) after();
+    return;
+  }
+  if (cur && back && !reducedMotion()) {
+    zoomBack(cur, back);
     if (after) after();
     return;
   }
@@ -1283,6 +1290,50 @@ function slideDetail(cur, dir) {
     }
     el.animate([{ opacity: 0, transform: `translateX(${38 * dx}px)` }, { opacity: 1, transform: 'none' }], { duration: 480, delay: 70 + k * 45, easing: EASE_OUT, fill: 'backwards' });
     k++;
+  }
+}
+
+// Back to the view you came from (an hour back to its day): that view is simply there
+// again, drawn at once with its bars in place, and zooms out of what had opened the one
+// you're leaving (that hour's column), which shrinks back into it as it fades. The
+// column then glows for a moment, so you see where you were. One shared origin;
+// transform and opacity only, so there's no blank moment and nothing to lay out.
+const ZOOM_OUT = 'cubic-bezier(0.4, 0, 0.9, 0.6)';
+function zoomBack(cur, origin) {
+  const dv = $('detail-view');
+  ++detailSeq;
+  for (const el of dv.querySelectorAll('.dv.leaving')) el.remove();
+  const wrap = buildDetailWrap(true);
+  cur.classList.add('leaving');
+  cur.style.pointerEvents = 'none';
+  cur.style.position = 'absolute';
+  cur.style.inset = '0';
+  dv.insertBefore(wrap, cur);
+  mountDetail(wrap);
+  // where the leaving view came from, in the view it goes back to (else the middle)
+  const target = originElement(origin);
+  const box = dv.getBoundingClientRect();
+  let ox = box.width / 2;
+  let oy = box.height / 3;
+  if (target && wrap.contains(target)) {
+    const t = target.getBoundingClientRect();
+    ox = t.left + t.width / 2 - box.left;
+    oy = t.top + t.height / 2 - box.top;
+  }
+  const at = `${ox.toFixed(1)}px ${oy.toFixed(1)}px`;
+  cur.style.transformOrigin = at;
+  wrap.style.transformOrigin = at;
+  // the leaving view is mostly gone before the other one shows, so the two never read on top of each other
+  cur.animate([{ transform: 'none' }, { transform: 'scale(0.9)' }], { duration: 260, easing: ZOOM_OUT, fill: 'forwards' });
+  cur.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 170, easing: 'cubic-bezier(0.2, 0.6, 0.4, 1)', fill: 'forwards' })
+    .finished.then(() => setTimeout(() => cur.remove(), 80), () => cur.remove());
+  wrap.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300, delay: 130, easing: 'ease-out', fill: 'backwards' });
+  const zoom = wrap.animate([{ transform: 'scale(1.05)' }, { transform: 'none' }], { duration: 640, delay: 130, easing: EASE_OUT, fill: 'backwards' });
+  const done = () => { wrap.style.transformOrigin = ''; };
+  zoom.finished.then(done, done);
+  if (target && wrap.contains(target)) {
+    target.classList.add('came-from');
+    setTimeout(() => target.classList.remove('came-from'), 1600);
   }
 }
 
@@ -2016,7 +2067,7 @@ function openPagePop(domain, anchor, scope = null) {
   const s = state.summary;
   if (!s) return;
   if (popAnchor === anchor && pages.isOpen) { closePagePop(); return; }
-  tip.hide();
+  tip.hide(true);
   resetPageTip();
   closeCatMenu(true);
   closeCatPop(true);
@@ -2050,18 +2101,23 @@ function openPagePop(domain, anchor, scope = null) {
     return;
   }
 
-  layer.textContent = '';
-  layer.appendChild(body);
-  layer.hidden = false;
   const drop = card.contains(anchor) && !reducedMotion();
   const was = pages.state;
   const wasMode = pages.mode;
+  // reopened while folding back into its row: the title carries on from where it is
+  const headNow = was === 'closing' && wasMode === 'drop' ? headPose(layer) : null;
+  stopHead();
+  layer.textContent = '';
+  layer.appendChild(body);
+  layer.hidden = false;
   pages.state = 'opening';
   pages.mode = drop ? 'drop' : 'fade';
   const done = () => { if (pages.state === 'opening') pages.state = 'open'; };
 
   if (drop) {
-    // the row's own rectangle, in the card, grows to fill it
+    // The row's own rectangle, in the card, grows to fill it. The row's name rides up
+    // to become the pages' title while the rest of the list fades away, and the pages'
+    // rows come in under it; so the row is what turns into the pages.
     const R = parseFloat(getComputedStyle(card).borderTopLeftRadius) || 20;
     const row = insetsOf(card, anchor);
     let from = row;
@@ -2072,22 +2128,40 @@ function openPagePop(domain, anchor, scope = null) {
       opacity = +getComputedStyle(layer).opacity;
     }
     if (pages.anim) pages.anim.cancel();
+    if (pages.fade) { pages.fade.cancel(); pages.fade = null; }
     layer.style.clipPath = '';
-    card.classList.add('paged', 'drop');
+    card.classList.add('paged', 'drop', 'lifted');
     const left = Math.min(1, sum(from) / Math.max(1, sum(row)));
-    pages.anim = layer.animate([
-      { clipPath: insetCss(from, 12), opacity },
-      { clipPath: insetCss([0, 0, 0, 0], R), opacity: 1 },
-    ], { duration: 200 + 400 * left, easing: POP, fill: 'forwards' });
-    // the pages come with the surface (no empty card on the way), their rows a beat behind
+    const D = 200 + 400 * left;
+    const D2 = Math.max(260, 560 * left);
+    const { frames, T } = dropFrames(from, R, D, D2);
+    frames.forEach(f => { f.opacity = +(opacity + (1 - opacity) * Math.min(1, f.offset * 2)).toFixed(3); });
+    pages.anim = layer.animate(frames, { duration: T, easing: 'linear', fill: 'forwards' });
+    // the surface starts as the row's highlight and loses it as it grows
+    const tint = was === 'closing' && pages.tint ? tintNow(layer) : 1;
+    if (pages.tint) pages.tint.cancel();
+    pages.tint = layer.animate([{ opacity: tint }, { opacity: 0 }], { duration: D * 0.4, easing: 'linear', pseudoElement: '::before', fill: 'forwards' });
+    const at = headOffset(body, anchor, card);
+    const start = headNow || at;
+    pages.head = [
+      body.querySelector('.sp-head').animate([{ transform: `translate(${start.x}px, ${start.y}px)` }, { transform: 'none' }], { duration: D2, easing: EASE_OUT, fill: 'backwards' }),
+      body.querySelector('.sp-name').animate([{ scale: start.k }, { scale: 1 }], { duration: D2, easing: EASE_OUT, fill: 'backwards' }),
+    ];
+    // the title's surroundings (back, colour, time) arrive once it's on its way
+    for (const el of body.querySelectorAll('.pp-back, .sp-title .dot, .sp-meta')) {
+      pages.head.push(el.animate([{ opacity: headNow ? headNow.chrome : 0 }, { opacity: 1 }], { duration: 260, delay: headNow ? 0 : 110 * left, easing: 'ease-out', fill: 'backwards' }));
+    }
     body.classList.add('unfold');
-    body.animate([{ opacity: 0, transform: 'translateY(4px)' }, { opacity: 1, transform: 'none' }], { duration: 420, delay: 60 * left, easing: EASE_OUT, fill: 'backwards' });
-    pages.anim.finished.then(() => { done(); growBars(body); }, () => {});
+    growBars(body);
+    pages.anim.finished.then(done, () => {});
     return;
   }
 
   // cross-fading in (CSS, like Daily activity's views): from wherever it is
   if (pages.anim) { pages.anim.cancel(); pages.anim = null; }
+  if (pages.tint) { pages.tint.cancel(); pages.tint = null; }
+  if (pages.fade) { pages.fade.cancel(); pages.fade = null; }
+  card.classList.remove('lifted');
   if (card.classList.contains('drop')) {
     // it was growing or shrinking from a row: carry on from its look now, as a fade
     card.classList.remove('drop');
@@ -2097,7 +2171,7 @@ function openPagePop(domain, anchor, scope = null) {
   // where Most used is below the window (narrow layouts), it comes into view first
   const r = card.getBoundingClientRect();
   if (r.top < 0 || r.bottom > innerHeight) card.scrollIntoView({ block: 'nearest', behavior: reducedMotion() ? 'auto' : 'smooth' });
-  setTimeout(() => { growBars(body); }, reducedMotion() ? 0 : 160);
+  growBars(body);
   setTimeout(done, reducedMotion() ? 0 : 700);
 }
 let pageSwap = 0;
@@ -2114,6 +2188,94 @@ function insetsOf(card, row) {
   return [clamp(a.top - c.top), clamp(c.right - a.right), clamp(c.bottom - a.bottom), clamp(a.left - c.left)];
 }
 const insetCss = (v, r) => `inset(${v.map(n => `${n}px`).join(' ')} round ${r}px)`;
+// Where the pages' title has to be to sit on a row's name (as a translate from its own
+// place, kept inside the card) and how big the row's name is next to it.
+function headOffset(body, anchor, card) {
+  const name = body.querySelector('.sp-name');
+  const head = body.querySelector('.sp-head');
+  const src = anchor.querySelector('.site-domain .sl-text') || anchor.querySelector('.site-domain') || anchor;
+  const a = src.getBoundingClientRect();
+  const n = name.getBoundingClientRect();
+  const h = head.getBoundingClientRect();
+  const c = card.getBoundingClientRect();
+  // the same words in two fonts: scaled so they're as wide as the row's
+  const wa = textWidth(src);
+  const wn = textWidth(name);
+  const k = wa > 0 && wn > 0 ? wa / wn : (parseFloat(getComputedStyle(src).fontSize) || 13.5) / (parseFloat(getComputedStyle(name).fontSize) || 15);
+  // baselines meet (the two fonts sit differently in their boxes), so the words land
+  // exactly on each other
+  let y = a.top + a.height / 2 + baselineDrop(src) - (n.top + n.height / 2 + k * baselineDrop(name));
+  y = Math.max(c.top - h.top, Math.min(y, c.bottom - h.bottom));
+  return { x: +(a.left - n.left).toFixed(1), y: +y.toFixed(1), k: +k.toFixed(4) };
+}
+// the laid-out width of an element's words (all of them, even where an ellipsis cuts them)
+function textWidth(el) {
+  const r = document.createRange();
+  r.selectNodeContents(el);
+  return r.getBoundingClientRect().width;
+}
+// how far below the middle of its line an element's text sits on its baseline
+let metricsCtx = null;
+function baselineDrop(el) {
+  metricsCtx = metricsCtx || document.createElement('canvas').getContext('2d');
+  const cs = getComputedStyle(el);
+  metricsCtx.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+  const m = metricsCtx.measureText('x');
+  const asc = m.fontBoundingBoxAscent;
+  const desc = m.fontBoundingBoxDescent;
+  return Number.isFinite(asc) && Number.isFinite(desc) ? (asc - desc) / 2 : 0;
+}
+// A cubic-bezier easing as a function (for keyframes sampled by hand).
+function bezier(x1, y1, x2, y2) {
+  const at = (a, b, t) => 3 * a * t * (1 - t) * (1 - t) + 3 * b * t * t * (1 - t) + t * t * t;
+  return x => {
+    if (x <= 0) return 0;
+    if (x >= 1) return 1;
+    let lo = 0;
+    let hi = 1;
+    let t = x;
+    for (let i = 0; i < 24; i++) {
+      const v = at(x1, x2, t);
+      if (Math.abs(v - x) < 1e-5) break;
+      if (v < x) lo = t; else hi = t;
+      t = (lo + hi) / 2;
+    }
+    return at(y1, y2, t);
+  };
+}
+const easeOutFn = bezier(0.22, 1, 0.36, 1);
+const popFn = bezier(0.32, 1.24, 0.5, 1);
+// The surface growing from a row: its sides and bottom spring out like a popover, while
+// its top edge keeps pace with the title riding up just under it (so the title is
+// never clipped). Sampled, since one clip-path can't ease each edge its own way.
+function dropFrames(from, R, D, D2) {
+  const T = Math.max(D, D2);
+  const frames = [];
+  const N = 30;
+  for (let n = 0; n <= N; n++) {
+    const ms = (n / N) * T;
+    const p = popFn(Math.min(1, ms / D));
+    const q = easeOutFn(Math.min(1, ms / D2));
+    const v = [from[0] * (1 - q), from[1] * (1 - p), from[2] * (1 - p), from[3] * (1 - p)];
+    frames.push({ clipPath: insetCss(v.map(x => +x.toFixed(2)), +(12 + (R - 12) * Math.min(1, p)).toFixed(2)), offset: n / N });
+  }
+  return { frames, T };
+}
+// the title as it is right now (mid-flight), to carry on from
+function headPose(layer) {
+  const head = layer.querySelector('.sp-body:not(.leaving) .sp-head');
+  const name = head && head.querySelector('.sp-name');
+  if (!head || !name) return null;
+  const m = new DOMMatrixReadOnly(getComputedStyle(head).transform === 'none' ? undefined : getComputedStyle(head).transform);
+  const k = parseFloat(getComputedStyle(name).scale);
+  const back = head.querySelector('.pp-back');
+  return { x: +m.e.toFixed(1), y: +m.f.toFixed(1), k: Number.isFinite(k) ? k : 1, chrome: back ? +getComputedStyle(back).opacity : 1 };
+}
+function stopHead() {
+  if (pages.head) for (const a of pages.head) a.cancel();
+  pages.head = null;
+}
+const tintNow = layer => +getComputedStyle(layer, '::before').opacity || 0;
 function parseInsets(clip) {
   const m = /inset\(([^)]*?)(?: round [^)]*)?\)/.exec(clip || '');
   if (!m) return null;
@@ -2181,7 +2343,10 @@ function closePagePop(instant = false) {
   const finish = () => {
     if (token !== pageSwap || pages.state !== 'closing') return;
     if (pages.anim) { pages.anim.cancel(); pages.anim = null; }
-    card.classList.remove('paged', 'drop');
+    if (pages.tint) { pages.tint.cancel(); pages.tint = null; }
+    if (pages.fade) { pages.fade.cancel(); pages.fade = null; }
+    stopHead();
+    card.classList.remove('paged', 'drop', 'lifted');
     layer.classList.remove('closing');
     layer.hidden = true;
     layer.textContent = '';
@@ -2191,21 +2356,52 @@ function closePagePop(instant = false) {
   if (instant || reducedMotion()) { finish(); return; }
   const intoRow = pages.mode === 'drop' && anchor && anchor.isConnected && card.contains(anchor) && card.classList.contains('drop');
   if (intoRow) {
+    // the opening, backwards: the pages' rows go first, the title rides back down onto
+    // the row's name as the surface folds into the row (turning back into its
+    // highlight) and the list returns around it; then the surface lets the row show
     const row = insetsOf(card, anchor);
     const now = parseInsets(getComputedStyle(layer).clipPath) || [0, 0, 0, 0];
     const opacity = +getComputedStyle(layer).opacity;
+    const tint = tintNow(layer);
+    const body = layer.querySelector('.sp-body:not(.leaving)');
+    const pose = headPose(layer) || { x: 0, y: 0, k: 1, chrome: 1 };
+    stopHead();
     if (pages.anim) pages.anim.cancel();
+    if (pages.tint) pages.tint.cancel();
+    if (pages.fade) pages.fade.cancel();
     const left = Math.min(1, row.reduce((t, v, i) => t + Math.abs(v - now[i]), 0) / Math.max(1, sum(row)));
-    for (const b of layer.querySelectorAll('.sp-body')) b.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 240, easing: 'ease-out', fill: 'forwards' });
+    const D = 160 + 340 * left;
+    const SHEET = 'cubic-bezier(0.45, 0, 0.15, 1)';
+    // it lets the row through as it lands (the title is then right on the row's name)
     pages.anim = layer.animate([
-      { clipPath: insetCss(now, 12), opacity },
-      { clipPath: insetCss(row, 12), opacity: 0 },
-    ], { duration: 150 + 400 * left, easing: EASE_OUT, fill: 'forwards' });
+      { clipPath: insetCss(now, 12), easing: SHEET },
+      { clipPath: insetCss(row, 12) },
+    ], { duration: D, fill: 'forwards' });
+    pages.fade = layer.animate([{ opacity }, { opacity, offset: 0.74, easing: 'ease-in' }, { opacity: 0 }], { duration: D, fill: 'forwards' });
+    pages.tint = layer.animate([{ opacity: tint }, { opacity: 1 }], { duration: D * 0.8, easing: 'ease-in', pseudoElement: '::before', fill: 'forwards' });
+    card.classList.remove('lifted');
+    for (const b of layer.querySelectorAll('.sp-body')) {
+      for (const el of b.children) if (!(b === body && el.classList.contains('sp-head'))) el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 150, easing: 'ease-out', fill: 'forwards' });
+    }
+    if (body) {
+      const to = headOffset(body, anchor, card);
+      pages.head = [
+        body.querySelector('.sp-head').animate([{ transform: `translate(${pose.x}px, ${pose.y}px)` }, { transform: `translate(${to.x}px, ${to.y}px)` }], { duration: D, easing: SHEET, fill: 'forwards' }),
+        body.querySelector('.sp-name').animate([{ scale: pose.k }, { scale: to.k }], { duration: D, easing: SHEET, fill: 'forwards' }),
+      ];
+      for (const el of body.querySelectorAll('.pp-back, .sp-title .dot, .sp-meta')) {
+        pages.head.push(el.animate([{ opacity: pose.chrome }, { opacity: 0 }], { duration: 150, easing: 'ease-out', fill: 'forwards' }));
+      }
+    }
     pages.anim.finished.then(finish, () => {});
     return;
   }
-  // a cross-fade back (also for pages that grew from a row now gone, or now from elsewhere)
+  // a fade back (also for pages that grew from a row now gone, or now from elsewhere)
   if (pages.anim) { pages.anim.cancel(); pages.anim = null; }
+  if (pages.tint) { pages.tint.cancel(); pages.tint = null; }
+  if (pages.fade) { pages.fade.cancel(); pages.fade = null; }
+  stopHead();
+  card.classList.remove('lifted');
   if (card.classList.contains('drop')) { card.classList.remove('drop'); getComputedStyle(layer).opacity; }
   card.classList.remove('paged');
   setTimeout(finish, 600);
@@ -2881,6 +3077,8 @@ function openSettings() {
   $('settings-btn').setAttribute('aria-expanded', 'true');
   $('settings-btn').setAttribute('aria-label', 'Close settings');
   renderSettings();
+  clearTimeout(dustNap);
+  dust.pause(false);
   requestAnimationFrame(() => {
     for (const seg of ['appearance', 'detail', 'retention']) syncSegmented($(seg), false);
   });
@@ -2899,6 +3097,10 @@ function closeSettings(focusTrigger = false) {
   pendingRetention = null;
   $('ex-form').classList.remove('invalid');
   tip.hide();
+  // the sites under Never track hide again as you leave; the dust rests once the panel is shut
+  for (const li of $('ex-list').querySelectorAll('.ex-chip')) concealChip(li);
+  clearTimeout(dustNap);
+  dustNap = setTimeout(() => dust.pause(true), 900);
   answerImport(null, true);
   closeAuthor(true);
   $('settings-btn').setAttribute('aria-expanded', 'false');
@@ -2974,8 +3176,9 @@ function renderSettings() {
 }
 
 let exPrimed = false;   // the first fill of the list (when Settings opens) doesn't animate
-const exFlights = new Map(); // site -> the text flying from the input into its chip
+const exFlights = new Map(); // site -> its typed words, on their way from the field to its chip
 
+// Newest first: a site you add lands right under the field, the others make room.
 function renderExcluded(added = null) {
   const ul = $('ex-list');
   const list = state.settings.excluded;
@@ -2986,29 +3189,118 @@ function renderExcluded(added = null) {
   if (!stale.length && !fresh.length) { exPrimed = true; return; }
   const animate = exPrimed && !reducedMotion();
   const made = [];
+  const stay = [...existing.values()].filter(li => list.includes(li.dataset.site));
+  const first = animate ? new Map(stay.map(li => [li, li.getBoundingClientRect()])) : null;
   // the list (and everything under it) rolls open instead of jumping
   const build = () => {
-    for (const [, li] of stale) li.remove();
+    for (const [, li] of stale) { dropChip(li); li.remove(); }
+    for (const li of stay) if (li._flip) { li._flip.cancel(); li._flip = null; }
     for (const site of fresh) {
+      const flown = animate && exFlights.has(site);
       const li = document.createElement('li');
-      li.className = `ex-chip${animate ? ' adding' : ''}`;
+      li.className = `ex-chip${animate && !flown ? ' adding' : ''}`;
       li.dataset.site = site;
-      li.innerHTML = `<span>${escapeHtml(site)}</span><button class="x" type="button" aria-label="Track ${escapeHtml(site)} again"><svg><use href="#i-x"/></svg></button>`;
-      ul.appendChild(li);
+      li.innerHTML = `<canvas class="ex-dust" aria-hidden="true"></canvas><button class="ex-name" type="button" aria-label="${HIDDEN_SITE}"><span class="ex-text">${escapeHtml(site)}</span></button><button class="x" type="button" aria-label="Track this site again"><svg><use href="#i-x"/></svg></button>`;
+      ul.prepend(li);
       made.push(li);
     }
   };
   if (animate) animateHeight($('ex-wrap'), build, { duration: 420 });
   else build();
   exPrimed = true;
-  // a site you just typed flies from the field into its new chip
+  // the others glide to their new places (even across rows)
+  if (first) {
+    for (const li of stay) {
+      const a = first.get(li);
+      const b = li.getBoundingClientRect();
+      const dx = a.left - b.left;
+      const dy = a.top - b.top;
+      if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) continue;
+      const anim = li.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }], { duration: 420, easing: EASE_OUT });
+      li._flip = anim;
+      anim.finished.then(() => { if (li._flip === anim) li._flip = null; }, () => {});
+    }
+  }
   for (const li of made) {
-    const from = exFlights.get(li.dataset.site);
-    if (!from || !animate) continue;
+    // a site you just typed: its words fly from the field into the new chip, still
+    // readable, and turn to dust once they've landed; every other one is dust from the start
+    const bird = animate ? exFlights.get(li.dataset.site) : null;
+    if (bird) li.classList.add('shown');
+    dust.attach(chipDust(li), { shown: !!bird, hole: 13 });
+    if (!bird) continue;
     exFlights.delete(li.dataset.site);
-    flyIntoChip(from, li);
+    flyIntoChip(bird, li);
   }
   void added;
+}
+
+// ----- never-track sites are hidden under dust; two clicks show one -----
+// The first click stirs the dust and asks for a second; the second, within a moment,
+// blows the dust away from where it landed while the name clears up from there. A click
+// on a shown name (or closing Settings) hides it again.
+const HIDDEN_SITE = 'A hidden site. Press twice to show it';
+const dust = createDust();
+let dustNap = 0;
+const ARM_MS = 2600;
+let armedChip = null;
+function chipDust(li) { return li.querySelector('.ex-dust'); }
+function disarmChip(li) {
+  if (!li || !li._armTimer) return;
+  clearTimeout(li._armTimer);
+  li._armTimer = 0;
+  li.classList.remove('armed');
+  if (armedChip === li) { armedChip = null; tip.hide(); }
+  dust.heat(chipDust(li), li.matches(':hover') ? 1.4 : 1);
+  if (!li.classList.contains('shown')) li.querySelector('.ex-name').setAttribute('aria-label', HIDDEN_SITE);
+}
+function armChip(li, e) {
+  if (armedChip && armedChip !== li) disarmChip(armedChip);
+  armedChip = li;
+  li.classList.add('armed');
+  li._armTimer = setTimeout(() => disarmChip(li), ARM_MS);
+  dust.poke(chipDust(li), e, 2.3);
+  li.querySelector('.ex-name').setAttribute('aria-label', 'Press again to show this site');
+  if (e && e.detail) tip.show('<div class="tip-row"><span>Click again to show it</span></div>', e.clientX, e.clientY);
+}
+function revealChip(li, e) {
+  disarmChip(li);
+  li.classList.remove('hiding');
+  li.classList.add('shown');
+  li.querySelector('.ex-name').setAttribute('aria-label', `${li.dataset.site}. Press to hide it again`);
+  dust.reveal(chipDust(li), e);
+  if (reducedMotion()) return;
+  // the name clears up from where the click landed, as the dust blows away from there
+  const text = li.querySelector('.ex-text');
+  const c = dust.at(chipDust(li), e);
+  const cr = chipDust(li).getBoundingClientRect();
+  const tr = text.getBoundingClientRect();
+  const x = c.x + cr.left - tr.left;
+  const y = c.y + cr.top - tr.top;
+  const R = Math.hypot(Math.max(x, tr.width - x), Math.max(y, tr.height - y)) + 6;
+  text.getAnimations().forEach(a => a.cancel());
+  text.animate([
+    { clipPath: `circle(0px at ${x.toFixed(1)}px ${y.toFixed(1)}px)`, filter: 'blur(3px)', opacity: 0.5 },
+    { clipPath: `circle(${R.toFixed(1)}px at ${x.toFixed(1)}px ${y.toFixed(1)}px)`, filter: 'blur(0)', opacity: 1 },
+  ], { duration: 620, easing: EASE_OUT });
+}
+function concealChip(li, { instant = false } = {}) {
+  disarmChip(li);
+  if (!li.classList.contains('shown')) return;
+  li.classList.remove('shown');
+  li.querySelector('.ex-name').setAttribute('aria-label', HIDDEN_SITE);
+  const fast = instant || reducedMotion();
+  dust.conceal(chipDust(li), fast);
+  if (fast) return;
+  // the name blurs away as fresh dust settles over it
+  const text = li.querySelector('.ex-text');
+  li.classList.add('hiding');
+  text.getAnimations().forEach(a => a.cancel());
+  text.animate([{ opacity: 1, filter: 'blur(0)' }, { opacity: 0, filter: 'blur(3px)' }], { duration: 340, easing: 'ease-in' })
+    .finished.then(() => li.classList.remove('hiding'), () => {});
+}
+function dropChip(li) {
+  disarmChip(li);
+  dust.detach(chipDust(li));
 }
 
 // A removed chip fades out where it is while the others glide straight to their
@@ -3034,31 +3326,44 @@ function foldChip(li) {
     anim.finished.then(() => { if (c._flip === anim) c._flip = null; }, () => {});
   }
   const out = li.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(0.6)' }], { duration: 240, easing: EASE_OUT, fill: 'forwards' });
-  out.finished.then(() => li.remove(), () => li.remove());
+  const gone = () => { dropChip(li); li.remove(); };
+  out.finished.then(gone, gone);
 }
 
-function flyIntoChip(from, li) {
-  const to = li.getBoundingClientRect();
-  if (!to.width) return;
+// The words you typed, lifted off the field the moment you add them (the field empties
+// under them in the same frame, so they're never there twice): same place, size and
+// weight as the typed text.
+function liftTyped(site) {
+  const r = $('ex-input').getBoundingClientRect();
   const bird = document.createElement('div');
   bird.className = 'ex-bird';
-  bird.textContent = li.dataset.site;
-  Object.assign(bird.style, { left: `${from.left}px`, top: `${from.top}px`, height: `${from.height}px` });
+  bird.textContent = site;
+  Object.assign(bird.style, { left: `${r.left}px`, top: `${r.top}px`, height: `${r.height}px` });
   document.body.appendChild(bird);
-  li.classList.remove('adding');
-  li.style.opacity = '0';
+  return bird;
+}
+
+// The words glide down into the new chip (right under the field) and settle exactly on
+// its name, easing to its size on the way, while the pill grows in under them. Then a
+// beat to read it, and it turns to dust like the others.
+function flyIntoChip(bird, li) {
+  const text = li.querySelector('.ex-text');
+  const to = text.getBoundingClientRect();
   const b = bird.getBoundingClientRect();
-  const dx = to.left + 10 - b.left;
-  const dy = to.top + (to.height - b.height) / 2 - b.top;
+  if (!to.width || !b.width) { bird.remove(); return; }
+  const k = (parseFloat(getComputedStyle(text).fontSize) || 12) / (parseFloat(getComputedStyle(bird).fontSize) || 12.5);
+  const dx = to.left - b.left;
+  const dy = to.top + to.height / 2 - (b.top + b.height / 2);
+  li.classList.add('awaiting');
+  li.animate([{ opacity: 0, transform: 'scale(0.86)' }, { opacity: 1, transform: 'none' }], { duration: 380, delay: 90, easing: EASE_OUT, fill: 'backwards' });
   const a = bird.animate([
-    { transform: 'none', opacity: 1 },
-    { transform: `translate(${dx * 0.55}px, ${dy * 0.35 - 6}px)`, opacity: 1, offset: 0.45 },
-    { transform: `translate(${dx}px, ${dy}px)`, opacity: 0.9 },
-  ], { duration: 520, easing: 'cubic-bezier(0.3, 0.7, 0.2, 1)' });
+    { transform: 'none' },
+    { transform: `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px) scale(${k.toFixed(4)})` },
+  ], { duration: 460, easing: 'cubic-bezier(0.3, 0.7, 0.2, 1)', fill: 'forwards' });
   const land = () => {
     bird.remove();
-    li.style.opacity = '';
-    li.animate([{ transform: 'scale(0.92)' }, { transform: 'none' }], { duration: 360, easing: 'cubic-bezier(0.32, 1.24, 0.5, 1)' });
+    li.classList.remove('awaiting');
+    setTimeout(() => { if (li.isConnected && !li.classList.contains('leaving')) concealChip(li); }, 650);
   };
   a.finished.then(land, land);
 }
@@ -3514,7 +3819,7 @@ function wire() {
     else tip.hide();
   }
   // a row with pages (not its name or its category) opens them
-  const openRowPages = row => { tip.hide(); openPagePop(row.dataset.domain, row); };
+  const openRowPages = row => { tip.hide(true); openPagePop(row.dataset.domain, row); };
   $('sites').addEventListener('click', e => {
     if (e.target.closest('.site-link, .cat-btn')) return;
     const row = e.target.closest('.site.has-pages');
@@ -3528,7 +3833,7 @@ function wire() {
     openRowPages(time.closest('.site'));
   });
   // the same from a row in the day or hour view, for that day or hour
-  const detailPages = row => { tip.hide(); openPagePop(row.dataset.domain, row, { days: row.parentElement._days, hour: row.parentElement._hour }); };
+  const detailPages = row => { tip.hide(true); openPagePop(row.dataset.domain, row, { days: row.parentElement._days, hour: row.parentElement._hour }); };
   $('detail-view').addEventListener('click', e => {
     if (e.target.closest('.site-link')) return;
     const row = e.target.closest('.row.has-pages');
@@ -3652,27 +3957,64 @@ function wire() {
       toast('That doesn’t look like a website');
       return;
     }
-    // remember where the typed text is, so it can fly into its chip
-    const r = exInput.getBoundingClientRect();
-    exFlights.set(site, { left: r.left, top: r.top, height: r.height });
+    // a new site: the typed words lift off at once (the field empties under them) and
+    // fly into the chip once it's made
+    if (!state.settings.excluded.includes(site) && !reducedMotion()) {
+      exFlights.set(site, liftTyped(site));
+      exInput.value = '';
+      exForm.classList.remove('has-text');
+      exForm.classList.add('sent');
+      setTimeout(() => exForm.classList.remove('sent'), 420);
+    }
     if (await addExcluded(site)) {
       exInput.value = '';
       exForm.classList.remove('has-text');
     }
+    // words that found no chip to land in just fade
+    const stray = exFlights.get(site);
     exFlights.delete(site);
+    if (stray) stray.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200, fill: 'forwards' }).finished.then(() => stray.remove(), () => stray.remove());
   });
   $('ex-list').addEventListener('click', async e => {
+    const name = e.target.closest('.ex-name');
+    if (name) {
+      const li = name.closest('.ex-chip');
+      if (li.classList.contains('leaving')) return;
+      if (li.classList.contains('shown')) concealChip(li);
+      else if (li._armTimer) revealChip(li, e);
+      else armChip(li, e);
+      return;
+    }
     const x = e.target.closest('.x');
     if (!x) return;
     const li = x.closest('.ex-chip');
     if (li.classList.contains('leaving')) return;
     const site = li.dataset.site;
+    // a hidden site stays unnamed, even on its way out
+    const named = li.classList.contains('shown');
     li.classList.add('leaving');
-    if (reducedMotion()) li.remove();
+    disarmChip(li);
+    if (reducedMotion()) { dropChip(li); li.remove(); }
     else foldChip(li);
     state.settings = await updateSettings({ excluded: state.settings.excluded.filter(s => s !== site) });
-    toast(`${site} will be tracked again`);
+    toast(named ? `${site} will be tracked again` : 'That site will be tracked again');
   });
+  // pointing at a hidden site stirs its dust a little; leaving lets it settle (and the
+  // "click again" hint goes with the pointer)
+  $('ex-list').addEventListener('pointerover', e => {
+    const name = e.target.closest('.ex-name');
+    if (!name || (e.relatedTarget && name.contains(e.relatedTarget))) return;
+    const li = name.closest('.ex-chip');
+    if (!li._armTimer) dust.heat(chipDust(li), 1.4);
+  });
+  $('ex-list').addEventListener('pointerout', e => {
+    const name = e.target.closest('.ex-name');
+    if (!name || (e.relatedTarget && name.contains(e.relatedTarget))) return;
+    const li = name.closest('.ex-chip');
+    if (armedChip === li) tip.hide();
+    if (!li._armTimer) dust.heat(chipDust(li), 1);
+  });
+  $('ex-list').addEventListener('pointermove', e => { if (armedChip && e.target.closest('.ex-name') && tip.visible) tip.move(e.clientX, e.clientY); });
 
   // weekly reminder
   $('set-reminder').addEventListener('change', async e => {
@@ -4224,6 +4566,8 @@ async function startTour({ prepared = false, handoff = null } = {}) {
     if (t) t.scrollIntoView({ block: 'nearest', behavior: reducedMotion() ? 'auto' : 'smooth' });
   };
   const noSettings = async () => { tidy(); closeSettings(); };
+  // a day, an hour or the trend that a try opened in Daily activity: lit too, so it's seen
+  const chartOpen = () => (state.view.type !== 'week' ? chart() : null);
   // a limit can be tried in the tour only when none is locked in already
   const canTryLimit = !limitLocked(state.goalHistory, dayKey(new Date()));
 
@@ -4233,10 +4577,10 @@ async function startTour({ prepared = false, handoff = null } = {}) {
       { text: 'Click <b>‹</b> to see the week before', watch: onClick('#prev-week') },
       { text: 'Then <b>›</b> to come back', watch: onClick('#next-week') },
     ] },
-    { title: 'Daily average', text: 'How long you browse on a typical day, and how it compares with last week.', target: () => [q('.summary .caption'), q('#stat-avg'), q('#trend-btn')], before: thisWeek, radius: 14, tasks: [
+    { title: 'Daily average', text: 'How long you browse on a typical day, and how it compares with last week.', target: () => [q('.summary .caption'), q('#stat-avg'), q('#trend-btn')], follow: () => (state.view.type === 'trend' ? chart() : null), before: thisWeek, radius: 14, tasks: [
       { text: 'Point at <b>the change from last week</b>: it becomes a button for Trend over time', watch: onHover('#trend-btn') },
     ] },
-    { title: 'Highlights', text: 'What your week looked like, in words. <b>Bold words are buttons.</b>', target: () => q('#story'), before: tidy, settle: 0, radius: 14, tasks: [
+    { title: 'Highlights', text: 'What your week looked like, in words. <b>Bold words are buttons.</b>', target: () => q('#story'), follow: chartOpen, before: async () => { tidy(); await toWeek(); }, settle: 0, radius: 14, tasks: [
       { text: 'Try a bold <b>day</b> or <b>hour</b> to open it', watch: onClick('#story [data-act="day"], #story [data-act="hour"]') },
       { text: 'Try a bold <b>category</b> to see its sites', watch: onClick('#story [data-act="cat"]') },
     ] },
@@ -4254,7 +4598,7 @@ async function startTour({ prepared = false, handoff = null } = {}) {
       { text: 'Walk hour by hour with <b>‹ ›</b>', watch: onClick('#step-prev, #step-next', () => state.view.type === 'hour') },
       { text: 'Press <b>«</b> to go all the way home', watch: onClick('#chart-home') },
     ] },
-    { title: 'Activity by hour', text: 'When you browse, square by square. The outline shows what’s open right now.', target: () => q('#heat-card'), before: tidy, settle: 0, tasks: [
+    { title: 'Activity by hour', text: 'When you browse, square by square. The outline shows what’s open right now.', target: () => q('#heat-card'), follow: chartOpen, before: tidy, settle: 0, tasks: [
       { text: 'Click any square to open that hour', watch: onClick('#heat-card .cell') },
       { text: 'Click a day’s name for the whole day', watch: onClick('#heat-card .heat-day') },
     ] },
@@ -4283,7 +4627,11 @@ async function startTour({ prepared = false, handoff = null } = {}) {
     { title: 'Sample week, tour and data', text: 'Look around with made-up data, replay this tour, and <b>Export</b> or <b>Import</b> your history. <b>Clear all</b> asks twice.', target: () => [block('#set-demo'), block('#data-row')], before: toSettings('#data-row'), settle: 350, radius: 14 },
     { kicker: 'All set', title: 'That’s the tour', text: 'Your own week fills in as you browse. The hourglass in your toolbar shows today at a glance.', before: async () => { await noSettings(); await toWeek(); }, settle: 300 },
   ];
-  await runTour(steps, { handoff });
+  await runTour(steps, {
+    handoff,
+    // popovers and menus a try opened stay in sight
+    avoid: () => [...document.querySelectorAll('.pop:not([hidden]), .menu:not([hidden])')].filter(el => el.dataset.state !== 'closing'),
+  });
   chrome.storage.local.set({ onboarded: true });
   document.body.classList.remove('touring');
   catPop.z = popZ;

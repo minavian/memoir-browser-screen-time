@@ -4,6 +4,9 @@ Quietly logs where your browsing time goes, keeps you to a daily limit if you
 want one, and shows your whole week at a glance, on one screen with no
 scrolling. Three themes: **Light**, **Dark** and **Pink**.
 
+> **Themes, from this version on:** only **Light** and **Dark** are being worked on.
+> **Pink** stays as it is and will be replaced with a new theme soon.
+
 The Windows app is in **Windows Memoir**. Open `Memoir.exe` there; see
 [its instructions](Windows%20Memoir/README.md) for Windows app tracking and the optional browser connector.
 
@@ -78,8 +81,8 @@ notified once more.
   Long lists scroll.
 
 In a day or an hour, **‹ ›** (or the ← → keys) step to the previous or next one.
-**Back** (or Esc) returns one step; the round **«** button goes straight back to
-the daily chart.
+**Back** (or Esc) returns one step (from an hour, the day zooms back out of that
+hour's column); the round **«** button goes straight back to the daily chart.
 
 On smaller windows (under about 1100 px wide) the cards stack and the page
 scrolls. Scrollable pages, Settings, and lists use a long, smooth glide with the
@@ -103,7 +106,9 @@ Open the gear in the top-right corner of the report.
 - **Track browsing:** pause and resume. Also in the popup.
 - **Never track:** sites you add are still timed and still count toward your
   totals and limit, but only as *Private*. Their names are never saved or shown,
-  and their past time is made Private too.
+  and their past time is made Private too. In Settings each one stays hidden under
+  a shimmer of dust: click it twice to see it (a click hides it again, and so does
+  closing Settings). The newest is first.
 - **Weekly recap reminder:** the day and time you get your recap notification.
 - **Daily limit:** once committed, a limit can only be undone here, after a
   long run of increasingly pointed questions. They never come in the same order

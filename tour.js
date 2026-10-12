@@ -22,9 +22,20 @@ function unionRect(els) {
   return { left, top, width: right - left, height: bottom - top };
 }
 
+// boxes as { l, t, r, b }
+const box = el => { const r = el.getBoundingClientRect(); return { l: r.left, t: r.top, r: r.right, b: r.bottom }; };
+const area = a => Math.max(0, a.r - a.l) * Math.max(0, a.b - a.t);
+const overlap = (a, b) => Math.max(0, Math.min(a.r, b.r) - Math.max(a.l, b.l)) * Math.max(0, Math.min(a.b, b.b) - Math.max(a.t, b.t));
+const join = (a, b) => ({ l: Math.min(a.l, b.l), t: Math.min(a.t, b.t), r: Math.max(a.r, b.r), b: Math.max(a.b, b.b) });
+const apart = (a, b) => Math.hypot(Math.max(0, a.l - b.r, b.l - a.r), Math.max(0, a.t - b.b, b.t - a.b));
+
 // handoff(card): called with the first card once it's placed, before it's seen, so a
 // welcome screen can turn into it (the tour's dim then appears at once, no fade).
-export function runTour(steps, { handoff = null } = {}) {
+// avoid(): what's up on the page right now that the card must leave visible (popovers,
+// menus a try opened). A step's follow() lists what its tries opened elsewhere (the
+// trend graph, a day the highlights opened): it joins the light, so you see it, and the
+// card moves off it.
+export function runTour(steps, { handoff = null, avoid = () => [] } = {}) {
   return new Promise(resolve => {
     const root = document.createElement('div');
     root.className = 'tour';
@@ -65,6 +76,8 @@ export function runTour(steps, { handoff = null } = {}) {
     // spot and card move together, straight away, on one heavy ease
     function place(step, cardH = card.offsetHeight) {
       const els = step.target ? [].concat(step.target()).filter(Boolean) : [];
+      // what the step's tries opened elsewhere joins the light
+      if (els.length && step.follow) els.push(...[].concat(step.follow()).filter(Boolean));
       const r = els.length ? unionRect(els) : null;
       const pad = step.pad != null ? step.pad : 8;
       // hands-on steps leave a hole in the blocker over the spotlight, so what's lit can be used
@@ -88,10 +101,8 @@ export function runTour(steps, { handoff = null } = {}) {
         Object.assign(spot.style, { left: `${innerWidth / 2}px`, top: `${innerHeight / 2}px`, width: '0px', height: '0px', borderRadius: '50%' });
         spot.classList.add('none');
       }
-      // beside the spotlight when there's room, otherwise below or above it
       const cw = card.offsetWidth;
       const ch = cardH;
-      const gap = 16;
       const M = 14;
       let x;
       let y;
@@ -99,25 +110,46 @@ export function runTour(steps, { handoff = null } = {}) {
         x = (innerWidth - cw) / 2;
         y = (innerHeight - ch) / 2;
       } else {
-        const sp = { left: r.left - pad, top: r.top - pad, right: r.left + r.width + pad, bottom: r.top + r.height + pad };
-        if (sp.right + gap + cw <= innerWidth - M) { x = sp.right + gap; y = sp.top; }
-        else if (sp.left - gap - cw >= M) { x = sp.left - gap - cw; y = sp.top; }
-        else if (sp.bottom + gap + ch <= innerHeight - M) { x = sp.left + (sp.right - sp.left - cw) / 2; y = sp.bottom + gap; }
-        else if (sp.top - gap - ch >= M) { x = sp.left + (sp.right - sp.left - cw) / 2; y = sp.top - gap - ch; }
-        else {
-          // no side fits it whole: take the roomiest one (it may overlap the light's
-          // edge a little, never sit in the middle of what you're asked to click)
-          const room = { right: innerWidth - sp.right, left: sp.left, below: innerHeight - sp.bottom, above: sp.top };
-          const side = Object.keys(room).reduce((a, b) => (room[b] > room[a] ? b : a));
-          if (side === 'right') { x = sp.right + gap; y = sp.top; }
-          else if (side === 'left') { x = sp.left - gap - cw; y = sp.top; }
-          else if (side === 'below') { x = sp.left + (sp.right - sp.left - cw) / 2; y = sp.bottom + gap; }
-          else { x = sp.left + (sp.right - sp.left - cw) / 2; y = sp.top - gap - ch; }
-        }
+        ({ x, y } = cardSpot({ l: r.left - pad, t: r.top - pad, r: r.left + r.width + pad, b: r.top + r.height + pad }, cw, ch));
       }
       x = Math.max(M, Math.min(x, innerWidth - cw - M));
       y = Math.max(M, Math.min(y, innerHeight - ch - M));
       card.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`;
+    }
+
+    // Where the card goes: beside the light, never on it, and never on what's up on the
+    // page (a popover, a menu). Each place beside the light (and beside the light with
+    // those things) is scored: covering the light costs most, then covering what's up,
+    // then being far away. Right, left, below, above, in that order, break ties.
+    function cardSpot(sp, cw, ch) {
+      const gap = 16;
+      const M = 14;
+      const ups = [].concat(avoid()).filter(el => el && el.isConnected).map(box).filter(a => area(a) > 0 && overlap(a, sp) < area(a) * 0.9);
+      const cands = [];
+      const around = (R, rank0) => {
+        const midY = sp.t + (sp.b - sp.t - ch) / 2;
+        const midX = sp.l + (sp.r - sp.l - cw) / 2;
+        [sp.t, midY, sp.b - ch].forEach((y, k) => {
+          cands.push({ x: R.r + gap, y, rank: rank0 + k * 0.1 });
+          cands.push({ x: R.l - gap - cw, y, rank: rank0 + 1 + k * 0.1 });
+        });
+        [midX, sp.l, sp.r - cw].forEach((x, k) => {
+          cands.push({ x, y: R.b + gap, rank: rank0 + 2 + k * 0.1 });
+          cands.push({ x, y: R.t - gap - ch, rank: rank0 + 3 + k * 0.1 });
+        });
+      };
+      around(sp, 0);
+      if (ups.length) around(ups.reduce(join, sp), 4);
+      let best = null;
+      for (const c of cands) {
+        const x = Math.max(M, Math.min(c.x, innerWidth - cw - M));
+        const y = Math.max(M, Math.min(c.y, innerHeight - ch - M));
+        const k = { l: x, t: y, r: x + cw, b: y + ch };
+        let score = overlap(k, sp) * 60 + c.rank * 400 + apart(k, sp) * 40;
+        for (const u of ups) score += overlap(k, u) * 30;
+        if (!best || score < best.score) best = { x, y, score };
+      }
+      return best;
     }
 
     // new words in (the old ones fade out on top), the card's height eases to fit
