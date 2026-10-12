@@ -18,6 +18,8 @@ import { TrendChart } from './trend.js';
 import { runGauntlet } from './gauntlet.js';
 import { runTour } from './tour.js';
 import { createWelcome } from './welcome.js';
+import { playLogo } from './shared/logo.js';
+import { followToolbarIcon } from './shared/toolbar-icon.js';
 import { initCursor, setCursorPref, cursorEnabled, cursorSmooth, setCursorSmooth } from './shared/cursor.js';
 import { createDust } from './shared/dust.js';
 import { initContextMenu } from './shared/context-menu.js';
@@ -128,6 +130,10 @@ async function init() {
 
   goalRing = createGoalRing($('goal-ring'), { onSet: btn => openGoalPicker(btn) });
   wire();
+  // the header's clock plays its entrance with the page, or (first visit) as the
+  // welcome's clock flies into it
+  const headMark = document.querySelector('.head .mark');
+  if (welcome) headMark.classList.add('hold');
   // the first render starts every entrance, so it happens right when the page is
   // shown: straight away, or (first visit) as the welcome leaves, not behind it.
   // Heading for the tour, the first thing rendered is the tour's sample week, so
@@ -138,6 +144,7 @@ async function init() {
     await render({});
     updateGoal();
     reveal();
+    if (!welcome) playLogo(headMark, { delay: 160 });
   };
   // the board's first render happens once, whichever moment asks for it first
   let shown = null;
@@ -148,7 +155,7 @@ async function init() {
     // becomes the tour's first card (handoff); the sample week is drawn once it has
     // landed, so no render ever competes with that animation.
     welcome.play({
-      markTarget: document.querySelector('.head .mark'),
+      markTarget: headMark,
       onShown: showOnce,
       onLeave: choice => (choice === 'tour' ? useTourWeek() : showOnce()),
       onHanded: async () => {
@@ -166,6 +173,7 @@ async function init() {
   }
 
   watchTheme(updateAppearanceUI);
+  followToolbarIcon();
   chrome.storage.onChanged.addListener(onStorageChanged);
   document.addEventListener('visibilitychange', applyHiddenChanges);
   setInterval(() => {
@@ -4594,7 +4602,7 @@ async function startTour({ prepared = false, handoff = null } = {}) {
     { title: 'Weekly recap', text: 'A reminder on the day and at the time you choose, with your week ready to look at.', target: () => block('#set-reminder'), before: toSettings('#set-reminder'), settle: 350, radius: 14 },
     { title: 'Your limit and history', text: 'A committed limit can only be undone here, after a long run of increasingly pointed questions. <b>Keep history</b> sets how long days are kept; a shorter option asks twice before removing anything.', target: () => [row('#limit-reset'), block('#retention')], before: toSettings('#retention'), settle: 350, radius: 14 },
     { title: 'Sample week, tour and data', text: 'Look around with made-up data, replay this tour, and <b>Export</b> or <b>Import</b> your history. <b>Clear all</b> asks twice.', target: () => [block('#set-demo'), block('#data-row')], before: toSettings('#data-row'), settle: 350, radius: 14 },
-    { kicker: 'All set', title: 'That’s the tour', text: 'Your own week fills in as you browse. The hourglass in your toolbar shows today at a glance.', before: async () => { await noSettings(); await toWeek(); }, settle: 300 },
+    { kicker: 'All set', title: 'That’s the tour', text: 'Your own week fills in as you browse. The clock in your toolbar shows today at a glance.', before: async () => { await noSettings(); await toWeek(); }, settle: 300 },
   ];
   await runTour(steps, {
     handoff,

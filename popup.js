@@ -8,6 +8,7 @@ import {
   animateNumber, reveal, faviconTile, tween, slicePath, initPetals, setOrigins, siteLinkHtml, replay, reducedMotion, POP, makeScroller, initSmoothScrolling, disableTitleTooltips,
 } from './shared/fx.js';
 import { watchTheme } from './shared/theme.js';
+import { followToolbarIcon } from './shared/toolbar-icon.js';
 import { createGoalRing, openPicker } from './shared/goal.js';
 import { initCursor } from './shared/cursor.js';
 import { initContextMenu } from './shared/context-menu.js';
@@ -45,6 +46,7 @@ async function main() {
   disableTitleTooltips();
   initCursor({ edge: true });
   watchTheme();
+  followToolbarIcon();
   initPetals(6, [8, 13]);
   $('today-label').textContent = `Today, ${new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}`;
 

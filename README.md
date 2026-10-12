@@ -22,7 +22,7 @@ pinning Memoir to the toolbar), then a hands-on tour shows you around on a
 sample week, so nothing of yours is touched. Whatever is lit up can be clicked:
 each step suggests something to try, and its dot turns green once you have.
 The tour ends with a walk through Settings. You can skip it, or replay it any
-time from Settings. After that, click the hourglass for today, then **Weekly Report** for
+time from Settings. After that, click the clock for today, then **Weekly Report** for
 the week.
 
 **Replacing an older version (Browser Screen Time 3.x)?** Remove the old one

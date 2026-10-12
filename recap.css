@@ -27,7 +27,33 @@ body { overflow: hidden; }
 
 .head { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 40px; position: relative; z-index: 50; }
 .head-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
-.mark { border-radius: 7px; flex: none; }
+.mark { width: 34px; height: 34px; flex: none; }
+
+/* ---------- logo: the Memoir clock (shared/logo.js) ---------- */
+/* One ink per theme. The ring and the minute hand fade out in opacity, so the clock
+   sits on anything. Its box is 168 units: ring centred (84, 84) from radius 59 to 76;
+   the knob at (84, 16.5), 15.5 round with a 7 hole right through the ring; the hands
+   turn about (84, 92), 11 thick, the minute 48 long and the hour 34. */
+:root, [data-wave="light"] { --lg-ink: 29 29 31; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme]) { --lg-ink: 255 255 255; } }
+:root[data-theme="dark"], [data-wave="dark"] { --lg-ink: 255 255 255; }
+.logo { position: relative; display: block; aspect-ratio: 1; }
+.logo > i { position: absolute; display: block; }
+.logo.hold > i { opacity: 0; }
+/* the hole under the knob, then the band */
+.lg-ring { inset: 0; -webkit-mask-image: radial-gradient(circle closest-side at 50% 9.821%, transparent calc(42.424% - 0.4px), #000 calc(42.424% + 0.4px)); }
+.lg-ring::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: conic-gradient(rgb(var(--lg-ink) / 0.937), rgb(var(--lg-ink) / 0.84) 45deg, rgb(var(--lg-ink) / 0.676) 125deg,
+    rgb(var(--lg-ink) / 0.5) 205deg, rgb(var(--lg-ink) / 0.332) 285deg, rgb(var(--lg-ink) / 0.181));
+  -webkit-mask-image: radial-gradient(circle closest-side, transparent calc(70.238% - 0.4px), #000 calc(70.238% + 0.4px), #000 calc(90.476% - 0.4px), transparent calc(90.476% + 0.4px));
+}
+.lg-knob { left: 40.774%; top: 0.595%; width: 18.452%; height: 18.452%; border-radius: 50%; background: radial-gradient(circle closest-side, transparent calc(45.161% - 0.4px), rgb(var(--lg-ink)) calc(45.161% + 0.4px)); }
+.lg-min, .lg-hour { left: 46.726%; top: 51.488%; height: 6.548%; border-radius: 99px; }
+.lg-min { width: 35.119%; transform-origin: 9.322% 50%; transform: rotate(-30deg); background: linear-gradient(90deg, rgb(var(--lg-ink)) 9.322%, rgb(var(--lg-ink) / 0.92) 33.729%, rgb(var(--lg-ink) / 0.513) 90.678%); }
+.lg-hour { width: 26.786%; transform-origin: 12.222% 50%; transform: rotate(215deg); background: rgb(var(--lg-ink)); }
 .head h1 { margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.03em; white-space: nowrap; }
 .title-text, .title-swap { display: inline-block; }
 .title-text.swap, .title-swap.swap { animation: swap 0.4s var(--ease-out); }
@@ -1943,39 +1969,7 @@ body { overflow: hidden; }
 .wel-mark { position: relative; z-index: 2; width: 84px; height: 84px; margin-bottom: 18px; }
 .wel.on .wel-mark { animation: wel-pop 0.9s var(--pop) both; }
 @keyframes wel-pop { from { opacity: 0; transform: scale(0.5) rotate(-8deg); } to { opacity: 1; transform: none; } }
-.wel-mark::before {
-  content: "";
-  position: absolute;
-  inset: -14px;
-  border-radius: 38px;
-  background: radial-gradient(closest-side, color-mix(in srgb, var(--accent) 22%, transparent), transparent);
-  opacity: 0;
-}
-.wel.on .wel-mark::before { animation: wel-glow 2.6s var(--ease-in-out) 0.6s infinite alternate both; }
-.wel-mark.flying::before { animation: none; opacity: 0; }
-@keyframes wel-glow { from { opacity: 0.25; transform: scale(0.94); } to { opacity: 1; transform: scale(1.08); } }
-.wel-glass { position: relative; display: block; width: 100%; height: 100%; filter: drop-shadow(0 14px 26px rgba(0, 0, 0, 0.22)); }
-.wg-bg { fill: #1d1d1f; }
-:root[data-theme="dark"] .wg-bg, :root[data-theme="pink"] .wg-bg { fill: #2c2c2e; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme]) .wg-bg { fill: #2c2c2e; } }
-/* on the dark and pink card, the icon keeps an edge */
-:root[data-theme="dark"] .wel-glass, :root[data-theme="pink"] .wel-glass { filter: drop-shadow(0 0 0.5px rgba(255, 255, 255, 0.35)) drop-shadow(0 14px 26px rgba(0, 0, 0, 0.3)); }
-@media (prefers-color-scheme: dark) { :root:not([data-theme]) .wel-glass { filter: drop-shadow(0 0 0.5px rgba(255, 255, 255, 0.35)) drop-shadow(0 14px 26px rgba(0, 0, 0, 0.3)); } }
-.wg-line { fill: none; stroke: #fff; stroke-width: 6; stroke-linecap: round; stroke-linejoin: round; }
-.wg-bar { stroke-width: 7; }
-.wg-sand { fill: #fff; opacity: 0.88; transform-box: view-box; }
-.wg-turn { transform-box: view-box; transform-origin: 64px 64px; }
-.wg-top { transform-origin: 64px 62px; }
-.wg-bot { transform-origin: 64px 88px; transform: scaleY(0); }
-.wg-stream { opacity: 0; }
-.wel.on .wg-turn { animation: wg-turn 3.8s var(--ease-in-out) 0.9s infinite; }
-.wel.on .wg-top { animation: wg-drain 3.8s linear 0.9s infinite; }
-.wel.on .wg-bot { animation: wg-fill 3.8s linear 0.9s infinite; }
-.wel.on .wg-stream { animation: wg-stream 3.8s linear 0.9s infinite; }
-@keyframes wg-turn { 0%, 76% { transform: rotate(0deg); } 100% { transform: rotate(180deg); } }
-@keyframes wg-drain { 0% { transform: scaleY(1); } 70%, 100% { transform: scaleY(0); } }
-@keyframes wg-fill { 0% { transform: scaleY(0); } 70%, 100% { transform: scaleY(1); } }
-@keyframes wg-stream { 0% { opacity: 0; } 4%, 66% { opacity: 0.88; } 70%, 100% { opacity: 0; } }
+.wel-mark .logo { width: 100%; height: 100%; }
 
 .wel-kicker { margin: 0; font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--label-3); }
 .wel-title { margin: 2px 0 0; font-size: clamp(44px, 7vw, 64px); font-weight: 800; line-height: 1.05; letter-spacing: -0.045em; }
@@ -2029,7 +2023,7 @@ body { overflow: hidden; }
 }
 @media (prefers-reduced-motion: reduce) {
   .wel-in, .wel-title span, .wel-mark, .wel-pin, .wel-card::before, .wel-dim { opacity: 1; }
-  .wel.on *, .wel.on .wel-mark::before, .wel.on .wel-card::before { animation: none !important; }
+  .wel.on *, .wel.on .wel-card::before { animation: none !important; }
   .wel-dim { transition: none; }
 }
 

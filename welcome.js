@@ -1,25 +1,16 @@
 // First run: a welcome card before the tour, on the same dim the tour uses. It
-// covers the report while the report gets ready, then plays in: the hourglass
-// pops up and starts pouring, the name rises letter by letter, the rest follows in
-// a cascade. On the way out the hourglass flies into the header's logo, blurring
-// as it goes. Heading for the tour, the card itself reshapes into the tour's first
-// card and the two dims swap in the same frame, so there's no seam.
+// covers the report while the report gets ready, then plays in: the clock pops up
+// and sets itself to 10:10, the name rises letter by letter, the rest follows in a
+// cascade. On the way out the clock flies into the header's logo, blurring as it
+// goes, and the header's clock plays its own entrance as it lands. Heading for the
+// tour, the card itself reshapes into the tour's first card and the two dims swap in
+// the same frame, so there's no seam.
 
 import { reducedMotion, morph, dropShell, EASE_OUT, EASE_IN_OUT } from './shared/fx.js';
+import { LOGO, playLogo } from './shared/logo.js';
 
 // the card reshapes from rest and settles softly (it's still when the words have gone)
 const RESHAPE = 'cubic-bezier(0.45, 0, 0.15, 1)';
-
-const HOURGLASS = `<svg class="wel-glass" viewBox="0 0 128 128" aria-hidden="true">
-  <rect class="wg-bg" width="128" height="128" rx="30"/>
-  <g class="wg-turn">
-    <path class="wg-sand wg-top" d="M48 40H80C78 52 66 58 64 62 62 58 50 52 48 40Z"/>
-    <path class="wg-sand wg-bot" d="M48 88H80C78 76 66 70 64 66 62 70 50 76 48 88Z"/>
-    <rect class="wg-sand wg-stream" x="63" y="62" width="2" height="24" rx="1"/>
-    <path class="wg-line" d="M44 36c0 16 20 22 20 28s-20 12-20 28M84 36c0 16-20 22-20 28s20 12 20 28"/>
-    <path class="wg-line wg-bar" d="M37 31h54M37 97h54"/>
-  </g>
-</svg>`;
 
 const PUZZLE = '<svg class="wel-ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M6.2 2.5a1.6 1.6 0 0 1 3.2 0V4h2.4c.4 0 .7.3.7.7v2.4h-1.1a1.6 1.6 0 0 0 0 3.2h1.1v2.4c0 .4-.3.7-.7.7H9.4v-1.1a1.6 1.6 0 0 0-3.2 0v1.1H3.8c-.4 0-.7-.3-.7-.7v-2.4h1.1a1.6 1.6 0 0 0 0-3.2H3.1V4.7c0-.4.3-.7.7-.7h2.4V2.5Z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>';
 const PIN = '<svg class="wel-ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M9.8 2.2 13.8 6.2 12.4 6.6 10.3 8.7 10.6 11.6 9.6 12.6 7 10 3.6 13.4M6 9 3.4 6.4 4.4 5.4 7.3 5.7 9.4 3.6 9.8 2.2" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
@@ -60,7 +51,7 @@ export function createWelcome() {
       <p class="wel-pin-card"><b>Keep it in reach</b><span>Click ${PUZZLE} in your toolbar, then ${PIN} next to Memoir.</span></p>
     </div>
     <div class="wel-card">
-      <div class="wel-mark">${HOURGLASS}</div>
+      <div class="wel-mark">${LOGO}</div>
       <p class="wel-kicker wel-in" style="--d:180">Welcome to</p>
       <h1 class="wel-title display" id="wel-title" aria-label="Memoir">${letters}</h1>
       <p class="wel-tagline wel-in" style="--d:600">Browser Screen Time</p>
@@ -77,7 +68,7 @@ export function createWelcome() {
 
   /**
    * Plays the welcome in, waits for a choice, then leaves.
-   * markTarget: the header logo the hourglass flies into.
+   * markTarget: the header logo the clock flies into (held hidden until it lands).
    * onShown(): called just after it starts playing in: fill the page in behind the dim
    *   then. Only compositor animations run here, so they don't stutter, and the page's
    *   follow-up work is done long before the card has to reshape.
@@ -98,6 +89,7 @@ export function createWelcome() {
 
       requestAnimationFrame(() => requestAnimationFrame(() => {
         root.classList.add('on');
+        playLogo(mark.querySelector('.logo'), { delay: 120 });
         setTimeout(() => { if (!leaving) go.focus({ preventScroll: true }); }, reducedMotion() ? 0 : 1300);
         setTimeout(() => { if (!leaving) onShown(); }, reducedMotion() ? 0 : 120);
       }));
@@ -113,18 +105,20 @@ export function createWelcome() {
       go.addEventListener('click', () => leave('tour'));
       skip.addEventListener('click', () => leave('skip'));
 
-      // the hourglass flies into the logo in the header, blurring away as it lands
+      // the clock flies into the logo in the header, blurring away as that one sets itself
       function flyMark() {
         const from = mark.getBoundingClientRect();
         const to = markTarget && markTarget.getClientRects().length ? markTarget.getBoundingClientRect() : null;
         mark.classList.add('flying');
         if (!to || !to.width || !from.width) {
+          playLogo(markTarget);
           return mark.animate([{ opacity: 1, transform: 'none', filter: 'blur(0px)' }, { opacity: 0, transform: 'scale(0.7)', filter: 'blur(4px)' }],
             { duration: 420, delay: 80, easing: EASE_OUT, fill: 'forwards' }).finished;
         }
         const dx = to.left + to.width / 2 - (from.left + from.width / 2);
         const dy = to.top + to.height / 2 - (from.top + from.height / 2);
         const s = to.width / from.width;
+        playLogo(markTarget, { delay: 120 + 950 * 0.45, pace: 0.8 });
         return mark.animate([
           { transform: 'none', filter: 'blur(0px)', opacity: 1 },
           { transform: `translate(${dx * 0.35}px, ${dy * 0.5}px) scale(${(1 + s) / 1.6})`, filter: 'blur(0.5px)', opacity: 1, offset: 0.45 },
@@ -142,6 +136,7 @@ export function createWelcome() {
         let handedOver = false;
         const handed = () => { if (!handedOver) { handedOver = true; onHanded(); } };
         if (reducedMotion()) {
+          playLogo(markTarget);
           ready.then(() => { root.remove(); resolve({ choice, handoff: handed }); if (choice === 'tour') setTimeout(handed, 0); });
           return;
         }

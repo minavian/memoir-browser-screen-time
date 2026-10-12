@@ -33,6 +33,8 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
 - `shared/goal.js` / `goal.css` — limit ring and circular limit picker.
 - `shared/dust.js`, `shared/dust-engine.js`, `shared/dust-worker.js` — the dust that hides the Never track
   sites (see "Never track, hidden" below).
+- `shared/logo.js` — the clock logo's markup and entrance (`playLogo`); `shared/toolbar-icon.js` — the toolbar
+  icon that follows the browser's light/dark look (see "The clock logo" below).
 - `popup.*` — 380×600 "today" popup.
 - `recap.html/css/js` — the weekly report (main orchestrator, ~3000 lines).
 - `trend.js` — Trend over time line chart. `tour.js` — guided tutorial. `gauntlet.js` — "reset the limit" questions.
@@ -41,7 +43,7 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
 
 ### Data model (chrome.storage.local)
 - `day:YYYY-MM-DD` = `{ s:{domain:ms}, h:[24], hs:{hour:{domain:ms}}, ti:{domain:{title:ms}} }`; excluded sites stored as `~private`.
-- `origins`, `categories` (overrides), `goal:{history:[{from, limit|null}]}`, `goalNotify`, `onboarded`,
+- `origins`, `categories` (overrides), `goal:{history:[{from, limit|null}]}`, `goalNotify`, `onboarded`, `toolbarLook`,
   `settings:{paused, weeklyReminder, reminderDay, reminderMinutes, titles, excluded, retention(0=forever)}`.
 
 ## Features in place (all working, tested)
@@ -58,11 +60,11 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
 - Clear all: two-step (sure → SURE variable-font morph).
 - Sample week uses the user's real limit (no fake limit).
 - First run (4.3.0): a fresh install opens `recap.html` (`onInstalled`, reason `install`). While `onboarded`
-  is unset the report shows the welcome (`welcome.js`): hourglass pops and pours, letters rise, cards cascade,
-  pin hint points at the toolbar. "Take the tour" flies the hourglass into the header logo while the page
+  is unset the report shows the welcome (`welcome.js`): the clock pops and sets itself, letters rise, cards cascade,
+  pin hint points at the toolbar. "Take the tour" flies the clock into the header logo while the page
   reveals, then the tutorial runs; "Skip for now" (or Esc) just sets `onboarded`. Replay the tour from Settings.
 - Welcome (5.1.2): a single card on the tour's own dim (`--tour-dim`, no colour orbs, no feature cards). Its surface
-  is `.wel-card::before`, so the hourglass inside can fly off on its own (blurring and fading into the header logo).
+  is `.wel-card::before`, so the clock inside can fly off on its own (blurring and fading into the header logo).
   "Take the tour" starts the tour at once, under the card, while the words fade; the dims swap in one frame
   (`.tour.handoff` skips the spot's fade); once the words are gone and the page is calm (`calm()`), a shell reshapes
   the card into the tour's first card (`handoff(card)` from `runTour`). The board's first render waits until it has
@@ -322,6 +324,19 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
   skips pills off screen (IntersectionObserver) and pauses everything when Settings is closed (900 ms after)
   or the tab is hidden. Specks are white; `--dust-ink` (a CSS filter token, recap.css) tints them per theme.
   Reduced motion: a still frame, instant reveal/hide.
+
+- The clock logo (5.1.5): the hourglass is gone; the logo is a clock at 10:10 with no tile behind it. The
+  ring fades clockwise from 12 in opacity (not grey shades), so it fades into any background; a knob at 12
+  covers the seam, with a hole right through. Masters: `M:\Code\MEMOIR\MEMOIR's logos` (`Memoir logo.svg`
+  white, for dark backgrounds; `... for light backgrounds.svg` ink). In the report it's HTML, not an image
+  (`.logo`, recap.css): a conic-gradient ring masked to a band, `--lg-ink` per theme (ink on Light, white on
+  Dark). Entrance (`playLogo`, compositor only): the band turns into place under a fixed slot at 12, the hands
+  sweep from 9:00 round to 10:10, and the knob pops into the slot. The header clock (34 px) plays it with the
+  page; on a first visit it's held (`.hold`) until the welcome's clock flies into it. Toolbar: `icons/iconN.png`
+  is the ink clock (light toolbars, the Web Store, the manifest default), `iconN-on-dark.png` the white one;
+  the popup and report set the one for the browser's look (`prefers-color-scheme`) and store it as
+  `toolbarLook`, which the worker restores at start-up and uses for notification icons. Small sizes are drawn
+  with thicker strokes (16 px has no hole in the knob).
 
 ## Possible next step
 A small one-time welcome touch in the popup the first time it opens (a line + pulse on Weekly Report).
