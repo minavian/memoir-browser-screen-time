@@ -27,19 +27,19 @@ body { overflow: hidden; }
 
 .head { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 40px; position: relative; z-index: 50; }
 .head-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
-.mark { width: 34px; height: 34px; flex: none; }
+.mark { width: 40px; height: 40px; flex: none; }
 
 /* ---------- logo: the Memoir clock (shared/logo.js) ---------- */
-/* One ink per theme. The ring and the minute hand fade out in opacity, so the clock
-   sits on anything. Its box is 168 units: ring centred (84, 84) from radius 59 to 76;
-   the knob at (84, 16.5), 15.5 round with a 7 hole right through the ring; the hands
-   turn about (84, 92), 11 thick, the minute 48 long and the hour 34. */
-:root, [data-wave="light"] { --lg-ink: 29 29 31; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme]) { --lg-ink: 255 255 255; } }
-:root[data-theme="dark"], [data-wave="dark"] { --lg-ink: 255 255 255; }
-.logo { position: relative; display: block; aspect-ratio: 1; }
-.logo > i { position: absolute; display: block; }
-.logo.hold > i { opacity: 0; }
+/* White on a black disc, in every theme (the clock's fades were tuned on that black).
+   The disc is 200 units across with the clock's 168-unit box in its middle: ring
+   centred (84, 84) from radius 59 to 76; the knob at (84, 16.5), 15.5 round with a 7
+   hole right through the ring; the hands turn about (84, 92), 11 thick, the minute 48
+   long and the hour 34. The ring and the minute hand fade out in opacity. */
+.logo { --lg-ink: 255 255 255; position: relative; display: block; aspect-ratio: 1; }
+.logo::before { content: ""; position: absolute; inset: 0; border-radius: 50%; background: #111114; }
+.lg-clock { position: absolute; inset: 8%; }
+.lg-clock > i { position: absolute; display: block; }
+.logo.hold::before, .logo.hold .lg-clock > i { opacity: 0; }
 /* the hole under the knob, then the band */
 .lg-ring { inset: 0; -webkit-mask-image: radial-gradient(circle closest-side at 50% 9.821%, transparent calc(42.424% - 0.4px), #000 calc(42.424% + 0.4px)); }
 .lg-ring::before {
@@ -1966,7 +1966,7 @@ body { overflow: hidden; }
 @keyframes wel-letter { from { opacity: 0; transform: translateY(0.45em) scale(0.92); } to { opacity: 1; transform: none; } }
 
 /* the hourglass: pops up, then pours and turns over, again and again */
-.wel-mark { position: relative; z-index: 2; width: 84px; height: 84px; margin-bottom: 18px; }
+.wel-mark { position: relative; z-index: 2; width: 96px; height: 96px; margin-bottom: 18px; }
 .wel.on .wel-mark { animation: wel-pop 0.9s var(--pop) both; }
 @keyframes wel-pop { from { opacity: 0; transform: scale(0.5) rotate(-8deg); } to { opacity: 1; transform: none; } }
 .wel-mark .logo { width: 100%; height: 100%; }
@@ -2017,7 +2017,7 @@ body { overflow: hidden; }
 }
 @media (max-height: 700px) {
   .wel-card { padding-top: 26px; padding-bottom: 20px; }
-  .wel-mark { width: 64px; height: 64px; margin-bottom: 12px; }
+  .wel-mark { width: 74px; height: 74px; margin-bottom: 12px; }
   .wel-ask { margin-top: 18px; }
   .wel-private { margin-top: 18px; }
 }

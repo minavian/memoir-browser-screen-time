@@ -329,9 +329,10 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
   ring fades clockwise from 12 in opacity (not grey shades), so it fades into any background; a knob at 12
   covers the seam, with a hole right through. Masters: `M:\Code\MEMOIR\MEMOIR's logos` (`Memoir logo.svg`
   white, for dark backgrounds; `... for light backgrounds.svg` ink). In the report it's HTML, not an image
-  (`.logo`, recap.css): a conic-gradient ring masked to a band, `--lg-ink` per theme (ink on Light, white on
-  Dark). Entrance (`playLogo`, compositor only): the band turns into place under a fixed slot at 12, the hands
-  sweep from 9:00 round to 10:10, and the knob pops into the slot. The header clock (34 px) plays it with the
+  (`.logo`, recap.css): white on a black disc in every theme (the owner asked for a round black background
+  there, not a square), a conic-gradient ring masked to a band. Entrance (`playLogo`, compositor only): the
+  disc pops in, the band turns into place under a fixed slot at 12, the hands sweep from 9:00 round to 10:10,
+  and the knob pops into the slot. The header clock (40 px with its disc) plays it with the
   page; on a first visit it's held (`.hold`) until the welcome's clock flies into it. Toolbar: `icons/iconN.png`
   is the ink clock (light toolbars, the Web Store, the manifest default), `iconN-on-dark.png` the white one;
   the popup and report set the one for the browser's look (`prefers-color-scheme`) and store it as
