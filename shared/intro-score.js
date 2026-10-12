@@ -9,15 +9,15 @@ export const TIMES = {
   kicker: 1950,   // WELCOME TO, letter by letter, left to right
   word: 2250,     // MEMOIR, the same
   light: 2050,    // the light behind the word starts drifting in
-  thin: 3700,     // the O thins out…
-  clock: 3800,    // …into the clock, which sets itself (shared/logo.js)
+  clock: 3800,    // the clock takes the O's place and sets itself (shared/logo.js)
   morph: 5000,    // everything turns into the card
   morphMs: 950,
   end: 6000,
 };
-// shared/logo.js's timing: the hands sweep after 160 ms for 1500 ms; the knob pops at 880 ms
+// shared/logo.js's timing (heavy ring, as here): the hands sweep after 160 ms for 1500 ms;
+// the knob pops at 320 ms
 const SWEEP = { delay: 160, ms: 1500, ease: [0.45, 0, 0.1, 1] };
-const KNOB = 880;
+const KNOB = 320;
 
 export function rng(seed) {
   return () => {

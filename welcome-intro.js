@@ -1,12 +1,14 @@
 // The welcome's opening, before the card. On black, grain blooms up here and there and
 // drifts off slowly, each bloom with a soft crackle; then WELCOME TO and a big MEMOIR
-// (the thumbnail's: platinum, grain, a tight glow, a light behind) arrive letter by
-// letter from left to right; the O thins out into the clock, which sets itself; then it
-// all becomes the welcome card. The letters fly into its title, WELCOME TO into its
-// kicker and the clock into its logo, while the black lifts off the page.
-// Everything is scheduled at once from one start, on transform and opacity (the O's
-// weight is the one exception, and it comes after the page behind has settled), so the
-// page filling in can't make it stutter. A click or a key skips ahead to the card.
+// (the trailer's wordmark, with a light behind it) arrive letter by letter from left to
+// right; the clock takes the O's place, as heavy as the O at first and slowly thinning
+// to its own weight as it sets itself; then it all becomes the welcome card. The
+// letters fly onto the card's own MEMOIR, WELCOME TO into its kicker and the clock into
+// its logo, while the black lifts off the page.
+// Made to stay smooth on a slow device: everything is scheduled at once from one start,
+// almost all of it transform and opacity on layers painted once (the letters' glow is a
+// text-shadow, the grain clouds are drawn with their soft edge in them: no filters, no
+// masks moving; the clock's ring thins by scaling). A click or a key skips ahead to the card.
 
 import { EASE_OUT } from './shared/fx.js';
 import { playLogo } from './shared/logo.js';
@@ -16,9 +18,13 @@ const MORPH = 'cubic-bezier(0.5, 0, 0.15, 1)';
 const POPIN = 'cubic-bezier(0.2, 0.7, 0.3, 1)';
 const FONT = '"Memoir Unbounded"';
 const TILE = 160;
+const CLOUD = 384;
+// the heavy O's hole is about 0.4 of its outer radius (Unbounded 900: its stroke is 238
+// of 393 units), so the clock's ring starts with its inner edge there
+const O_INNER = 0.4;
 
-// A tile of film grain: sparse light specks, or (wash) a grey grain for the type.
-function grain(seed, wash = false) {
+// A tile of fine light specks, for the faint grain over the whole black.
+function specks(seed) {
   const c = document.createElement('canvas');
   c.width = c.height = TILE;
   const g = c.getContext('2d');
@@ -26,12 +32,33 @@ function grain(seed, wash = false) {
   const r = rng(seed);
   for (let i = 0; i < img.data.length; i += 4) {
     const v = r();
-    const l = wash ? 128 + (v - 0.5) * 150 : 205 + r() * 50;
-    img.data[i] = img.data[i + 1] = img.data[i + 2] = l;
-    img.data[i + 3] = wash ? 255 : v * v * v * 255;
+    img.data[i] = img.data[i + 1] = img.data[i + 2] = 205 + r() * 50;
+    img.data[i + 3] = v * v * v * 255;
   }
   g.putImageData(img, 0, 0);
   return `url(${c.toDataURL()})`;
+}
+
+// A cloud of grain with its soft round edge drawn in (so it needs no mask): full to a
+// fifth of the way out, under half by three fifths, gone at the rim; a faint haze under it.
+function cloud(seed) {
+  const c = document.createElement('canvas');
+  c.width = c.height = CLOUD;
+  const g = c.getContext('2d');
+  const img = g.createImageData(CLOUD, CLOUD);
+  const r = rng(seed), h = CLOUD / 2;
+  for (let y = 0; y < CLOUD; y++) {
+    for (let x = 0; x < CLOUD; x++) {
+      const d = Math.hypot(x + 0.5 - h, y + 0.5 - h) / h;
+      if (d >= 1) continue;
+      const fall = d < 0.22 ? 1 : d < 0.62 ? 1 - ((d - 0.22) / 0.4) * 0.55 : 0.45 * (1 - (d - 0.62) / 0.38);
+      const v = r(), i = (y * CLOUD + x) * 4;
+      img.data[i] = img.data[i + 1] = img.data[i + 2] = 205 + r() * 50;
+      img.data[i + 3] = (v * v * v + 0.05 * (1 - d)) * fall * 255;
+    }
+  }
+  g.putImageData(img, 0, 0);
+  return c;
 }
 
 // where a line of text sits: a zero-size probe on its baseline
@@ -74,8 +101,9 @@ export function createIntro(root) {
   const type = document.createElement('div');
   type.className = 'wi-type';
   type.setAttribute('aria-hidden', 'true');
-  const spans = text => [...text].map(ch => `<span>${ch === ' ' ? '&nbsp;' : ch}</span>`).join('');
-  type.innerHTML = `<p class="wi-kicker">${spans('WELCOME TO')}</p><p class="wi-word">${spans('MEMOIR')}</p>`;
+  const kick = [...'WELCOME TO'].map(ch => `<span>${ch === ' ' ? '&nbsp;' : ch}</span>`).join('');
+  const word = [...'MEMOIR'].map(ch => `<span class="wordmark wm-dark" data-t="${ch}">${ch}</span>`).join('');
+  type.innerHTML = `<p class="wi-kicker">${kick}</p><p class="wi-word">${word}</p>`;
   root.querySelector('.wel-dim').after(bg);
   root.append(type);
   root.classList.add('intro');
@@ -85,43 +113,37 @@ export function createIntro(root) {
   const elapsed = () => (run.length ? run[0].currentTime ?? 0 : 0);
 
   /**
-   * Plays it, into the card's own title, kicker and logo (they're found at rest).
+   * Plays it, into the card's own MEMOIR, kicker and logo (they're found at rest).
    * Resolves once everything is scheduled: start the card's own entrance then.
    */
   async function play({ card, mark }) {
     await Promise.race([document.fonts.load(`900 100px ${FONT}`), new Promise(r => setTimeout(r, 1500))]).catch(() => {});
-    const specks = [grain(11), grain(23), grain(31)];
-    const wash = grain(37, true);
 
     // ---- everything measured at rest, before anything moves
-    const word = type.querySelector('.wi-word');
+    const wordEl = type.querySelector('.wi-word');
     const kicker = type.querySelector('.wi-kicker');
-    const big = [...word.children];
+    const big = [...wordEl.children];
     const O = big[3];
-    O.style.width = `${O.getBoundingClientRect().width}px`;   // so it can thin without moving the I and R
-    const F = parseFloat(getComputedStyle(word).fontSize);
+    const F = parseFloat(getComputedStyle(wordEl).fontSize);
     const cap = F * 0.75;                                      // Unbounded's cap height
-    const wr = word.getBoundingClientRect();
-    const base = baseline(word);
-    // the platinum runs across the whole word, so each letter takes its own slice of it
+    const wr = wordEl.getBoundingClientRect();
+    const base = baseline(wordEl);
+    // the platinum runs across the whole word, so each letter shows its own slice of it
     for (const L of big) {
-      const r = L.getBoundingClientRect();
-      const x = `${wr.left - r.left}px`;
-      L.style.backgroundImage = `${wash}, linear-gradient(rgba(255,255,255,0.1), transparent 45%, rgba(0,0,0,0.1) 80%, rgba(255,255,255,0.04)), `
-        + 'linear-gradient(76deg, #a4a4ac, #dedee3 30%, #fff 55%, #e9e9ee 78%, #fff)';
-      L.style.backgroundSize = `${TILE}px ${TILE}px, 100% 100%, ${wr.width}px 100%`;
-      L.style.backgroundPosition = `${x} 0, 0 0, ${x} 0`;
+      L.style.setProperty('--wm-w', `${wr.width}px`);
+      L.style.setProperty('--wm-x', `${wr.left - L.getBoundingClientRect().left}px`);
     }
 
-    // each letter's flight into the card's title: baseline centre onto baseline centre
-    const title = card.querySelector('.wel-title');
-    const small = [...title.children];
-    const tBase = baseline(title);
-    const k = capHeight(title, 'M') / cap;
+    // each letter flies onto its own in the card's MEMOIR: the same face, so it lands exactly
+    const title = card.querySelector('.wel-title .wordmark');
+    const k = parseFloat(getComputedStyle(title).fontSize) / F;
+    const tBase = baseline(title.parentElement);
+    const range = document.createRange();
     const flights = big.map((L, i) => {
-      const a = L.getBoundingClientRect(), b = small[i].getBoundingClientRect();
+      range.setStart(title.firstChild, i);
+      range.setEnd(title.firstChild, i + 1);
+      const a = L.getBoundingClientRect(), b = range.getBoundingClientRect();
       L.style.transformOrigin = `50% ${base - a.top}px`;
-      small[i].style.transformOrigin = `50% ${tBase - b.top}px`;
       return { dx: b.left + b.width / 2 - (a.left + a.width / 2), dy: tBase - base };
     });
     const kick = card.querySelector('.wel-kicker');
@@ -134,7 +156,7 @@ export function createIntro(root) {
 
     // the clock sits where the O is, its ring on the O's outline (the ring is 0.76 of the disc)
     const m = mark.getBoundingClientRect(), o = O.getBoundingClientRect();
-    const markAt = `translate(${o.left + o.width / 2 - (m.left + m.width / 2)}px, ${base - F * 0.375 - (m.top + m.height / 2)}px) scale(${(F * 0.78) / (m.width * 0.76)})`;
+    const markAt = `translate(${o.left + o.width / 2 - (m.left + m.width / 2)}px, ${base - F * 0.375 - (m.top + m.height / 2)}px) scale(${(F * 0.786) / (m.width * 0.76)})`;
 
     // the light behind the word drifts in from the left and settles between the M and the O
     const light = document.createElement('div');
@@ -145,15 +167,15 @@ export function createIntro(root) {
     });
     const field = document.createElement('div');
     field.className = 'wi-grain';
-    field.style.backgroundImage = specks[0];
+    field.style.backgroundImage = specks(11);
     const { blooms } = plan();
+    const clouds = [cloud(23), cloud(31), cloud(47)];
     const puffs = blooms.map((b, i) => {
-      const el = document.createElement('div');
+      const el = document.createElement('canvas');
       el.className = 'wi-bloom';
-      Object.assign(el.style, {
-        left: `${b.x * 100}vw`, top: `${b.y * 100}vh`, width: `${b.size}vmin`, height: `${b.size}vmin`,
-        backgroundImage: `${specks[1 + (i % 2)]}, radial-gradient(closest-side, rgba(255,255,255,0.05), transparent)`,
-      });
+      el.width = el.height = CLOUD;
+      el.getContext('2d').drawImage(clouds[i % 3], 0, 0);
+      Object.assign(el.style, { left: `${b.x * 100}vw`, top: `${b.y * 100}vh`, width: `${b.size}vmin`, height: `${b.size}vmin` });
       return el;
     });
     bg.append(field, ...puffs, light);
@@ -181,32 +203,29 @@ export function createIntro(root) {
       { duration: 800, delay: T.kicker + i * 40, easing: EASE_OUT }));
     big.forEach((L, i) => go(L, [{ opacity: 0, transform: 'translateX(-0.16em) scale(0.96)' }, { opacity: 1, transform: 'none' }],
       { duration: 1000, delay: T.word + i * 105, easing: EASE_OUT }));
-    // the O thins out to the clock's ring and gives way to it
-    go(O, [{ fontVariationSettings: '"wght" 900' }, { fontVariationSettings: '"wght" 200' }], { duration: 900, delay: T.thin, easing: 'cubic-bezier(0.45, 0, 0.2, 1)' });
-    go(O, [{ opacity: 1 }, { opacity: 0 }], { duration: 420, delay: T.thin + 480, fill: 'forwards' });
+
+    // the clock takes the O's place, as heavy as the O, and slowly thins to its own weight
+    go(O, [{ opacity: 1 }, { opacity: 0 }], { duration: 380, delay: T.clock + 60, fill: 'forwards' });
     const logo = mark.querySelector('.logo');
     go(mark, [
       { opacity: 1, transform: markAt },
       { opacity: 1, transform: markAt, offset: T.morph / (T.morph + T.morphMs), easing: MORPH },
       { opacity: 1, transform: 'none' },
     ], { duration: T.morph + T.morphMs });
-    playLogo(logo, { delay: T.clock, face: false });
+    playLogo(logo, { delay: T.clock, face: false, thick: O_INNER });
     go(logo, [{ opacity: 0 }, { opacity: 1 }], { duration: 500, delay: T.morph + 250, pseudoElement: '::before', fill: 'forwards' });
 
-    // into the card: each letter onto its own in the title, crossing over halfway; the
-    // ones with furthest to go set off first, so they all land together
+    // into the card: each letter onto its own (the furthest set off first, so they land
+    // together), then the card's MEMOIR takes over where they've landed
     const far = Math.max(...flights.map(f => Math.hypot(f.dx, f.dy)));
     big.forEach((L, i) => {
+      if (i === 3) return;   // the O became the clock
       const { dx, dy } = flights[i];
-      const t = { duration: T.morphMs, delay: T.morph + (1 - Math.hypot(dx, dy) / far) * 160, easing: MORPH };
-      if (i === 3) {   // the O went to the clock: the card's o comes up as its neighbours land
-        go(small[i], [{ opacity: 0, transform: 'translateY(0.3em) scale(0.9)' }, { opacity: 1, transform: 'none' }], { duration: 520, delay: T.morph + 660, easing: EASE_OUT });
-        return;
-      }
-      go(L, [{ opacity: 1, transform: 'none' }, { opacity: 1, offset: 0.3 }, { opacity: 0, offset: 0.75 }, { opacity: 0, transform: `translate(${dx}px, ${dy}px) scale(${k})` }],
-        { ...t, fill: 'forwards' });
-      go(small[i], [{ opacity: 0, transform: `translate(${-dx}px, ${-dy}px) scale(${1 / k})` }, { opacity: 0, offset: 0.3 }, { opacity: 1, offset: 0.8 }, { opacity: 1, transform: 'none' }], t);
+      const start = T.morph + (1 - Math.hypot(dx, dy) / far) * 160;
+      go(L, [{ transform: 'none' }, { transform: `translate(${dx}px, ${dy}px) scale(${k})` }], { duration: T.morphMs, delay: start, easing: MORPH, fill: 'forwards' });
+      go(L, [{ opacity: 1 }, { opacity: 0 }], { duration: T.morphMs * 0.2, delay: start + T.morphMs * 0.86, fill: 'forwards' });
     });
+    go(title, [{ opacity: 0 }, { opacity: 1 }], { duration: T.morphMs * 0.24, delay: T.morph + 160 + T.morphMs * 0.8 });
     go(kicker, [{ opacity: 1, transform: 'none' }, { opacity: 1, offset: 0.25 }, { opacity: 0, offset: 0.7 }, { opacity: 0, transform: `translate(${kdx}px, ${kdy}px) scale(${kk})` }],
       { duration: T.morphMs, delay: T.morph, easing: MORPH, fill: 'forwards' });
     go(kick, [{ opacity: 0, transform: `translate(${-kdx}px, ${-kdy}px) scale(${1 / kk})` }, { opacity: 0, offset: 0.3 }, { opacity: 1, offset: 0.8 }, { opacity: 1, transform: 'none' }],

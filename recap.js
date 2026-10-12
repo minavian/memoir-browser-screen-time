@@ -4207,6 +4207,17 @@ async function addExcluded(site) {
 let toastTimer = 0;
 // A message at the bottom. One already showing doesn't blink: its words cross-fade
 // and the pill eases to its new width.
+// Toast text, with the name set in its face (as everywhere in Settings, where toasts come from).
+function brand(el, text) {
+  el.replaceChildren(...text.split(/(Memoir)/).map(part => {
+    if (part !== 'Memoir') return part;
+    const name = document.createElement('span');
+    name.className = 'wordmark-plain';
+    name.textContent = part;
+    return name;
+  }));
+}
+
 function toast(text, hold = 2600) {
   const t = $('toast');
   const showing = t.classList.contains('on') && t.textContent && !reducedMotion();
@@ -4215,7 +4226,7 @@ function toast(text, hold = 2600) {
     t._resize?.cancel();
     t.innerHTML = '';
     const words = document.createElement('span');
-    words.textContent = text;
+    brand(words, text);
     t.appendChild(words);
     const w1 = t.getBoundingClientRect().width;
     t.style.overflow = 'hidden';
@@ -4223,7 +4234,7 @@ function toast(text, hold = 2600) {
     t._resize.finished.then(() => { t.style.overflow = ''; }, () => {});
     words.animate([{ opacity: 0, transform: 'translateY(5px)' }, { opacity: 1, transform: 'none' }], { duration: 300, delay: 60, easing: EASE_OUT, fill: 'backwards' });
   } else {
-    t.textContent = text;
+    brand(t, text);
   }
   t.classList.add('on');
   clearTimeout(toastTimer);
@@ -4359,7 +4370,7 @@ async function writeImport({ days, categories, origins }, mode) {
 let importAnswer = null;
 function askImportMode(count) {
   answerImport(null, true);
-  $('ip-text').innerHTML = `<b>${count} day${count === 1 ? '' : 's'}</b> in this file also ${count === 1 ? 'has' : 'have'} time in Memoir. Every other day is added either way.`;
+  $('ip-text').innerHTML = `<b>${count} day${count === 1 ? '' : 's'}</b> in this file also ${count === 1 ? 'has' : 'have'} time in <span class="wordmark-plain">Memoir</span>. Every other day is added either way.`;
   return new Promise(resolve => {
     importAnswer = resolve;
     importPop.open($('import'));
@@ -4549,7 +4560,7 @@ async function startTour({ prepared = false, handoff = null } = {}) {
   const canTryLimit = !limitLocked(state.goalHistory, dayKey(new Date()));
 
   const steps = [
-    { kicker: 'Quick tour', title: 'This is Memoir', text: 'A quick look around, on a <b>sample week</b>, so nothing of yours is touched. When a step says <b>Try</b>, go ahead: everything in the light is live.', next: 'Start', before: toWeek, settle: 0 },
+    { kicker: 'Quick tour', title: 'This is <span class="wordmark">Memoir</span>', text: 'A quick look around, on a <b>sample week</b>, so nothing of yours is touched. When a step says <b>Try</b>, go ahead: everything in the light is live.', next: 'Start', before: toWeek, settle: 0 },
     { title: 'Your weeks', text: 'Step back through past weeks with the arrows. The <b>←</b> and <b>→</b> keys work too.', target: () => q('.week-nav'), before: toWeek, settle: 0, radius: 12, tasks: [
       { text: 'Click <b>‹</b> to see the week before', watch: onClick('#prev-week') },
       { text: 'Then <b>›</b> to come back', watch: onClick('#next-week') },
@@ -4594,7 +4605,7 @@ async function startTour({ prepared = false, handoff = null } = {}) {
     { title: 'Appearance', text: '<b>System</b> picks your theme automatically. Or pick Light, Dark, or <b>Pink</b>.', target: () => block('#appearance'), before: toSettings('#appearance'), settle: 350, radius: 14, tasks: [
       { text: 'Try another theme', watch: onClick('#appearance button') },
     ] },
-    { title: 'Cursor', text: 'Memoir’s own animated cursor. Turning it off is highly recommended on low-end devices: everything stays the same, just lighter. <b>Smooth cursor</b> lets it glide after your mouse, a touch behind it; it needs the custom cursor on.', target: () => block('#set-cursor'), before: toSettings('#set-smooth'), settle: 350, radius: 14, tasks: [
+    { title: 'Cursor', text: '<span class="wordmark wm-in">Memoir</span>’s own animated cursor. Turning it off is highly recommended on low-end devices: everything stays the same, just lighter. <b>Smooth cursor</b> lets it glide after your mouse, a touch behind it; it needs the custom cursor on.', target: () => block('#set-cursor'), before: toSettings('#set-smooth'), settle: 350, radius: 14, tasks: [
       { text: 'Switch <b>Custom cursor</b> off, then on again, to compare', watch: onChange('#set-cursor') },
       { text: 'Try <b>Smooth cursor</b>', watch: onChange('#set-smooth') },
     ] },

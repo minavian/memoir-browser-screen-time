@@ -179,7 +179,8 @@ export function initContextMenu({ getItems = () => [], beforeOpen = () => {}, on
     menu.replaceChildren();
     const title = document.createElement('p');
     title.className = 'context-title';
-    title.textContent = context.editable ? 'Edit text' : context.domain && context.domain !== '~private' ? context.domain : context.text.trim() ? 'Selected text' : 'Memoir';
+    title.textContent = context.editable ? 'Edit text' : context.domain && context.domain !== '~private' ? context.domain : context.text.trim() ? 'Selected text' : '';
+    if (!title.textContent) title.innerHTML = '<span class="wordmark">Memoir</span>';
     menu.appendChild(title);
     items.forEach((item, index) => {
       const el = document.createElement(item.separator ? 'div' : item.href ? 'a' : 'button');

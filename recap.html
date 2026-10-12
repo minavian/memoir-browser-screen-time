@@ -6,6 +6,7 @@
   <title>Memoir · Weekly Report</title>
   <link rel="icon" href="icons/icon32.png">
   <script src="shared/theme-boot.js"></script>
+  <link rel="preload" href="fonts/Unbounded-subset.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="shared/theme.css">
   <link rel="stylesheet" href="shared/goal.css">
   <link rel="stylesheet" href="recap.css">
@@ -211,7 +212,7 @@
                   </div>
                 </div>
               </div>
-              <p class="p-foot">Memoir · Made by <button class="p-author" id="author" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="author-pop">Mina Vian</button> · Your data never leaves this browser</p>
+              <p class="p-foot"><span class="wordmark-plain">Memoir</span> · Made by <button class="p-author" id="author" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="author-pop">Mina Vian</button> · Your data never leaves this browser</p>
             </div>
           </div>
           <button class="icon-btn morph-trigger" id="settings-btn" aria-label="Settings" aria-expanded="false" aria-controls="settings-panel">
@@ -329,7 +330,7 @@
   <div class="pop" id="cat-pop" role="dialog" aria-label="Sites in this category" hidden></div>
   <div class="pop import-pop" id="import-pop" role="dialog" aria-labelledby="ip-title" aria-describedby="ip-text" hidden>
     <p class="ip-title" id="ip-title">Some days are already here</p>
-    <p class="ip-text" id="ip-text"><b id="ip-count">1 day</b> in this file also has time in Memoir. Every other day is added either way.</p>
+    <p class="ip-text" id="ip-text"><b id="ip-count">1 day</b> in this file also has time in <span class="wordmark-plain">Memoir</span>. Every other day is added either way.</p>
     <div class="ip-choices">
       <button class="ip-choice" type="button" data-mode="merge" style="--d:70ms"><b>Merge</b><small>Keep both, without counting any time twice</small></button>
       <button class="ip-choice" type="button" data-mode="replace" style="--d:110ms"><b>Replace</b><small>Use the file’s version of those days</small></button>

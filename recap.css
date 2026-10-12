@@ -33,24 +33,32 @@ body { overflow: hidden; }
 /* White on a black disc, in every theme (the clock's fades were tuned on that black).
    The disc is 200 units across with the clock's 168-unit box in its middle: ring
    centred (84, 84) from radius 59 to 76; the knob at (84, 16.5), 15.5 round with a 7
-   hole right through the ring; the hands turn about (84, 92), 11 thick, the minute 48
+   black middle; the hands turn about (84, 92), 11 thick, the minute 48
    long and the hour 34. The ring and the minute hand fade out in opacity. */
 .logo { --lg-ink: 255 255 255; position: relative; display: block; aspect-ratio: 1; }
 .logo::before { content: ""; position: absolute; inset: 0; border-radius: 50%; background: #111114; }
 .lg-clock { position: absolute; inset: 8%; }
 .lg-clock > i { position: absolute; display: block; }
 .logo.hold::before, .logo.hold .lg-clock > i { opacity: 0; }
-/* the hole under the knob, then the band */
-.lg-ring { inset: 0; -webkit-mask-image: radial-gradient(circle closest-side at 50% 9.821%, transparent calc(42.424% - 0.4px), #000 calc(42.424% + 0.4px)); }
+/* The ring: its box (radius 76 about (84, 84) in the 168 box), the clockwise fade masked
+   to the band, 59 to 76 (77.632%). While it thins from heavy (playLogo's `thick`, the
+   opening) it's built another way for that while: a round clip for the outer edge over a
+   disc twice the clock's size with a hole in it (59 of its 168, 35.119%), so the ring
+   thinning is that disc scaling up, with no repaint; the fade is angular, so scaling
+   leaves it as it is. At rest the two look the same, and the plain one is cheaper. */
+.lg-ring { inset: 4.762%; border-radius: 50%; }
 .lg-ring::before {
   content: "";
   position: absolute;
   inset: 0;
   background: conic-gradient(rgb(var(--lg-ink) / 0.937), rgb(var(--lg-ink) / 0.84) 45deg, rgb(var(--lg-ink) / 0.676) 125deg,
     rgb(var(--lg-ink) / 0.5) 205deg, rgb(var(--lg-ink) / 0.332) 285deg, rgb(var(--lg-ink) / 0.181));
-  -webkit-mask-image: radial-gradient(circle closest-side, transparent calc(70.238% - 0.4px), #000 calc(70.238% + 0.4px), #000 calc(90.476% - 0.4px), transparent calc(90.476% + 0.4px));
+  -webkit-mask-image: radial-gradient(circle closest-side, transparent calc(77.632% - 0.3px), #000 calc(77.632% + 0.3px), #000 calc(100% - 0.6px), transparent);
 }
-.lg-knob { left: 40.774%; top: 0.595%; width: 18.452%; height: 18.452%; border-radius: 50%; background: radial-gradient(circle closest-side, transparent calc(45.161% - 0.4px), rgb(var(--lg-ink)) calc(45.161% + 0.4px)); }
+.logo.thick .lg-ring { overflow: hidden; }
+.logo.thick .lg-ring::before { inset: -60.526%; -webkit-mask-image: radial-gradient(circle closest-side, transparent calc(35.119% - 0.3px), #000 calc(35.119% + 0.3px)); }
+/* the knob covers the ring's seam; its middle is the disc's black */
+.lg-knob { left: 40.774%; top: 0.595%; width: 18.452%; height: 18.452%; border-radius: 50%; background: radial-gradient(circle closest-side, #111114 calc(45.161% - 0.4px), rgb(var(--lg-ink)) calc(45.161% + 0.4px)); }
 .lg-min, .lg-hour { left: 46.726%; top: 51.488%; height: 6.548%; border-radius: 99px; }
 .lg-min { width: 35.119%; transform-origin: 9.322% 50%; transform: rotate(-30deg); background: linear-gradient(90deg, rgb(var(--lg-ink)) 9.322%, rgb(var(--lg-ink) / 0.92) 33.729%, rgb(var(--lg-ink) / 0.513) 90.678%); }
 .lg-hour { width: 26.786%; transform-origin: 12.222% 50%; transform: rotate(215deg); background: rgb(var(--lg-ink)); }
@@ -1972,7 +1980,7 @@ body { overflow: hidden; }
 .wel-mark .logo { width: 100%; height: 100%; }
 
 .wel-kicker { margin: 0; font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--label-3); }
-.wel-title { margin: 2px 0 0; font-size: clamp(44px, 7vw, 64px); font-weight: 800; line-height: 1.05; letter-spacing: -0.045em; }
+.wel-title { margin: 4px 0 2px; font-size: clamp(34px, 5.2vw, 48px); line-height: 1.15; }
 .wel-title span { display: inline-block; }
 .wel-tagline { margin: 4px 0 0; font-size: 15px; font-weight: 600; letter-spacing: -0.01em; color: var(--label-2); }
 .wel-sub { max-width: 340px; margin: 10px 0 0; font-size: 14px; line-height: 1.5; color: var(--label-2); }
@@ -2013,25 +2021,13 @@ body { overflow: hidden; }
 .wel.leaving { pointer-events: none; }
 
 /* ---------- welcome: the opening (welcome-intro.js) ---------- */
-/* Black with a faint drifting grain, blooms of grain, a light behind the word; WELCOME TO
-   and MEMOIR as on the thumbnail (Unbounded, platinum, grain, a tight glow). The card's
-   kicker, title and logo are where they all land, so the card's own entrance for those
-   is off, and the rest of it waits (--intro). */
-@font-face {
-  font-family: "Memoir Unbounded";
-  src: url("fonts/Unbounded-subset.woff2") format("woff2");
-  font-weight: 200 900;
-  font-display: block;
-}
+/* Black with a faint drifting grain, clouds of grain (canvases with their soft edge drawn
+   in), a light behind the word; WELCOME TO, and MEMOIR as the wordmark (theme.css). The
+   card's kicker, title and logo are where they all land, so the card's own entrance for
+   those is off, and the rest of it waits (--intro). */
 .wi-bg { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; background: radial-gradient(130% 100% at 50% 46%, #0d0d0f, #040405 62%, #000); }
 .wi-grain { position: absolute; inset: -80px; background-size: 160px 160px; opacity: 0; }
-.wi-bloom {
-  position: absolute;
-  border-radius: 50%;
-  background-size: 160px 160px, 100% 100%;
-  -webkit-mask-image: radial-gradient(closest-side, #000 22%, rgba(0, 0, 0, 0.45) 62%, transparent);
-  opacity: 0;
-}
+.wi-bloom { position: absolute; opacity: 0; }
 .wi-light { position: absolute; background: radial-gradient(closest-side, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.04) 45%, transparent); opacity: 0; }
 .wi-type {
   --wi-f: min(14.2vw, 27vh, 214px);
@@ -2055,23 +2051,8 @@ body { overflow: hidden; }
   color: rgba(216, 216, 221, 0.9);
   white-space: nowrap;
 }
-.wi-word {
-  margin: 0;
-  font-size: var(--wi-f);
-  font-weight: 900;
-  line-height: 1.2;
-  white-space: nowrap;
-  filter: drop-shadow(0 0 0.045em rgba(255, 255, 255, 0.3)) drop-shadow(0 0 0.16em rgba(255, 255, 255, 0.1));
-}
+.wi-word { margin: 0; font-size: var(--wi-f); line-height: 1.2; white-space: nowrap; }
 .wi-kicker span, .wi-word span { display: inline-block; opacity: 0; }
-.wi-word span {
-  text-align: center;
-  color: transparent;
-  background-repeat: repeat, no-repeat, no-repeat;
-  background-blend-mode: soft-light, normal, normal;
-  -webkit-background-clip: text;
-  background-clip: text;
-}
 .wel.intro .wel-mark, .wel.intro .wel-title span, .wel.intro .wel-kicker { animation: none; }
 .wel.intro .wel-mark .logo::before { opacity: 0; }
 .wel.intro.on .wel-in { animation-delay: calc(var(--d) * 1ms + var(--intro) - 100ms); }

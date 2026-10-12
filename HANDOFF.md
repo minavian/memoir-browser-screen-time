@@ -28,7 +28,8 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
   refresh-rate independent, reduced-motion aware. List sliders use it too; dragging and resets stay immediate.
 - `shared/context-menu.js` — themed right-click menus shared by report/popup, contextual site/text actions,
   keyboard navigation, viewport clamping, and transform/opacity entrances. Styles live in `shared/theme.css`.
-- `shared/theme.css` — tokens per theme, buttons, switches, cursor styles. `shared/theme-boot.js` sets theme/cursor before paint.
+- `shared/theme.css` — tokens per theme, buttons, switches, cursor styles, the MEMOIR wordmark (`shared/grain.png` is its
+  grain tile). `shared/theme-boot.js` sets theme/cursor before paint.
 - `shared/cursor.js` — custom animated cursor (toggle in Settings).
 - `shared/goal.js` / `goal.css` — limit ring and circular limit picker.
 - `shared/dust.js`, `shared/dust-engine.js`, `shared/dust-worker.js` — the dust that hides the Never track
@@ -329,17 +330,30 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
 
 - The opening (5.1.5, `welcome-intro.js`): before the welcome card, on black: grain blooms pop up at random
   places (a fixed seed, `plan()`) and drift off slowly, each with a soft crackle over a low hiss; WELCOME TO
-  and a big MEMOIR (the commercial thumbnail's: Unbounded 900, platinum gradient per letter, grain, a tight
-  glow, a light drifting in behind) arrive letter by letter from left to right; the O thins (wght 900 to 200)
-  into the clock, which sets itself in its place; at 5 s it all becomes the card: each letter flies onto its
-  own in the title (furthest first, crossing over halfway), WELCOME TO onto the kicker, the clock (the card's
-  own `.wel-mark`, moved onto the O from the start) into its spot as its disc fades in, and the black lifts
-  off the page. Everything is scheduled at once (WAAPI, transform/opacity; the O's weight runs after the
-  page has rendered), the card's own entrance waits for it (`--intro`), and a click or key skips ahead to
+  and a big MEMOIR (the wordmark, a slice of the platinum per letter, a light drifting in behind) arrive
+  letter by letter from left to right; the clock takes the O's place as heavy as the O (playLogo `thick`:
+  ring inner edge 0.4 of its radius, Unbounded 900's O) and slowly thins to its own weight as it sets itself,
+  hands growing with it, the knob landing early over the seam; at 5 s it all becomes the card: each letter
+  flies onto its own in the card's MEMOIR (the same face, so it lands exactly; furthest first), which then
+  takes over, WELCOME TO onto the kicker, the clock (the card's own `.wel-mark`, moved onto the O from the
+  start) into its spot as its disc fades in, and the black lifts off the page. Everything is scheduled at
+  once, transform and opacity on layers painted once: the grain clouds are canvases with their soft edge
+  drawn in (no masks), the glow is a text-shadow (no filters), the ring thins by scaling a holed disc under a
+  round clip (`.logo.thick`, only while it thins; the plain masked band otherwise, cheaper). On one CPU core
+  the clock/morph part runs a little under the old one; on two it's ~115 fps either way (the owner plans a
+  performance setting). The card's own entrance waits for it (`--intro`), and a click or key skips ahead to
   the card (`intro.skip`, the click doesn't reach the buttons). `.wel.landed` marks the end. Sound: a fresh
   tab can't start audio before a click, so it plays from an offscreen document (`offscreen` permission,
   reason AUDIO_PLAYBACK) scheduled from the opening's start time; the score is synthesised (Web Audio, no
   files) from the same plan. Reduced motion: no opening, the card as before.
+- The MEMOIR wordmark (5.1.5, `shared/theme.css`): wherever the name shows (popup header, welcome title and pin
+  hint, tour, right-click menu title) it's the trailer's: Unbounded 900 capitals (`fonts/Unbounded-subset.woff2`,
+  preloaded), platinum on Dark and graphite on Light (`--wm-fill`), a fine grain (soft-light tile), a tight glow
+  (`--wm-glow`). Painted once and never again: the glow is the word's own text-shadow (its text is transparent),
+  the platinum a copy on top (`::after`, background-clip text), no filters. `<span class="wordmark">Memoir</span>`;
+  `.wm-in` sizes it for a line of text; a slice (one letter) sets `data-t` and `--wm-w`/`--wm-x`. In Settings it's
+  plain on purpose (owner's rule): `.wordmark-plain`, Unbounded capitals only (footer, import popover, the toasts
+  via `brand()`). Notifications and window titles stay plain text.
 - The clock logo (5.1.5): the hourglass is gone; the logo is a clock at 10:10 with no tile behind it. The
   ring fades clockwise from 12 in opacity (not grey shades), so it fades into any background; a knob at 12
   covers the seam, with a hole right through. Masters: `M:\Code\MEMOIR\MEMOIR's logos` (`Memoir logo.svg`

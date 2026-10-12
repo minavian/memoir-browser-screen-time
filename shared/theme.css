@@ -306,6 +306,64 @@ button, input { font: inherit; color: inherit; letter-spacing: inherit; }
 .num { font-variant-numeric: tabular-nums; }
 .display { font-family: var(--font-display); letter-spacing: -0.022em; }
 
+/* ---------- the MEMOIR wordmark ---------- */
+/* As in the trailer: Unbounded at its heaviest, platinum (graphite on Light), a fine
+   grain, a tight glow. It's all painted once and never again: the grain is a small tile,
+   the glow a text-shadow on the word itself, the platinum a copy on top (::after), no
+   filters, so it costs nothing on a slow device. <span class="wordmark">Memoir</span>
+   reads "Memoir"; a slice of the word (one letter, for animation) sets data-t to its
+   letters and --wm-w/--wm-x to the whole word's width and its own offset in it.
+   In Settings it's plain: .wordmark-plain, the face and capitals only. */
+@font-face {
+  font-family: "Memoir Unbounded";
+  src: url("../fonts/Unbounded-subset.woff2") format("woff2");
+  font-weight: 200 900;
+  font-display: block;
+}
+:root, [data-wave="light"] {
+  --wm-fill: linear-gradient(76deg, #5e5e64, #2c2c30 30%, #0e0e10 55%, #232327 78%, #0e0e10);
+  --wm-glow: 0 0.02em 0.06em rgba(0, 0, 0, 0.14);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --wm-fill: linear-gradient(76deg, #a4a4ac, #dedee3 30%, #fff 55%, #e9e9ee 78%, #fff);
+    --wm-glow: 0 0 0.045em rgba(255, 255, 255, 0.32), 0 0 0.16em rgba(255, 255, 255, 0.12);
+  }
+}
+:root[data-theme="dark"], [data-wave="dark"], .wm-dark {
+  --wm-fill: linear-gradient(76deg, #a4a4ac, #dedee3 30%, #fff 55%, #e9e9ee 78%, #fff);
+  --wm-glow: 0 0 0.045em rgba(255, 255, 255, 0.32), 0 0 0.16em rgba(255, 255, 255, 0.12);
+}
+.wordmark {
+  position: relative;
+  display: inline-block;
+  font-family: "Memoir Unbounded", var(--font-display);
+  font-weight: 900;
+  font-style: normal;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: transparent;
+  text-shadow: var(--wm-glow);
+}
+.wordmark::after {
+  content: "MEMOIR" / "";
+  position: absolute;
+  inset: 0;
+  text-shadow: none;
+  background:
+    url("grain.png") var(--wm-x, 0px) 0 / 96px 96px,
+    linear-gradient(rgba(255, 255, 255, 0.1), transparent 45%, rgba(0, 0, 0, 0.1) 80%, rgba(255, 255, 255, 0.04)),
+    var(--wm-fill) var(--wm-x, 0px) 0 / var(--wm-w, 100%) 100% no-repeat;
+  background-blend-mode: soft-light, normal, normal;
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+.wordmark[data-t]::after { content: attr(data-t) / ""; }
+/* in a line of text, so its capitals sit with the words around them */
+.wm-in { font-size: 0.86em; }
+.wordmark-plain { font-family: "Memoir Unbounded", var(--font-display); font-weight: 600; letter-spacing: 0.01em; text-transform: uppercase; }
+
 /* ---------- theme change: waves (theme.js setThemePref) ---------- */
 /* A block a wave has passed carries that wave's theme (blocks switch as the middle of a
    wave's soft edge passes them); its text colour is the theme's label colour, as the

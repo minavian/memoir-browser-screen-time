@@ -45,17 +45,16 @@ export function createWelcome() {
   root.setAttribute('aria-modal', 'true');
   root.setAttribute('aria-labelledby', 'wel-title');
   root.setAttribute('aria-describedby', 'wel-sub');
-  const letters = [...'Memoir'].map((ch, i) => `<span style="--d:${260 + i * 55}">${ch}</span>`).join('');
   root.innerHTML = `
     <div class="wel-dim"></div>
     <div class="wel-pin" aria-hidden="true">
       <svg class="wel-arrow" viewBox="0 0 24 56"><path d="M12 52V5M4.5 12.5 12 5l7.5 7.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      <p class="wel-pin-card"><b>Keep it in reach</b><span>Click ${PUZZLE} in your toolbar, then ${PIN} next to Memoir.</span></p>
+      <p class="wel-pin-card"><b>Keep it in reach</b><span>Click ${PUZZLE} in your toolbar, then ${PIN} next to <span class="wordmark wm-in">Memoir</span>.</span></p>
     </div>
     <div class="wel-card">
       <div class="wel-mark">${LOGO}</div>
       <p class="wel-kicker wel-in" style="--d:180">Welcome to</p>
-      <h1 class="wel-title display" id="wel-title" aria-label="Memoir">${letters}</h1>
+      <h1 class="wel-title" id="wel-title"><span class="wordmark" style="--d:260">Memoir</span></h1>
       <p class="wel-tagline wel-in" style="--d:600">Browser Screen Time</p>
       <p class="wel-sub wel-in" id="wel-sub" style="--d:700">This extension tracks your browsing time and summarizes it.</p>
       <p class="wel-ask wel-in" style="--d:860">Do you want to go through a tutorial before we start?</p>
