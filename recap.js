@@ -3189,8 +3189,8 @@ function renderExcluded(added = null) {
     // a site you just typed: its words fly from the field into the new chip, still
     // readable, and turn to dust once they've landed; every other one is dust from the start
     const bird = animate ? exFlights.get(li.dataset.site) : null;
-    if (bird) li.classList.add('shown');
-    dust.attach(chipDust(li), { shown: !!bird, hole: 13 });
+    if (bird) li.classList.add('shown', 'landing');
+    dust.attach(chipDust(li), { shown: !!bird });
     if (!bird) continue;
     exFlights.delete(li.dataset.site);
     flyIntoChip(bird, li);
@@ -3203,6 +3203,7 @@ function renderExcluded(added = null) {
 // blows the dust away from where it landed while the name clears up from there. A click
 // on a shown name (or closing Settings) hides it again.
 const HIDDEN_SITE = 'A hidden site. Press twice to show it';
+const REVEAL_GUARD_MS = 500; // after showing a site, its remove button (and hiding it) wait this long
 const dust = createDust();
 let dustNap = 0;
 const ARM_MS = 2600;
@@ -3228,8 +3229,9 @@ function armChip(li, e) {
 }
 function revealChip(li, e) {
   disarmChip(li);
-  li.classList.remove('hiding');
+  li.classList.remove('hiding', 'landing');
   li.classList.add('shown');
+  li._shownAt = performance.now();
   li.querySelector('.ex-name').setAttribute('aria-label', `${li.dataset.site}. Press to hide it again`);
   dust.reveal(chipDust(li), e);
   if (reducedMotion()) return;
@@ -3250,7 +3252,7 @@ function revealChip(li, e) {
 function concealChip(li, { instant = false } = {}) {
   disarmChip(li);
   if (!li.classList.contains('shown')) return;
-  li.classList.remove('shown');
+  li.classList.remove('shown', 'landing');
   li.querySelector('.ex-name').setAttribute('aria-label', HIDDEN_SITE);
   const fast = instant || reducedMotion();
   dust.conceal(chipDust(li), fast);
@@ -3944,24 +3946,27 @@ function wire() {
     if (name) {
       const li = name.closest('.ex-chip');
       if (li.classList.contains('leaving')) return;
-      if (li.classList.contains('shown')) concealChip(li);
-      else if (li._armTimer) revealChip(li, e);
+      if (li.classList.contains('shown')) {
+        // a third tap straight after showing it doesn't hide it again
+        if (performance.now() - (li._shownAt || 0) >= REVEAL_GUARD_MS) concealChip(li);
+      } else if (li._armTimer) revealChip(li, e);
       else armChip(li, e);
       return;
     }
+    // The remove button is under the dust with the name: it's there only once the site is
+    // shown, and only half a second after that (CSS), so a tap too many can't remove it.
     const x = e.target.closest('.x');
     if (!x) return;
     const li = x.closest('.ex-chip');
-    if (li.classList.contains('leaving')) return;
+    if (li.classList.contains('leaving') || !li.classList.contains('shown') || li.classList.contains('landing')) return;
+    if (performance.now() - (li._shownAt || 0) < REVEAL_GUARD_MS) return;
     const site = li.dataset.site;
-    // a hidden site stays unnamed, even on its way out
-    const named = li.classList.contains('shown');
     li.classList.add('leaving');
     disarmChip(li);
     if (reducedMotion()) { dropChip(li); li.remove(); }
     else foldChip(li);
     state.settings = await updateSettings({ excluded: state.settings.excluded.filter(s => s !== site) });
-    toast(named ? `${site} will be tracked again` : 'That site will be tracked again');
+    toast(`${site} will be tracked again`);
   });
   // pointing at a hidden site stirs its dust a little; leaving lets it settle (and the
   // "click again" hint goes with the pointer)

@@ -107,8 +107,9 @@ Open the gear in the top-right corner of the report.
 - **Never track:** sites you add are still timed and still count toward your
   totals and limit, but only as *Private*. Their names are never saved or shown,
   and their past time is made Private too. In Settings each one stays hidden under
-  a shimmer of dust: click it twice to see it (a click hides it again, and so does
-  closing Settings). The newest is first.
+  a shimmer of dust, its remove button too: click it twice to see it, and the ×
+  appears half a second later (a click hides it again, and so does closing
+  Settings). The newest is first.
 - **Weekly recap reminder:** the day and time you get your recap notification.
 - **Daily limit:** once committed, a limit can only be undone here, after a
   long run of increasingly pointed questions. They never come in the same order

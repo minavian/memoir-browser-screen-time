@@ -2,9 +2,8 @@
 // Each speck fades in and out on its own clock, so the cloud shimmers without moving as a
 // whole; stirring it (hover, a first click) makes it livelier. Revealing blows the specks
 // away from a point, a ring at a time, while the word shows through from there; hiding
-// lets a fresh cloud settle back in. The cloud fills a pill (it thins out towards the
-// pill's rounded edge, so it has no hard border) and clears a little round the pill's own
-// button (hole: its distance from the right end), so that stays readable.
+// lets a fresh cloud settle back in. The cloud fills a pill and thins out towards the
+// pill's rounded edge, so it has no hard border.
 //
 // Fields are drawn by a Runner: in a worker (dust-worker.js) on OffscreenCanvases, so none
 // of this costs the page a thing, or on this thread where that isn't possible. A field
@@ -33,9 +32,8 @@ function getSprite() {
 }
 
 export class Dust {
-  constructor(canvas, { w = 1, h = 1, dpr = 1, shown = false, still = false, hole = 0 } = {}) {
+  constructor(canvas, { w = 1, h = 1, dpr = 1, shown = false, still = false } = {}) {
     this.canvas = canvas;
-    this.hole = hole;
     this.ctx = canvas.getContext('2d');
     this.still = still;
     this.heat = 1;        // how lively the specks are (eases towards heatTo)
@@ -199,9 +197,7 @@ export class Dust {
       // thinner towards the pill's edge, so the cloud has no border
       const R = h / 2;
       const inner = R - Math.hypot(x - Math.max(R, Math.min(w - R, x)), y - R);
-      let edge = Math.min(1, (inner - this.size[i] * 0.9) / EDGE);
-      // and clear round the pill's button
-      if (this.hole) edge = Math.min(edge, (Math.hypot(x - (w - this.hole), y - R) - 8 - this.size[i]) / 6);
+      const edge = Math.min(1, (inner - this.size[i] * 0.9) / EDGE);
       const a = this.amax[i] * life * this.gone[i] * fade * Math.max(0, edge);
       if (a < 0.015) continue;
       const r = this.size[i] * dpr * (this.hit[i] ? 1.25 : 1);

@@ -65,8 +65,7 @@ export function createDust() {
 
   return {
     // shown: the word starts out visible (it's about to be hidden, as it lands)
-    // hole: how far from the right end the cloud clears round a button
-    attach(canvas, { shown = false, hole = 0 } = {}) {
+    attach(canvas, { shown = false } = {}) {
       if (ids.has(canvas)) return;
       const id = nextId++;
       ids.set(canvas, id);
@@ -75,7 +74,7 @@ export function createDust() {
       const h = canvas.offsetHeight || 1;
       canvas._dustSize = `${w}x${h}@${devicePixelRatio}`;
       const target = offscreen ? canvas.transferControlToOffscreen() : canvas;
-      send({ type: 'add', id, canvas: target, w, h, dpr: devicePixelRatio, shown, hole, still: still() }, offscreen ? [target] : []);
+      send({ type: 'add', id, canvas: target, w, h, dpr: devicePixelRatio, shown, still: still() }, offscreen ? [target] : []);
       sizes.observe(canvas);
       seen.observe(canvas);
     },

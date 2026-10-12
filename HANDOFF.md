@@ -308,11 +308,13 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
   disliked it (it sat far from the light); keep the card next to the light. Highlights starts on the week.
 
 - Never track, hidden (2026-10-12): the sites under Never track are hidden under dust, a shimmer of fine
-  specks over a soft haze, filling the whole pill (thinning towards its rounded edge, clear round the ×).
+  specks over a soft haze, filling the whole pill, the × too (thinning towards its rounded edge).
   One click stirs it and asks "Click again to show it" (2.6 s); the second blows the dust away from where it
   landed while the name clears up from there (clip-path circle + unblur). A click on a shown name, or closing
-  Settings, hides it again (fresh dust settles in). Enter twice works too. Removing a hidden site says
-  "That site will be tracked again" (no name). The newest site is first; a typed site lifts off the field the
+  Settings, hides it again (fresh dust settles in). Enter twice works too. The × is hidden with the name
+  (visibility, its place kept): it appears only on a shown site, 0.5 s after the reveal, so a triple tap
+  can't remove the site; clicks in that half second neither remove nor re-hide it (`REVEAL_GUARD_MS`).
+  A site that's just landed (`.landing`) shows no × before it turns to dust. The newest site is first; a typed site lifts off the field the
   moment you add it (the field empties under it in the same frame, `liftTyped`), glides into the first slot
   (the others make room, FLIP) and lands exactly on the chip's name, then turns to dust after a beat.
   Drawing: `shared/dust-engine.js` (`Dust` per pill, `Runner` loop) runs in a worker (`dust-worker.js`) on
