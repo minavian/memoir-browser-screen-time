@@ -1931,7 +1931,7 @@ body { overflow: hidden; }
 .wel.on .wel-dim { opacity: 1; }
 
 /* the card: its surface is a layer of its own (::before), so it can hand itself
-   over to the tour card while the hourglass inside flies off on its own */
+   over to the tour card while the clock inside flies off on its own */
 .wel-card {
   position: relative;
   display: flex;
@@ -1965,7 +1965,7 @@ body { overflow: hidden; }
 @keyframes wel-rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
 @keyframes wel-letter { from { opacity: 0; transform: translateY(0.45em) scale(0.92); } to { opacity: 1; transform: none; } }
 
-/* the hourglass: pops up, then pours and turns over, again and again */
+/* the clock: pops up and sets itself (or, after the opening, it's the O that became it) */
 .wel-mark { position: relative; z-index: 2; width: 96px; height: 96px; margin-bottom: 18px; }
 .wel.on .wel-mark { animation: wel-pop 0.9s var(--pop) both; }
 @keyframes wel-pop { from { opacity: 0; transform: scale(0.5) rotate(-8deg); } to { opacity: 1; transform: none; } }
@@ -2011,6 +2011,73 @@ body { overflow: hidden; }
 
 /* leaving: the page underneath takes clicks as soon as it starts */
 .wel.leaving { pointer-events: none; }
+
+/* ---------- welcome: the opening (welcome-intro.js) ---------- */
+/* Black with a faint drifting grain, blooms of grain, a light behind the word; WELCOME TO
+   and MEMOIR as on the thumbnail (Unbounded, platinum, grain, a tight glow). The card's
+   kicker, title and logo are where they all land, so the card's own entrance for those
+   is off, and the rest of it waits (--intro). */
+@font-face {
+  font-family: "Memoir Unbounded";
+  src: url("fonts/Unbounded-subset.woff2") format("woff2");
+  font-weight: 200 900;
+  font-display: block;
+}
+.wi-bg { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; background: radial-gradient(130% 100% at 50% 46%, #0d0d0f, #040405 62%, #000); }
+.wi-grain { position: absolute; inset: -80px; background-size: 160px 160px; opacity: 0; }
+.wi-bloom {
+  position: absolute;
+  border-radius: 50%;
+  background-size: 160px 160px, 100% 100%;
+  -webkit-mask-image: radial-gradient(closest-side, #000 22%, rgba(0, 0, 0, 0.45) 62%, transparent);
+  opacity: 0;
+}
+.wi-light { position: absolute; background: radial-gradient(closest-side, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.04) 45%, transparent); opacity: 0; }
+.wi-type {
+  --wi-f: min(14.2vw, 27vh, 214px);
+  position: fixed;
+  inset: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding-bottom: 5vh;
+  pointer-events: none;
+  font-family: "Memoir Unbounded", var(--font-display);
+}
+.wi-kicker {
+  margin: 0 0 calc(var(--wi-f) * 0.16);
+  padding-left: 0.34em; /* balances the spacing after the last letter */
+  font-size: calc(var(--wi-f) * 0.115);
+  font-weight: 500;
+  letter-spacing: 0.34em;
+  color: rgba(216, 216, 221, 0.9);
+  white-space: nowrap;
+}
+.wi-word {
+  margin: 0;
+  font-size: var(--wi-f);
+  font-weight: 900;
+  line-height: 1.2;
+  white-space: nowrap;
+  filter: drop-shadow(0 0 0.045em rgba(255, 255, 255, 0.3)) drop-shadow(0 0 0.16em rgba(255, 255, 255, 0.1));
+}
+.wi-kicker span, .wi-word span { display: inline-block; opacity: 0; }
+.wi-word span {
+  text-align: center;
+  color: transparent;
+  background-repeat: repeat, no-repeat, no-repeat;
+  background-blend-mode: soft-light, normal, normal;
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+.wel.intro .wel-mark, .wel.intro .wel-title span, .wel.intro .wel-kicker { animation: none; }
+.wel.intro .wel-mark .logo::before { opacity: 0; }
+.wel.intro.on .wel-in { animation-delay: calc(var(--d) * 1ms + var(--intro) - 100ms); }
+.wel.intro.on .wel-card::before { animation-delay: calc(var(--intro) + 320ms); }
+.wel.intro.on .wel-pin { animation-delay: calc(var(--intro) + 1.4s); }
+.wel.intro.on .wel-arrow { animation-delay: calc(var(--intro) + 2.4s); }
 
 @media (max-width: 760px) {
   .wel-pin { display: none; }

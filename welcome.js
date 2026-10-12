@@ -8,6 +8,8 @@
 
 import { reducedMotion, morph, dropShell, EASE_OUT, EASE_IN_OUT } from './shared/fx.js';
 import { LOGO, playLogo } from './shared/logo.js';
+import { createIntro } from './welcome-intro.js';
+import { TIMES } from './shared/intro-score.js';
 
 // the card reshapes from rest and settles softly (it's still when the words have gone)
 const RESHAPE = 'cubic-bezier(0.45, 0, 0.15, 1)';
@@ -65,6 +67,8 @@ export function createWelcome() {
       <p class="wel-by wel-in" style="--d:1200">Made by Mina Vian</p>
     </div>`;
   document.body.appendChild(root);
+  // the opening (welcome-intro.js): its black goes up now, before the page draws anything
+  const intro = reducedMotion() ? null : createIntro(root);
 
   /**
    * Plays the welcome in, waits for a choice, then leaves.
@@ -87,15 +91,34 @@ export function createWelcome() {
       const mark = root.querySelector('.wel-mark');
       let leaving = false;
 
-      requestAnimationFrame(() => requestAnimationFrame(() => {
+      requestAnimationFrame(() => requestAnimationFrame(async () => {
+        // with the opening, the card's own entrance waits for it (--intro, recap.css)
+        if (intro) await intro.play({ card, mark });
         root.classList.add('on');
-        playLogo(mark.querySelector('.logo'), { delay: 120 });
-        setTimeout(() => { if (!leaving) go.focus({ preventScroll: true }); }, reducedMotion() ? 0 : 1300);
+        if (!intro) playLogo(mark.querySelector('.logo'), { delay: 120 });
+        setTimeout(() => { if (!leaving) go.focus({ preventScroll: true }); }, reducedMotion() ? 0 : (intro ? TIMES.morph : 0) + 1300);
         setTimeout(() => { if (!leaving) onShown(); }, reducedMotion() ? 0 : 120);
       }));
 
+      // during the opening a click or a key skips ahead to the card, and does nothing else
+      let swallow = false;
+      root.addEventListener('pointerdown', e => {
+        if (!intro?.busy) return;
+        e.preventDefault();
+        e.stopPropagation();
+        swallow = true;
+        intro.skip();
+      }, true);
+      root.addEventListener('click', e => {
+        if (!swallow && !intro?.busy) return;
+        swallow = false;
+        e.preventDefault();
+        e.stopPropagation();
+      }, true);
+
       root.addEventListener('keydown', e => {
         e.stopPropagation();
+        if (intro?.busy) { e.preventDefault(); intro.skip(); return; }
         if (e.key === 'Escape') { e.preventDefault(); leave('skip'); }
         else if (e.key === 'Tab') {
           e.preventDefault();

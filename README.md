@@ -17,7 +17,8 @@ The Windows app is in **Windows Memoir**. Open `Memoir.exe` there; see
 3. Click **Load unpacked** and choose the `memoir-browser-screen-time` folder.
 4. Pin it from the puzzle-piece menu in the toolbar.
 
-Right after installing, the report opens with a short welcome (and a hint for
+Right after installing, the report opens with a short opening (MEMOIR on black,
+with a few soft sounds; a click or a key skips it), then a welcome (and a hint for
 pinning Memoir to the toolbar), then a hands-on tour shows you around on a
 sample week, so nothing of yours is touched. Whatever is lit up can be clicked:
 each step suggests something to try, and its dot turns green once you have.

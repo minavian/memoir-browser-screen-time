@@ -38,7 +38,9 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
 - `popup.*` — 380×600 "today" popup.
 - `recap.html/css/js` — the weekly report (main orchestrator, ~3000 lines).
 - `trend.js` — Trend over time line chart. `tour.js` — guided tutorial. `gauntlet.js` — "reset the limit" questions.
-- `welcome.js` — first-run welcome screen (styles at the end of `recap.css`).
+- `welcome.js` — first-run welcome screen (styles at the end of `recap.css`). `welcome-intro.js` — its opening;
+  `shared/intro-score.js` — the opening's timing, bloom plan and synthesised sound; `sound.html/js` — the
+  offscreen page the sound plays from; `fonts/Unbounded-subset.woff2` — the thumbnail's face, MEMOIR/WELCOME TO only.
 - `fonts/` — Inter variable subset (OFL) used by the Clear-all label.
 
 ### Data model (chrome.storage.local)
@@ -325,6 +327,19 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
   or the tab is hidden. Specks are white; `--dust-ink` (a CSS filter token, recap.css) tints them per theme.
   Reduced motion: a still frame, instant reveal/hide.
 
+- The opening (5.1.5, `welcome-intro.js`): before the welcome card, on black: grain blooms pop up at random
+  places (a fixed seed, `plan()`) and drift off slowly, each with a soft crackle over a low hiss; WELCOME TO
+  and a big MEMOIR (the commercial thumbnail's: Unbounded 900, platinum gradient per letter, grain, a tight
+  glow, a light drifting in behind) arrive letter by letter from left to right; the O thins (wght 900 to 200)
+  into the clock, which sets itself in its place; at 5 s it all becomes the card: each letter flies onto its
+  own in the title (furthest first, crossing over halfway), WELCOME TO onto the kicker, the clock (the card's
+  own `.wel-mark`, moved onto the O from the start) into its spot as its disc fades in, and the black lifts
+  off the page. Everything is scheduled at once (WAAPI, transform/opacity; the O's weight runs after the
+  page has rendered), the card's own entrance waits for it (`--intro`), and a click or key skips ahead to
+  the card (`intro.skip`, the click doesn't reach the buttons). `.wel.landed` marks the end. Sound: a fresh
+  tab can't start audio before a click, so it plays from an offscreen document (`offscreen` permission,
+  reason AUDIO_PLAYBACK) scheduled from the opening's start time; the score is synthesised (Web Audio, no
+  files) from the same plan. Reduced motion: no opening, the card as before.
 - The clock logo (5.1.5): the hourglass is gone; the logo is a clock at 10:10 with no tile behind it. The
   ring fades clockwise from 12 in opacity (not grey shades), so it fades into any background; a knob at 12
   covers the seam, with a hole right through. Masters: `M:\Code\MEMOIR\MEMOIR's logos` (`Memoir logo.svg`
