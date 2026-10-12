@@ -34,8 +34,8 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
 - `shared/goal.js` / `goal.css` — limit ring and circular limit picker.
 - `shared/dust.js`, `shared/dust-engine.js`, `shared/dust-worker.js` — the dust that hides the Never track
   sites (see "Never track, hidden" below).
-- `shared/logo.js` — the clock logo's markup and entrance (`playLogo`); `shared/toolbar-icon.js` — the toolbar
-  icon that follows the browser's light/dark look (see "The clock logo" below).
+- `shared/logo.js` — the clock logo's markup, its entrance (`playLogo`) and the live clocks (see "The clock logo"
+  below).
 - `popup.*` — 380×600 "today" popup.
 - `recap.html/css/js` — the weekly report (main orchestrator, ~3000 lines).
 - `trend.js` — Trend over time line chart. `tour.js` — guided tutorial. `gauntlet.js` — "reset the limit" questions.
@@ -45,7 +45,7 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
 
 ### Data model (chrome.storage.local)
 - `day:YYYY-MM-DD` = `{ s:{domain:ms}, h:[24], hs:{hour:{domain:ms}}, ti:{domain:{title:ms}} }`; excluded sites stored as `~private`.
-- `origins`, `categories` (overrides), `goal:{history:[{from, limit|null}]}`, `goalNotify`, `onboarded`, `toolbarLook`,
+- `origins`, `categories` (overrides), `goal:{history:[{from, limit|null}]}`, `goalNotify`, `onboarded`,
   `settings:{paused, weeklyReminder, reminderDay, reminderMinutes, titles, excluded, retention(0=forever)}`.
 
 ## Features in place (all working, tested)
@@ -329,7 +329,9 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
 
 - The opening (5.1.5, `welcome-intro.js`): before the welcome card, on black with a light drifting in behind, WELCOME TO
   and a big MEMOIR (the wordmark, a slice of the platinum per letter) arrive letter by letter from left to right; the O
-  thins (wght 900 to 200) and gives way to the clock, which sets itself in its place (playLogo); at 3.8 s it all becomes
+  holds a beat on the whole word, then thins (wght 900 to 200) and gives way to the clock, which sets itself in its place
+  (playLogo `gentle`: the ring fades in at the O's size, the knob settles without a bounce; the owner found the bounce
+  a jump); at 4.8 s it all becomes
   the card: the letters fly one after another, left to right, onto their own in the card's MEMOIR (the same face, so
   they land exactly), the clock in the O's turn into the card's logo (the card's own `.wel-mark`, moved onto the O
   from the start) as its disc fades in, WELCOME TO onto the kicker; once the R has landed the card's MEMOIR takes over,
@@ -354,10 +356,13 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
   there, not a square), a conic-gradient ring masked to a band. Entrance (`playLogo`, compositor only): the
   disc pops in, the band grows in as its fade turns into place, the hands sweep from 9:00 round to 10:10, and
   the knob pops onto the seam (its middle is the disc's black). The header clock (40 px with its disc) plays it
-  with the page, and so does the "No activity yet" card's (56 px, in place of the old hourglass) as it comes in; on a first visit it's held (`.hold`) until the welcome's clock flies into it. Toolbar: `icons/iconN.png`
-  is the ink clock (light toolbars, the Web Store, the manifest default), `iconN-on-dark.png` the white one;
-  the popup and report set the one for the browser's look (`prefers-color-scheme`) and store it as
-  `toolbarLook`, which the worker restores at start-up and uses for notification icons. Small sizes are drawn
+  with the page, and so does the "No activity yet" card's (56 px, in place of the old hourglass) as it comes in;
+  on a first visit it's held (`.hold`) until the welcome's clock flies into it. Those two are live (`live: true`):
+  their hands sweep to the current time and keep it, and the knob (on its own layer, `.lg-sec`) goes round the ring
+  once a minute with the ring's fade turning with it; compositor animations (`rotate`), set right again once a
+  minute and when the page is shown; reduced motion: the hands are set, nothing turns. The welcome's clock stays
+  at 10:10. Icons (toolbar, tab, store, notifications): `icons/iconN.png`, the white clock on the black disc, one
+  set for light and dark toolbars (the owner wanted the black behind it, as on the site); small sizes are drawn
   with thicker strokes (16 px has no hole in the knob).
 
 ## Possible next step

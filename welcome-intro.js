@@ -17,9 +17,9 @@ export const TIMES = {
   light: 250,     // the light behind the word starts drifting in
   kicker: 300,    // WELCOME TO, letter by letter
   word: 600,      // MEMOIR, the same
-  thin: 2300,     // the O thins out…
-  clock: 2400,    // …into the clock, which sets itself (shared/logo.js)
-  morph: 3800,    // everything turns into the card…
+  thin: 3300,     // after a beat on the whole word, the O thins out…
+  clock: 3400,    // …into the clock, which sets itself (shared/logo.js)
+  morph: 4800,    // everything turns into the card…
   step: 75,       // …a letter at a time
   morphMs: 950,
 };
@@ -143,7 +143,7 @@ export function createIntro(root) {
     go(O, [{ fontVariationSettings: '"wght" 900' }, { fontVariationSettings: '"wght" 200' }], { duration: 900, delay: T.thin, easing: 'cubic-bezier(0.45, 0, 0.2, 1)' });
     go(O, [{ opacity: 1 }, { opacity: 0 }], { duration: 420, delay: T.thin + 480, fill: 'forwards' });
     const logo = mark.querySelector('.logo');
-    playLogo(logo, { delay: T.clock, face: false });
+    playLogo(logo, { delay: T.clock, face: false, gentle: true });
 
     // into the card, a letter at a time from the left: the clock goes in the O's turn,
     // into the card's logo; when the R has landed, the card's MEMOIR takes over

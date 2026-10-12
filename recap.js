@@ -19,7 +19,6 @@ import { runGauntlet } from './gauntlet.js';
 import { runTour } from './tour.js';
 import { createWelcome } from './welcome.js';
 import { playLogo } from './shared/logo.js';
-import { followToolbarIcon } from './shared/toolbar-icon.js';
 import { initCursor, setCursorPref, cursorEnabled, cursorSmooth, setCursorSmooth } from './shared/cursor.js';
 import { createDust } from './shared/dust.js';
 import { initContextMenu } from './shared/context-menu.js';
@@ -130,8 +129,8 @@ async function init() {
 
   goalRing = createGoalRing($('goal-ring'), { onSet: btn => openGoalPicker(btn) });
   wire();
-  // the header's clock plays its entrance with the page, or (first visit) as the
-  // welcome's clock flies into it
+  // the header's clock (it tells the time) plays its entrance with the page, or (first
+  // visit) as the welcome's clock flies into it
   const headMark = document.querySelector('.head .mark');
   if (welcome) headMark.classList.add('hold');
   // the first render starts every entrance, so it happens right when the page is
@@ -144,7 +143,7 @@ async function init() {
     await render({});
     updateGoal();
     reveal();
-    if (!welcome) playLogo(headMark, { delay: 160 });
+    if (!welcome) playLogo(headMark, { delay: 160, live: true });
   };
   // the board's first render happens once, whichever moment asks for it first
   let shown = null;
@@ -173,7 +172,6 @@ async function init() {
   }
 
   watchTheme(updateAppearanceUI);
-  followToolbarIcon();
   chrome.storage.onChanged.addListener(onStorageChanged);
   document.addEventListener('visibilitychange', applyHiddenChanges);
   setInterval(() => {
@@ -705,10 +703,11 @@ function toggleEmpty(empty) {
       clearLeave([card]);
       card.hidden = false;
       clearLeave(cards());
-      // the clock sets itself as the card comes in (on the first render, once the page shows)
+      // the clock sets itself to the time as the card comes in (on the first render, once
+      // the page shows), then keeps it, the knob going round once a minute
       const logo = card.querySelector('.logo');
       logo.getAnimations({ subtree: true }).forEach(a => a.cancel());
-      playLogo(logo, { delay: still ? 300 : 600 });
+      playLogo(logo, { delay: still ? 300 : 600, live: true });
     };
     if (!still || wasEmpty) { show(); return; }
     Promise.all(cards().map(leave)).then(show);

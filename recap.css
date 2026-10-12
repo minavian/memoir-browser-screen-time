@@ -38,7 +38,10 @@ body { overflow: hidden; }
 .logo { --lg-ink: 255 255 255; position: relative; display: block; aspect-ratio: 1; }
 .logo::before { content: ""; position: absolute; inset: 0; border-radius: 50%; background: #111114; }
 .lg-clock { position: absolute; inset: 8%; }
-.lg-clock > i { position: absolute; display: block; }
+.lg-clock > i, .lg-sec > i { position: absolute; display: block; }
+/* the knob rides on its own layer the size of the clock, so a live clock can turn it
+   round the ring (with the ring's fade) once a minute */
+.lg-sec { inset: 0; }
 .logo.hold::before, .logo.hold .lg-clock > i { opacity: 0; }
 /* The ring: its box (radius 76 about (84, 84) in the 168 box), the clockwise fade masked
    to the band, 59 to 76 (77.632%). */

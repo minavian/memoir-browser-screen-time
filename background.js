@@ -17,7 +17,6 @@ import {
   getSettings, getSession, getDays, startOfWeek, weekDayKeys, addDays, formatDuration,
   getGoalHistory, limitOn, retentionCutoffKey, listDayKeys, withData,
 } from './shared/core.js';
-import { TOOLBAR_ICONS, toolbarLook, restoreToolbarIcon } from './shared/toolbar-icon.js';
 
 chrome.idle.setDetectionInterval(IDLE_SECONDS);
 
@@ -184,8 +183,7 @@ async function checkGoal(now) {
 
 async function notify(id, title, message) {
   try {
-    const iconUrl = TOOLBAR_ICONS[await toolbarLook()][128];
-    await chrome.notifications.create(id, { type: 'basic', iconUrl, title, message, priority: 1 });
+    await chrome.notifications.create(id, { type: 'basic', iconUrl: 'icons/icon128.png', title, message, priority: 1 });
   } catch { /* notifications may be blocked by the system */ }
 }
 
@@ -282,7 +280,6 @@ async function dailyHousekeeping() {
 }
 
 async function boot() {
-  restoreToolbarIcon();
   await ensureAlarms();
   await enqueue(async () => { await pruneOldDays(); await pruneOldTitles(); });
   sync();

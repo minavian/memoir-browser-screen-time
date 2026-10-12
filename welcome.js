@@ -125,14 +125,14 @@ export function createWelcome() {
         const to = markTarget && markTarget.getClientRects().length ? markTarget.getBoundingClientRect() : null;
         mark.classList.add('flying');
         if (!to || !to.width || !from.width) {
-          playLogo(markTarget);
+          playLogo(markTarget, { live: true });
           return mark.animate([{ opacity: 1, transform: 'none', filter: 'blur(0px)' }, { opacity: 0, transform: 'scale(0.7)', filter: 'blur(4px)' }],
             { duration: 420, delay: 80, easing: EASE_OUT, fill: 'forwards' }).finished;
         }
         const dx = to.left + to.width / 2 - (from.left + from.width / 2);
         const dy = to.top + to.height / 2 - (from.top + from.height / 2);
         const s = to.width / from.width;
-        playLogo(markTarget, { delay: 120 + 950 * 0.45, pace: 0.8 });
+        playLogo(markTarget, { delay: 120 + 950 * 0.45, pace: 0.8, live: true });
         return mark.animate([
           { transform: 'none', filter: 'blur(0px)', opacity: 1 },
           { transform: `translate(${dx * 0.35}px, ${dy * 0.5}px) scale(${(1 + s) / 1.6})`, filter: 'blur(0.5px)', opacity: 1, offset: 0.45 },
@@ -150,7 +150,7 @@ export function createWelcome() {
         let handedOver = false;
         const handed = () => { if (!handedOver) { handedOver = true; onHanded(); } };
         if (reducedMotion()) {
-          playLogo(markTarget);
+          playLogo(markTarget, { live: true });
           ready.then(() => { root.remove(); resolve({ choice, handoff: handed }); if (choice === 'tour') setTimeout(handed, 0); });
           return;
         }
