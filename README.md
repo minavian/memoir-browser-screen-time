@@ -81,8 +81,8 @@ notified once more.
   Long lists scroll.
 
 In a day or an hour, **‹ ›** (or the ← → keys) step to the previous or next one.
-**Back** (or Esc) returns one step (from an hour, the day zooms back out of that
-hour's column); the round **«** button goes straight back to the daily chart.
+**Back** (or Esc) returns one step; the round **«** button goes straight back to
+the daily chart.
 
 On smaller windows (under about 1100 px wide) the cards stack and the page
 scrolls. Scrollable pages, Settings, and lists use a long, smooth glide with the

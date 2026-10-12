@@ -1053,7 +1053,9 @@ function ghost(fromEl, toEl, { reverse = false } = {}) {
   const b = toEl.getBoundingClientRect();
   if (!a.width || !b.width || !a.height || !b.height) return;
   let bg = getComputedStyle(fromEl).backgroundColor;
-  if (!bg || bg === 'rgba(0, 0, 0, 0)' || bg === 'transparent') bg = 'var(--fill-2)';
+  // a square of the hour grid has its own colour; other things get a neutral tint
+  const solid = !(!bg || bg === 'rgba(0, 0, 0, 0)' || bg === 'transparent');
+  if (!solid) bg = 'var(--fill-2)';
   const src = reverse ? b : a;
   const dst = reverse ? a : b;
   const shell = document.createElement('div');
@@ -1066,7 +1068,16 @@ function ghost(fromEl, toEl, { reverse = false } = {}) {
   ghostShell = shell;
   const from = `translate(${(src.left - dst.left).toFixed(1)}px, ${(src.top - dst.top).toFixed(1)}px) scale(${(src.width / dst.width).toFixed(4)}, ${(src.height / dst.height).toFixed(4)})`;
   const end = () => { if (ghostShell === shell) ghostShell = null; shell.remove(); };
-  shell.animate([{ transform: from, opacity: 0.9 }, { transform: 'none', opacity: 0 }], { duration: reverse ? VIEW_BACK_MS : VIEW_OPEN_MS, easing: EASE_OUT })
+  if (!reverse) {
+    shell.animate([{ transform: from, opacity: 0.9 }, { transform: 'none', opacity: 0 }], { duration: VIEW_OPEN_MS, easing: EASE_OUT })
+      .finished.then(end, end);
+    return;
+  }
+  // Going back is the opening's mirror: it starts out faint while it's big (never a solid
+  // block over the chart), gathers as it shrinks, and settles into what opened it; on a
+  // square of its own colour it lands solid and simply becomes the square, otherwise it fades.
+  shell.animate([{ transform: from }, { transform: 'none' }], { duration: VIEW_BACK_MS, easing: EASE_OUT });
+  shell.animate([{ opacity: 0 }, { opacity: 0.6, offset: 0.3 }, { opacity: solid ? 0.9 : 0 }], { duration: VIEW_BACK_MS, easing: 'linear', fill: 'forwards' })
     .finished.then(end, end);
 }
 
@@ -1118,14 +1129,16 @@ function goBack() {
   const leaving = state.view;
   const prev = state.viewStack.pop() || { type: 'week' };
   state.view = prev;
-  if (prev.type === 'week') {
-    returnToWeek();
-    // shrink back into what opened it, now on screen again
+  // shrink back into what opened it, once that is on screen again
+  const shrinkBack = () => {
     const target = originElement(leaving.origin);
     if (target) ghost(target, $('chart-card').querySelector('.views'), { reverse: true });
+  };
+  if (prev.type === 'week') {
+    returnToWeek();
+    shrinkBack();
   } else {
-    // back to a day (or an hour): it zooms out of what opened the view you're leaving
-    showDetail(null, null, { back: leaving.origin || {} });
+    showDetail(shrinkBack, null, { back: true });
   }
 }
 
@@ -1203,11 +1216,6 @@ function showDetail(after = null, dir = null, { back = false } = {}) {
   followDay();
   if (cur && dir && !reducedMotion()) {
     slideDetail(cur, dir);
-    if (after) after();
-    return;
-  }
-  if (cur && back && !reducedMotion()) {
-    zoomBack(cur, back);
     if (after) after();
     return;
   }
@@ -1290,50 +1298,6 @@ function slideDetail(cur, dir) {
     }
     el.animate([{ opacity: 0, transform: `translateX(${38 * dx}px)` }, { opacity: 1, transform: 'none' }], { duration: 480, delay: 70 + k * 45, easing: EASE_OUT, fill: 'backwards' });
     k++;
-  }
-}
-
-// Back to the view you came from (an hour back to its day): that view is simply there
-// again, drawn at once with its bars in place, and zooms out of what had opened the one
-// you're leaving (that hour's column), which shrinks back into it as it fades. The
-// column then glows for a moment, so you see where you were. One shared origin;
-// transform and opacity only, so there's no blank moment and nothing to lay out.
-const ZOOM_OUT = 'cubic-bezier(0.4, 0, 0.9, 0.6)';
-function zoomBack(cur, origin) {
-  const dv = $('detail-view');
-  ++detailSeq;
-  for (const el of dv.querySelectorAll('.dv.leaving')) el.remove();
-  const wrap = buildDetailWrap(true);
-  cur.classList.add('leaving');
-  cur.style.pointerEvents = 'none';
-  cur.style.position = 'absolute';
-  cur.style.inset = '0';
-  dv.insertBefore(wrap, cur);
-  mountDetail(wrap);
-  // where the leaving view came from, in the view it goes back to (else the middle)
-  const target = originElement(origin);
-  const box = dv.getBoundingClientRect();
-  let ox = box.width / 2;
-  let oy = box.height / 3;
-  if (target && wrap.contains(target)) {
-    const t = target.getBoundingClientRect();
-    ox = t.left + t.width / 2 - box.left;
-    oy = t.top + t.height / 2 - box.top;
-  }
-  const at = `${ox.toFixed(1)}px ${oy.toFixed(1)}px`;
-  cur.style.transformOrigin = at;
-  wrap.style.transformOrigin = at;
-  // the leaving view is mostly gone before the other one shows, so the two never read on top of each other
-  cur.animate([{ transform: 'none' }, { transform: 'scale(0.9)' }], { duration: 260, easing: ZOOM_OUT, fill: 'forwards' });
-  cur.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 170, easing: 'cubic-bezier(0.2, 0.6, 0.4, 1)', fill: 'forwards' })
-    .finished.then(() => setTimeout(() => cur.remove(), 80), () => cur.remove());
-  wrap.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300, delay: 130, easing: 'ease-out', fill: 'backwards' });
-  const zoom = wrap.animate([{ transform: 'scale(1.05)' }, { transform: 'none' }], { duration: 640, delay: 130, easing: EASE_OUT, fill: 'backwards' });
-  const done = () => { wrap.style.transformOrigin = ''; };
-  zoom.finished.then(done, done);
-  if (target && wrap.contains(target)) {
-    target.classList.add('came-from');
-    setTimeout(() => target.classList.remove('came-from'), 1600);
   }
 }
 

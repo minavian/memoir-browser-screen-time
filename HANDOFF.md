@@ -278,13 +278,12 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
     with the surface under them. Nothing fades after landing.
   - Windows port: the `web/` copy needs the same `[data-wave]` token scoping.
 
-- Back from an hour (2026-10-12, recap.js `zoomBack`): going back to a day (or from any detail view to
-  another) no longer fades out, leaves the card blank and shrinks a grey ghost into a column that isn't drawn
-  yet. The day is drawn at once (soft: bars in place, no entrances) under the leaving hour; the hour shrinks
-  toward its column (scale 0.9, gone in 170 ms) while the day zooms out of the same point (scale 1.05 → 1,
-  from 130 ms), then that column glows for a moment (`.came-from`, a `::after` on `.hcol`/`.dcol`).
-  Transform and opacity only. Back to the week is unchanged (ghost into the day label, bars rise again).
-  Opening an hour is unchanged too.
+- Going back, the ghost (2026-10-12, recap.js `ghost` with `reverse`): it mirrors the opening. Opening, it
+  starts on the square it came from, in that square's colour (so it reads faint), swells and fades. Back, it
+  used to start full size at 0.9 opacity, a solid block over the chart. Now it starts invisible while big,
+  gathers to 0.6 as it shrinks (opacity is its own linear animation; the shrink keeps EASE_OUT) and lands at
+  0.9 on a square of its own colour (an hour-grid cell), becoming it; on something without a colour of its
+  own (a day label, an hour column, Trend) it fades out as it lands.
 
 - A site's pages, motion (2026-10-12): grown out of a Most used row, the row is what turns into the pages.
   The surface starts as the row's highlight (`.sites-page::before`, `pages.tint`, fades as it grows); the
