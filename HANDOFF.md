@@ -2,7 +2,7 @@
 
 Chrome MV3 extension by **Mina Vian** ("Made by Mina Vian" credit stays everywhere).
 Logs browsing time and shows today in a popup and the whole week in a full-page report.
-Current version: **5.1.2** (`manifest.json`). Load unpacked from this folder; after edits,
+Current version: **5.1.5** (`manifest.json`). Load unpacked from this folder; after edits,
 press reload on the extension in `chrome://extensions` and refresh the report tab.
 
 ## What the owner cares about (apply to every change)
@@ -278,14 +278,14 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
     with the surface under them. Nothing fades after landing.
   - Windows port: the `web/` copy needs the same `[data-wave]` token scoping.
 
-- Going back, the ghost (2026-10-12, recap.js `ghost` with `reverse`): it mirrors the opening. Opening, it
+- Going back, the ghost (5.1.5, recap.js `ghost` with `reverse`): it mirrors the opening. Opening, it
   starts on the square it came from, in that square's colour (so it reads faint), swells and fades. Back, it
   used to start full size at 0.9 opacity, a solid block over the chart. Now it starts invisible while big,
   gathers to 0.6 as it shrinks (opacity is its own linear animation; the shrink keeps EASE_OUT) and lands at
   0.9 on a square of its own colour (an hour-grid cell), becoming it; on something without a colour of its
   own (a day label, an hour column, Trend) it fades out as it lands.
 
-- A site's pages, motion (2026-10-12): grown out of a Most used row, the row is what turns into the pages.
+- A site's pages, motion (5.1.5): grown out of a Most used row, the row is what turns into the pages.
   The surface starts as the row's highlight (`.sites-page::before`, `pages.tint`, fades as it grows); the
   row's name rides up to become the title (`.sp-head` translate + `.sp-name` scale, measured by
   `headOffset`: baselines and word widths matched, so it lands exactly on the row's name and back); the rest
@@ -299,7 +299,7 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
   outgoing side is gone (0.16 s) before the incoming one shows (from 0.13 s), so two lists never read on top
   of each other. The "Click to see each page's time" hint vanishes on the click itself (`tip.hide(true)`).
 
-- Tour placement (2026-10-12, tour.js `cardSpot`): a step's `follow()` adds what its tries opened elsewhere
+- Tour placement (5.1.5, tour.js `cardSpot`): a step's `follow()` adds what its tries opened elsewhere
   to the light (Daily average: the trend graph; Highlights and Activity by hour: the day or hour they open
   in Daily activity), so it's lit, usable and the card moves off it; `avoid()` (runTour option) keeps the
   card off open popovers and menus. Places beside the light are scored (covering the light, then what's
@@ -307,7 +307,7 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
   open. Settings steps keep their old placement: the owner tried the card beside the Settings panel and
   disliked it (it sat far from the light); keep the card next to the light. Highlights starts on the week.
 
-- Never track, hidden (2026-10-12): the sites under Never track are hidden under dust, a shimmer of fine
+- Never track, hidden (5.1.5): the sites under Never track are hidden under dust, a shimmer of fine
   specks over a soft haze, filling the whole pill, the × too (thinning towards its rounded edge).
   One click stirs it and asks "Click again to show it" (2.6 s); the second blows the dust away from where it
   landed while the name clears up from there (clip-path circle + unblur). A click on a shown name, or closing
