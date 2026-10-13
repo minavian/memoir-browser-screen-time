@@ -329,10 +329,10 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
 
 - The opening (5.1.5, `welcome-intro.js`): before the welcome card, on black with a light drifting in, WELCOME TO and
   a big MEMOIR (the wordmark) arrive letter by letter from left to right while the welcome runs the page's work behind
-  it (`play({ load })`: the week drawn, the tour's sample weeks made ahead and cached, `calm()`). At 2.3 s (or once the
+  it (`play({ load })`: the week drawn, the tour's sample weeks made ahead and cached, `calm()`). 0.3 s after the word is in (or once the
   work is done, if later) it turns: the O thins (wght 900 to 300) and narrows to 0.921 (round, the ring's own stroke) as
   the clock's ring fades in exactly over it (playLogo `gentle`), and the clock sets itself; then the letters fly one
-  after another, left to right, onto their own in the card's MEMOIR, the clock in the O's turn into the card's logo,
+  after another (0.6 s after the clock is set), left to right, onto their own in the card's MEMOIR, the clock in the O's turn into the card's logo,
   WELCOME TO onto the kicker, the black lifting off; the card's entrance waits for `.cascade`. Clicks and keys during
   it do nothing; `.wel.landed` marks the end (~5.8 s). Reduced motion: no opening. Tried and dropped by the owner:
   sound, grain clouds, a heavy ring thinning, and the word as a coloured loading bar ("too ugly").

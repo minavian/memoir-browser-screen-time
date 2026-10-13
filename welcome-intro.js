@@ -16,10 +16,10 @@ export const TIMES = {
   light: 250,     // the light behind the word drifts in
   kicker: 300,    // WELCOME TO, letter by letter
   word: 600,      // MEMOIR, the same
-  turn: 2300,     // the earliest the O can turn (later if the page isn't ready)
-  thin: 400,      // the O thins out…
-  clock: 650,     // …as the clock fades in in its place and sets itself (shared/logo.js)
-  morph: 2050,    // everything turns into the card…
+  turn: 2125,     // the word has arrived (its last letter done); later if the page isn't ready
+  thin: 300,      // 0.3 s on, the O thins out…
+  clock: 550,     // …as the clock fades in in its place and sets itself (done 1660 ms on: shared/logo.js)
+  morph: 2810,    // 0.6 s after the clock is set, everything turns into the card…
   step: 75,       // …a letter at a time
   morphMs: 950,
 };
