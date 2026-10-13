@@ -66,7 +66,11 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
   pin hint points at the toolbar. "Take the tour" flies the clock into the header logo while the page
   reveals, then the tutorial runs; "Skip for now" (or Esc) just sets `onboarded`. Replay the tour from Settings.
 - Welcome (5.1.2): a single card on the tour's own dim (`--tour-dim`, no colour orbs, no feature cards). Its surface
-  is `.wel-card::before`, so the clock inside can fly off on its own (blurring and fading into the header logo).
+  is `.wel-card::before`, so the clock inside can fly off on its own. It flies home to the header and IS the header
+  logo from then on (`flyMark`: the hidden one waiting there is replaced by it; `goLive` starts it showing the time on
+  the way; halfway it takes the header logo's own 40 px size inside, scaled up, so it arrives drawn exactly as the
+  header's is; its start is allowed for being drawn from a whole pixel). One clock from the opening's O to the header,
+  nothing handed over (owner's rule). On a narrow window, with no header logo, it blurs away instead.
   "Take the tour" starts the tour at once, under the card, while the words fade; the dims swap in one frame
   (`.tour.handoff` skips the spot's fade); once the words are gone and the page is calm (`calm()`), a shell reshapes
   the card into the tour's first card (`handoff(card)` from `runTour`). The board's first render waits until it has
@@ -337,7 +341,9 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
   gives way to the ring's fade and the clock sets itself (playLogo `fromO`); then the letters fly one after another
   (0.6 s after the clock is set), left to right, onto their own in the card's MEMOIR, the clock in the O's turn on to
   its own place (the same element, one transform to `none`: nothing hands over, so nothing can jump; owner's rule, see
-  below), WELCOME TO onto the kicker, the black lifting off; the card's entrance waits for `.cascade`. Clicks and keys
+  below), WELCOME TO onto the kicker, the black lifting off (on Light the clock has no disc and turns from white to
+  ink with the page as it lifts, a little behind it, landing as the Light logo, `.themed`); the card's entrance waits
+  for `.cascade`. Clicks and keys
   during it do nothing; `.wel.landed` marks the end (~5.8 s). Reduced motion: no opening. Tried and dropped by the
   owner: sound, grain clouds, the word as a coloured loading bar ("too ugly"), and an O glyph crossfading into a
   separate clock ("a small correction" showed as they swapped). Owner's rule: a thing that turns into another is one

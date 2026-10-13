@@ -7,7 +7,7 @@
 // the same frame, so there's no seam.
 
 import { reducedMotion, morph, dropShell, EASE_OUT, EASE_IN_OUT } from './shared/fx.js';
-import { LOGO, playLogo } from './shared/logo.js';
+import { LOGO, playLogo, goLive, settleLogo } from './shared/logo.js';
 import { createIntro } from './welcome-intro.js';
 
 // the card reshapes from rest and settles softly (it's still when the words have gone)
@@ -141,7 +141,10 @@ export function createWelcome() {
       go.addEventListener('click', () => leave('tour'));
       skip.addEventListener('click', () => leave('skip'));
 
-      // the clock flies into the logo in the header, blurring away as that one sets itself
+      // the clock flies home to the header and is its logo from then on (the one that waited
+      // there, hidden, goes): one clock from the opening's O to the header, nothing handed
+      // over. On the way it starts showing the time. (No header logo on a narrow window: it
+      // blurs away instead.)
       function flyMark() {
         const from = mark.getBoundingClientRect();
         const to = markTarget && markTarget.getClientRects().length ? markTarget.getBoundingClientRect() : null;
@@ -151,15 +154,32 @@ export function createWelcome() {
           return mark.animate([{ opacity: 1, transform: 'none', filter: 'blur(0px)' }, { opacity: 0, transform: 'scale(0.7)', filter: 'blur(4px)' }],
             { duration: 420, delay: 80, easing: EASE_OUT, fill: 'forwards' }).finished;
         }
-        const dx = to.left + to.width / 2 - (from.left + from.width / 2);
-        const dy = to.top + to.height / 2 - (from.top + from.height / 2);
+        // (the card's clock is drawn from a whole pixel, its layout rounded: allowed for, so it
+        // lands exactly where the header's is drawn)
+        const dx = to.left + to.width / 2 - (from.left + from.width / 2) + (from.left - Math.round(from.left));
+        const dy = to.top + to.height / 2 - (from.top + from.height / 2) + (from.top - Math.round(from.top));
         const s = to.width / from.width;
-        playLogo(markTarget, { delay: 120 + 950 * 0.45, pace: 0.8, live: true });
-        return mark.animate([
-          { transform: 'none', filter: 'blur(0px)', opacity: 1 },
-          { transform: `translate(${dx * 0.35}px, ${dy * 0.5}px) scale(${(1 + s) / 1.6})`, filter: 'blur(0.5px)', opacity: 1, offset: 0.45 },
-          { transform: `translate(${dx}px, ${dy}px) scale(${s})`, filter: 'blur(6px)', opacity: 0 },
-        ], { duration: 950, delay: 120, easing: EASE_IN_OUT, fill: 'forwards' }).finished;
+        const logo = mark.querySelector('.logo');
+        goLive(logo, { delay: 120, duration: 850 });
+        // halfway, at its fastest, it takes the header logo's own size inside (scaled up to look
+        // the same), so it arrives drawn just as the header's is: a shrunk-down big clock is
+        // drawn a hair differently, and that would show as it takes the header's place
+        const W = from.width, w = to.width;
+        logo.animate([{ opacity: 1 }, { opacity: 1 }], { duration: 1, delay: 120 + 950 / 2 }).finished.then(() => {
+          Object.assign(logo.style, { position: 'absolute', left: `${(W - w) / 2}px`, top: `${(W - w) / 2}px`, width: `${w}px`, height: `${w}px`, transform: `scale(${W / w})` });
+        }).catch(() => {});
+        return mark.animate([{ transform: 'none' }, { transform: `translate(${dx}px, ${dy}px) scale(${s})` }],
+          { duration: 950, delay: 120, easing: EASE_IN_OUT, fill: 'forwards' }).finished.then(() => {
+          // home: it takes the header logo's place, looking just as it did in flight (the
+          // opening's leftovers on it were all at rest)
+          const ring = logo.querySelector('.lg-ring');
+          ring.removeAttribute('style');
+          ring.className = 'lg-ring';
+          logo.removeAttribute('style');
+          logo.className = markTarget.className.replace(/\bhold\b/, '').replace(/\s+/g, ' ').trim();
+          markTarget.replaceWith(logo);
+          settleLogo(logo);
+        });
       }
 
       function leave(choice) {

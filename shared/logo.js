@@ -60,6 +60,35 @@ function watch() {
 }
 
 /**
+ * Sets a clock that shows 10:10 going with the time, with no jump: its hands, and the knob
+ * with the ring's fade, sweep on clockwise from where they are round to now, then keep it
+ * as a live clock does (the welcome's clock on its way home to the header).
+ */
+export function goLive(logo, { delay = 0, duration = 900 } = {}) {
+  if (!logo) return;
+  const now = new Date();
+  run(logo, now);
+  watch();
+  if (reducedMotion()) return;
+  const a = angles(now);
+  const part = name => logo.querySelector(`.lg-${name}`);
+  // each starts where it is (the live angle plus this) and comes round to the live angle
+  const back = deg => -((((-deg) % 360) + 360) % 360);
+  const sweep = (el, by) => el.animate([{ rotate: `${by}deg` }, { rotate: '0deg' }],
+    { duration, delay, easing: SWEEP, composite: 'add', fill: 'backwards' });
+  sweep(part('min'), back(-30 - a.min));
+  sweep(part('hour'), back(215 - a.hour));
+  sweep(part('sec'), back(-a.sec));
+  sweep(part('ring'), back(-a.sec));
+}
+
+/** Drops every animation on a clock but its live motion (looks held by an entrance or a flight). */
+export function settleLogo(logo) {
+  const keep = new Set(live.get(logo) || []);
+  for (const a of logo.getAnimations({ subtree: true })) if (!keep.has(a)) a.cancel();
+}
+
+/**
  * Plays the clock's entrance. A logo marked `hold` stays hidden until this runs.
  * delay: ms before it starts; pace: a multiplier on its length (under 1 is quicker);
  * face: false leaves the disc out (its caller brings it in);
