@@ -355,7 +355,7 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
   ring fades clockwise from 12 in opacity (not grey shades), so it fades into any background; a knob at 12
   covers the seam, with a hole right through. Masters: `M:\Code\MEMOIR\MEMOIR's logos` (`Memoir logo.svg`
   white, for dark backgrounds; `... for light backgrounds.svg` ink). In the report it's HTML, not an image
-  (`.logo`, shared/logo.css; in the report header, the empty card, the welcome and the popup header; live in the report, 10:10 in the welcome and beside the name in the popup): white on a black disc in every theme (the owner asked for a round black background
+  (`.logo`, shared/logo.css; in the report header, the empty card, the welcome and the popup header, live in all but the welcome): white on a black disc in every theme (the owner asked for a round black background
   there, not a square), a conic-gradient ring masked to a band. Entrance (`playLogo`, compositor only): the
   disc pops in, the band grows in as its fade turns into place, the hands sweep from 9:00 round to 10:10, and
   the knob pops onto the seam (its middle is the disc's black). The header clock (40 px with its disc) plays it

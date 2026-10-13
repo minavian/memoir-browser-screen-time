@@ -74,7 +74,7 @@ async function main() {
   render();
   wire();
   reveal();
-  playLogo(document.querySelector('.top-mark'), { delay: 160 });
+  playLogo(document.querySelector('.top-mark'), { delay: 160, live: true });
 
   setTimeout(() => { state.liveReady = true; }, 1400);
   setInterval(tick, 1000);

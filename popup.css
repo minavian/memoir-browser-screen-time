@@ -14,7 +14,7 @@ body { background: var(--bg-art), var(--bg); }
 .top { display: flex; align-items: flex-start; justify-content: space-between; flex: none; }
 h1 { margin: 0; font-size: 20px; font-weight: 700; line-height: 1.2; }
 .top .caption { margin: 2px 0 0; }
-/* the logo beside the name, at 10:10 (shared/logo.js): the brand's own mark, not the time */
+/* the clock beside the name: live, like the report's (shared/logo.js) */
 .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .top-mark { width: 40px; height: 40px; flex: none; }
 
