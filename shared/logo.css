@@ -32,16 +32,18 @@
 .lg-min { width: 35.119%; transform-origin: 9.322% 50%; transform: rotate(-30deg); background: linear-gradient(90deg, rgb(var(--lg-ink)) 9.322%, rgb(var(--lg-ink) / 0.92) 33.729%, rgb(var(--lg-ink) / 0.513) 90.678%); }
 .lg-hour { width: 26.786%; transform-origin: 12.222% 50%; transform: rotate(215deg); background: rgb(var(--lg-ink)); }
 /* .themed follows the theme. On Light it's the master for light backgrounds: no disc, the
-   clock in the theme's ink, the knob's middle a hole right through to the page (the ring
-   is cut away under it, and turns with the knob on a live clock). On Dark it's white on
-   the disc, as above. The welcome's clock stays white on its disc: it comes out of the
+   clock in the theme's ink filling the disc's room (as the master's crop; on the disc it's
+   84% of it), the knob's middle a hole right through to the page (the ring is cut away
+   under it, and turns with the knob on a live clock). On Dark it's white on the disc, as
+   above. The welcome's clock stays white on its disc: it comes out of the
    black opening. */
-:root, [data-wave="light"] { --logo-ink: 29 29 31; --logo-disc: transparent; }
+:root, [data-wave="light"] { --logo-ink: 29 29 31; --logo-disc: transparent; --logo-inset: 0%; }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme]) { --logo-ink: 255 255 255; --logo-disc: #111114; }
+  :root:not([data-theme]) { --logo-ink: 255 255 255; --logo-disc: #111114; --logo-inset: 8%; }
 }
-:root[data-theme="dark"], [data-wave="dark"] { --logo-ink: 255 255 255; --logo-disc: #111114; }
+:root[data-theme="dark"], [data-wave="dark"] { --logo-ink: 255 255 255; --logo-disc: #111114; --logo-inset: 8%; }
 .logo.themed { --lg-ink: var(--logo-ink); }
 .logo.themed::before { background: var(--logo-disc); }
+.logo.themed .lg-clock { inset: var(--logo-inset); }
 .logo.themed .lg-knob { background: radial-gradient(circle closest-side, transparent calc(45.161% - 0.4px), rgb(var(--lg-ink)) calc(45.161% + 0.4px)); }
 .logo.themed .lg-ring { -webkit-mask-image: radial-gradient(4.605% 4.605% at 50% 5.592%, transparent calc(100% - 0.4px), #000 calc(100% + 0.4px)); }
