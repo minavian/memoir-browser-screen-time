@@ -329,13 +329,20 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
 
 - The opening (5.1.5, `welcome-intro.js`): before the welcome card, on black with a light drifting in, WELCOME TO and
   a big MEMOIR (the wordmark) arrive letter by letter from left to right while the welcome runs the page's work behind
-  it (`play({ load })`: the week drawn, the tour's sample weeks made ahead and cached, `calm()`). 0.3 s after the word is in (or once the
-  work is done, if later) it turns: the O thins (wght 900 to 300) and narrows to 0.921 (round, the ring's own stroke) as
-  the clock's ring fades in exactly over it (playLogo `gentle`), and the clock sets itself; then the letters fly one
-  after another (0.6 s after the clock is set), left to right, onto their own in the card's MEMOIR, the clock in the O's turn into the card's logo,
-  WELCOME TO onto the kicker, the black lifting off; the card's entrance waits for `.cascade`. Clicks and keys during
-  it do nothing; `.wel.landed` marks the end (~5.8 s). Reduced motion: no opening. Tried and dropped by the owner:
-  sound, grain clouds, a heavy ring thinning, and the word as a coloured loading bar ("too ugly").
+  it (`play({ load })`: the week drawn, the tour's sample weeks made ahead and cached, `calm()`). The O is not a letter:
+  the word keeps only its room (`.wi-o`, the O's advance) and the card's own clock (`.wel-mark`) sits in it, scaled up,
+  its ring drawn as Unbounded Black's O (heavy: `--lg-band` 42%, a registered property; wide: `scale` 1.16; the word's
+  platinum across it in the ring's `::after`, the letters' glow as a box-shadow). As soon as the word is in (or once the
+  work is done, if later) it turns: band and width in one animation to the ring's own (77.632%, round) as its platinum
+  gives way to the ring's fade and the clock sets itself (playLogo `fromO`); then the letters fly one after another
+  (0.6 s after the clock is set), left to right, onto their own in the card's MEMOIR, the clock in the O's turn on to
+  its own place (the same element, one transform to `none`: nothing hands over, so nothing can jump; owner's rule, see
+  below), WELCOME TO onto the kicker, the black lifting off; the card's entrance waits for `.cascade`. Clicks and keys
+  during it do nothing; `.wel.landed` marks the end (~5.8 s). Reduced motion: no opening. Tried and dropped by the
+  owner: sound, grain clouds, the word as a coloured loading bar ("too ugly"), and an O glyph crossfading into a
+  separate clock ("a small correction" showed as they swapped). Owner's rule: a thing that turns into another is one
+  element on one path, never two matched up (that breaks on high-DPI screens). The flying letters and the kicker still
+  hand over to the card's own at landing.
 - The MEMOIR wordmark (5.1.5, `shared/theme.css`): wherever the name shows (popup header, welcome title and pin
   hint, tour, right-click menu title) it's the trailer's: Unbounded 900 capitals (`fonts/Unbounded-subset.woff2`,
   preloaded), platinum on Dark and graphite on Light (`--wm-fill`), a fine grain (soft-light tile), a tight glow

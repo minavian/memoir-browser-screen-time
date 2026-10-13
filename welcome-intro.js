@@ -1,11 +1,12 @@
 // The welcome's opening, before the card. On black, with a light drifting in behind,
 // WELCOME TO and a big MEMOIR (the trailer's wordmark) arrive letter by letter from left
 // to right while the page gets ready behind them (the week drawn, the tour's sample
-// weeks made); then the O thins and rounds off into the clock's ring, the clock fades in
-// over it and sets itself, and it all becomes the welcome card: the letters fly one
-// after another, left to right (the clock in the O's turn), onto the card's own MEMOIR,
-// WELCOME TO into its kicker and the clock into its logo, while the black lifts off.
-// Transform and opacity on layers painted once (the O's weight is the one repaint, after
+// weeks made). The O is the card's clock itself, nothing standing in for it: all ring at
+// first, heavy and wide in the wordmark's platinum, it thins and rounds off into the
+// clock's own ring as the clock sets itself, then flies on into the card as its logo,
+// one element on one path. With it the letters fly one after another, left to right,
+// onto the card's own MEMOIR and WELCOME TO into its kicker, while the black lifts off.
+// Transform and opacity on layers painted once (the O's band is the one repaint, after
 // loading). Clicks and keys wait until the card has landed, so nothing unseen is pressed.
 
 import { EASE_OUT } from './shared/fx.js';
@@ -16,16 +17,19 @@ export const TIMES = {
   light: 250,     // the light behind the word drifts in
   kicker: 300,    // WELCOME TO, letter by letter
   word: 600,      // MEMOIR, the same
-  turn: 2125,     // the word has arrived (its last letter done); later if the page isn't ready
-  thin: 300,      // 0.3 s on, the O thins out…
-  clock: 550,     // …as the clock fades in in its place and sets itself (done 1660 ms on: shared/logo.js)
-  morph: 2810,    // 0.6 s after the clock is set, everything turns into the card…
+  turn: 1825,     // the word has arrived (the R's last ease-out tail aside); later if the page isn't ready
+  thin: 0,        // the O thins and rounds off straight away…
+  clock: 250,     // …as it takes the clock's own fade and the clock sets itself (done 1660 ms on: shared/logo.js)
+  morph: 2510,    // 0.6 s after the clock is set, everything turns into the card…
   step: 75,       // …a letter at a time
   morphMs: 950,
 };
 const T = TIMES;
 const MORPH = 'cubic-bezier(0.5, 0, 0.15, 1)';
 const FONT = '"Memoir Unbounded"';
+// Unbounded Black's O, in its size: 0.786 tall and 1.16 times as wide, its middle 0.375
+// above the baseline, its counter about 0.42 across (wght 900; its room is in recap.css)
+const O_TALL = 0.786, O_WIDE = 1.16, O_MID = 0.375, O_BAND = '42%', RING_BAND = '77.632%';
 
 // where a line of text sits: a zero-size probe on its baseline
 function baseline(el) {
@@ -61,7 +65,9 @@ export function createIntro(root) {
   type.className = 'wi-type';
   type.setAttribute('aria-hidden', 'true');
   const kick = [...'WELCOME TO'].map(ch => `<span>${ch === ' ' ? '&nbsp;' : ch}</span>`).join('');
-  const word = [...'MEMOIR'].map(ch => `<span class="wordmark wm-dark" data-t="${ch}">${ch}</span>`).join('');
+  // the O is only room in the word: the card's clock takes it (play)
+  const word = [...'MEMOIR'].map(ch => (ch === 'O' ? '<span class="wi-o"></span>'
+    : `<span class="wordmark wm-dark" data-t="${ch}">${ch}</span>`)).join('');
   type.innerHTML = `<p class="wi-kicker">${kick}</p><p class="wi-word">${word}</p>`;
   root.querySelector('.wel-dim').after(bg);
   root.append(type);
@@ -81,9 +87,7 @@ export function createIntro(root) {
     // ---- everything measured at rest, before anything moves
     const word = type.querySelector('.wi-word');
     const kicker = type.querySelector('.wi-kicker');
-    const big = [...word.children];
-    const O = big[3];
-    O.style.width = `${O.getBoundingClientRect().width}px`;   // so it can thin without moving the I and R
+    const big = [...word.children];                            // M E M, the O's room, I R
     const F = parseFloat(getComputedStyle(word).fontSize);
     const cap = F * 0.75;                                      // Unbounded's cap height
     const wr = word.getBoundingClientRect();
@@ -114,11 +118,28 @@ export function createIntro(root) {
     const kk = capHeight(kick, 'W') / (parseFloat(getComputedStyle(kicker).fontSize) * 0.75);
     const kdx = kb.left + kb.width / 2 - (ka.left + ka.width / 2), kdy = kbBase - kaBase;
 
-    // the clock sits where the O is, its ring exactly on the thinned O (the ring is 0.76 of the disc):
-    // Unbounded's O at weight 300 is 0.776 of the size tall with a stroke the ring's own weight,
-    // and narrowed to 0.921 it's round
-    const m = mark.getBoundingClientRect(), o = O.getBoundingClientRect();
-    const markAt = `translate(${o.left + o.width / 2 - (m.left + m.width / 2)}px, ${base - F * 0.375 - (m.top + m.height / 2)}px) scale(${(F * 0.776) / (m.width * 0.76)})`;
+    // the card's clock is the O: one element, from the word to the card. In the word it's
+    // scaled up to the O's height in the O's room, and its ring is the O, heavy (O_BAND) and
+    // wide (O_WIDE), in the word's platinum across it, with the letters' glow
+    const logo = mark.querySelector('.logo');
+    const ring = logo.querySelector('.lg-ring');
+    const m = mark.getBoundingClientRect(), o = big[3].getBoundingClientRect(), r = ring.getBoundingClientRect();
+    const s = (F * O_TALL) / r.height;
+    const ox = o.left + o.width / 2, oy = base - F * O_MID;
+    const inWord = (nudge = 0, k = 1) => `translate(${ox + nudge - (m.left + m.width / 2)}px, ${oy - (m.top + m.height / 2)}px) scale(${s * k})`;
+    const kx = s * O_WIDE, ky = s, lt = big[0].getBoundingClientRect();
+    const left = ox - (r.width * kx) / 2, top = oy - (r.height * ky) / 2;
+    ring.classList.add('wm-dark');
+    ring.style.setProperty('--wi-ox', `${(wr.left - left) / kx}px`);
+    ring.style.setProperty('--wi-oy', `${(lt.top - top) / ky}px`);
+    ring.style.setProperty('--wi-ow', `${wr.width / kx}px`);
+    ring.style.setProperty('--wi-oh', `${lt.height / ky}px`);
+    ring.style.setProperty('--wi-og', `${96 / kx}px ${96 / ky}px`);
+    ring.style.setProperty('--lg-band', O_BAND);
+    ring.style.scale = `${O_WIDE} 1`;
+    const glow = a => `0 0 ${(0.045 * F) / s}px rgba(255, 255, 255, ${0.32 * a}), 0 0 ${(0.16 * F) / s}px rgba(255, 255, 255, ${0.12 * a})`;
+    ring.style.boxShadow = glow(1);
+    mark.classList.add('as-o');                                // hands and knob wait for the turn
 
     // the light behind the word drifts in from the left and settles between the M and the O
     const light = document.createElement('div');
@@ -135,7 +156,9 @@ export function createIntro(root) {
       { duration: 2600, delay: T.light });
     [...kicker.children].forEach((L, i) => go(L, [{ opacity: 0, transform: 'translateX(-0.7em)' }, { opacity: 1, transform: 'none' }],
       { duration: 800, delay: T.kicker + i * 40, easing: EASE_OUT }));
-    big.forEach((L, i) => go(L, [{ opacity: 0, transform: 'translateX(-0.16em) scale(0.96)' }, { opacity: 1, transform: 'none' }],
+    big.forEach((L, i) => go(i === 3 ? mark : L,
+      i === 3 ? [{ opacity: 0, transform: inWord(-0.16 * F, 0.96) }, { opacity: 1, transform: inWord() }]
+        : [{ opacity: 0, transform: 'translateX(-0.16em) scale(0.96)' }, { opacity: 1, transform: 'none' }],
       { duration: 1000, delay: T.word + i * 105, easing: EASE_OUT }));
 
     // ---- the turn: once the word has had its moment and the page's work is done
@@ -144,23 +167,25 @@ export function createIntro(root) {
     // ---- the O becomes the clock, and it all becomes the card
     filled.then(() => {
 
-      // the O thins out and rounds off into the ring, which fades in over it, at its pace
-      const thinning = { duration: 900, delay: T.thin, easing: 'cubic-bezier(0.45, 0, 0.2, 1)', fill: 'forwards' };
-      go(O, [{ fontVariationSettings: '"wght" 900' }, { fontVariationSettings: '"wght" 300' }], thinning);
-      go(O, [{ scale: '1 1' }, { scale: '0.921 1' }], thinning);
-      go(O, [{ opacity: 1 }, { opacity: 0 }], { duration: 650, delay: T.clock + 60, fill: 'forwards' });
-      const logo = mark.querySelector('.logo');
-      go(mark, [{ opacity: 1, transform: markAt }, { opacity: 1, transform: markAt }], { duration: 1 });
-      playLogo(logo, { delay: T.clock, face: false, gentle: true });
+      // the O thins and rounds off into the clock's ring (band and width in one animation,
+      // so they keep step), its platinum giving way to the ring's own fade, as the clock sets itself
+      go(ring, [{ '--lg-band': O_BAND, scale: `${O_WIDE} 1` }, { '--lg-band': RING_BAND, scale: '1 1' }],
+        { duration: 900, delay: T.thin, easing: 'cubic-bezier(0.45, 0, 0.2, 1)', fill: 'forwards' });
+      const tint = { duration: 650, delay: T.clock + 60, fill: 'forwards' };
+      go(ring, [{ opacity: 1 }, { opacity: 0 }], { ...tint, pseudoElement: '::after' });
+      go(ring, [{ opacity: 0 }, { opacity: 1 }], { ...tint, pseudoElement: '::before' });
+      go(ring, [{ boxShadow: glow(1) }, { boxShadow: glow(0) }], tint);
+      mark.classList.remove('as-o');
+      playLogo(logo, { delay: T.clock, face: false, fromO: true });
 
-      // into the card, a letter at a time from the left: the clock goes in the O's turn,
-      // into the card's logo; when the R has landed, the card's MEMOIR takes over
+      // into the card, a letter at a time from the left: the clock goes on in the O's turn,
+      // from the word to its own place; when the R has landed, the card's MEMOIR takes over
       const landing = T.morph + 5 * T.step + T.morphMs;
       const flying = [];
       big.forEach((L, i) => {
         const start = T.morph + i * T.step;
         if (i === 3) {
-          flying.push(go(mark, [{ opacity: 1, transform: markAt }, { opacity: 1, transform: 'none' }], { duration: T.morphMs, delay: start, easing: MORPH }));
+          flying.push(go(mark, [{ opacity: 1, transform: inWord() }, { opacity: 1, transform: 'none' }], { duration: T.morphMs, delay: start, easing: MORPH }));
           go(logo, [{ opacity: 0 }, { opacity: 1 }], { duration: 500, delay: start + 250, pseudoElement: '::before', fill: 'forwards' });
           return;
         }

@@ -44,7 +44,8 @@ body { overflow: hidden; }
 .lg-sec { inset: 0; }
 .logo.hold::before, .logo.hold .lg-clock > i { opacity: 0; }
 /* The ring: its box (radius 76 about (84, 84) in the 168 box), the clockwise fade masked
-   to the band, 59 to 76 (77.632%). */
+   to the band, 59 to 76 (77.632%: --lg-band, so the welcome's opening can thin it from an O). */
+@property --lg-band { syntax: "<percentage>"; inherits: true; initial-value: 77.632%; }
 .lg-ring { inset: 4.762%; border-radius: 50%; }
 .lg-ring::before {
   content: "";
@@ -52,7 +53,9 @@ body { overflow: hidden; }
   inset: 0;
   background: conic-gradient(rgb(var(--lg-ink) / 0.937), rgb(var(--lg-ink) / 0.84) 45deg, rgb(var(--lg-ink) / 0.676) 125deg,
     rgb(var(--lg-ink) / 0.5) 205deg, rgb(var(--lg-ink) / 0.332) 285deg, rgb(var(--lg-ink) / 0.181));
-  -webkit-mask-image: radial-gradient(circle closest-side, transparent calc(77.632% - 0.3px), #000 calc(77.632% + 0.3px), #000 calc(100% - 0.6px), transparent);
+}
+.lg-ring::before, .lg-ring::after {
+  -webkit-mask-image: radial-gradient(circle closest-side, transparent calc(var(--lg-band) - 0.3px), #000 calc(var(--lg-band) + 0.3px), #000 calc(100% - 0.6px), transparent);
 }
 /* the knob covers the ring's seam; its middle is the disc's black */
 .lg-knob { left: 40.774%; top: 0.595%; width: 18.452%; height: 18.452%; border-radius: 50%; background: radial-gradient(circle closest-side, #111114 calc(45.161% - 0.4px), rgb(var(--lg-ink)) calc(45.161% + 0.4px)); }
@@ -2047,6 +2050,23 @@ body { overflow: hidden; }
 .wi-word { margin: 0; font-size: var(--wi-f); line-height: 1.2; white-space: nowrap; }
 .wi-kicker span, .wi-word span { display: inline-block; opacity: 0; }
 .wi-word .wordmark { text-align: center; }
+/* MEMOIR's O is the card's clock itself (welcome-intro.js), so the word keeps only its room:
+   the O's advance in Unbounded Black. Until it turns, the clock is all ring, heavy and wide,
+   in the wordmark's platinum (its ::after, the word's own gradient across it); the clock's
+   own fade (::before) comes up under it as it thins. */
+.wi-o { width: 0.976em; }
+.wel.intro .wel-mark .lg-ring::before { opacity: 0; }
+.wel.intro .wel-mark .lg-ring::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    url("shared/grain.png") var(--wi-ox) var(--wi-oy) / var(--wi-og),
+    linear-gradient(rgba(255, 255, 255, 0.1), transparent 45%, rgba(0, 0, 0, 0.1) 80%, rgba(255, 255, 255, 0.04)) var(--wi-ox) var(--wi-oy) / var(--wi-ow) var(--wi-oh) no-repeat,
+    var(--wm-fill) var(--wi-ox) var(--wi-oy) / var(--wi-ow) var(--wi-oh) no-repeat;
+  background-blend-mode: soft-light, normal, normal;
+}
+.wel-mark.as-o .lg-min, .wel-mark.as-o .lg-hour, .wel-mark.as-o .lg-knob { opacity: 0; }
 .wel.intro .wel-mark, .wel.intro .wel-title span, .wel.intro .wel-kicker { animation: none; }
 .wel.intro .wel-mark .logo::before { opacity: 0; }
 .wel.intro.on:not(.cascade) .wel-in, .wel.intro.on:not(.cascade) .wel-card::before, .wel.intro.on:not(.cascade) .wel-pin,
