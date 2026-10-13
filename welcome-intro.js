@@ -26,6 +26,7 @@ export const TIMES = {
 };
 const T = TIMES;
 const MORPH = 'cubic-bezier(0.5, 0, 0.15, 1)';
+const LIFT = 'cubic-bezier(0.4, 0, 0.2, 1)';    // the black lifting off the page
 const FONT = '"Memoir Unbounded"';
 // Unbounded Black's O, in its size: 0.786 tall and 1.16 times as wide, its middle 0.375
 // above the baseline, its counter about 0.42 across (wght 900; its room is in recap.css)
@@ -166,6 +167,8 @@ export function createIntro(root) {
 
     // ---- the O becomes the clock, and it all becomes the card
     filled.then(() => {
+      // on Light the card's logo is the one for light backgrounds (shared/logo.css .themed)
+      const onLight = getComputedStyle(logo).getPropertyValue('--logo-disc').trim() === 'transparent';
 
       // the O thins and rounds off into the clock's ring (band and width in one animation,
       // so they keep step), its platinum giving way to the ring's own fade, as the clock sets itself
@@ -186,7 +189,8 @@ export function createIntro(root) {
         const start = T.morph + i * T.step;
         if (i === 3) {
           flying.push(go(mark, [{ opacity: 1, transform: inWord() }, { opacity: 1, transform: 'none' }], { duration: T.morphMs, delay: start, easing: MORPH }));
-          go(logo, [{ opacity: 0 }, { opacity: 1 }], { duration: 500, delay: start + 250, pseudoElement: '::before', fill: 'forwards' });
+          // its disc comes in as it flies (on Light it has none: below)
+          if (!onLight) go(logo, [{ opacity: 0 }, { opacity: 1 }], { duration: 500, delay: start + 250, pseudoElement: '::before', fill: 'forwards' });
           return;
         }
         const { dx, dy } = flights[i];
@@ -194,14 +198,35 @@ export function createIntro(root) {
         go(L, [{ opacity: 1 }, { opacity: 0 }], { duration: 220, delay: landing - 120, fill: 'forwards' });
       });
       flying.push(go(title, [{ opacity: 0 }, { opacity: 1 }], { duration: 240, delay: landing - 160 }));
+      // on Light it becomes the logo for light backgrounds as it flies: no disc, and the
+      // clock turns from white to ink with the page as the black lifts, a little behind it
+      // (white while the page is still dark, ink once it's light), filling the disc's room
+      // as it goes (on the disc it's 84% of it). Its knob's middle becomes a hole through to
+      // the page first, while the page is still black (unseen: the same black)
+      const settle = [];
+      if (onLight) {
+        at(logo, T.morph).then(() => {
+          logo.classList.add('cut');
+          logo.style.setProperty('--lg-knob-mid', 'transparent');
+        });
+        settle.push(
+          go(logo, [{ '--lg-ink': '255 255 255' }, { '--lg-ink': getComputedStyle(logo).getPropertyValue('--logo-ink').trim() }],
+            { duration: 300, delay: T.morph + 300, easing: 'cubic-bezier(0.4, 0, 0.6, 1)', fill: 'forwards' }),
+          go(logo.querySelector('.lg-clock'), [{ scale: '1' }, { scale: `${1 / 0.84}` }],
+            { duration: T.morphMs, delay: T.morph + 3 * T.step, easing: MORPH, fill: 'forwards' }));
+      }
       go(kicker, [{ opacity: 1, transform: 'none' }, { opacity: 1, offset: 0.25 }, { opacity: 0, offset: 0.7 }, { opacity: 0, transform: `translate(${kdx}px, ${kdy}px) scale(${kk})` }],
         { duration: T.morphMs, delay: T.morph, easing: MORPH, fill: 'forwards' });
       go(kick, [{ opacity: 0, transform: `translate(${-kdx}px, ${-kdy}px) scale(${1 / kk})` }, { opacity: 0, offset: 0.3 }, { opacity: 1, offset: 0.8 }, { opacity: 1, transform: 'none' }],
         { duration: T.morphMs, delay: T.morph, easing: MORPH });
       // the black lifts off the page as they fly, and the rest of the card follows them in
-      flying.push(go(bg, [{ opacity: 1 }, { opacity: 0 }], { duration: 750, delay: T.morph + 60, easing: 'cubic-bezier(0.4, 0, 0.2, 1)', fill: 'forwards' }));
+      flying.push(go(bg, [{ opacity: 1 }, { opacity: 0 }], { duration: 750, delay: T.morph + 60, easing: LIFT, fill: 'forwards' }));
       at(bg, T.morph).then(() => root.classList.add('cascade'));
       Promise.all(flying.map(a => a.finished)).catch(() => {}).then(() => {
+        // from here it's the logo that follows the theme, as everywhere else (the same look)
+        logo.classList.add('themed');
+        settle.forEach(a => a.cancel());
+        logo.style.removeProperty('--lg-knob-mid');
         bg.remove();
         type.remove();
         root.classList.add('landed');
