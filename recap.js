@@ -155,7 +155,8 @@ async function init() {
     // landed, so no render ever competes with that animation.
     welcome.play({
       markTarget: headMark,
-      onShown: showOnce,
+      // behind the opening: the week drawn, then the tour's sample weeks made
+      load: [{ weight: 5, run: showOnce }, { weight: 3, run: warmSamples }],
       onLeave: choice => (choice === 'tour' ? useTourWeek() : showOnce()),
       onHanded: async () => {
         if (!shown) { await showOnce(); return; } // first render: the sample week already
@@ -4850,7 +4851,28 @@ function boost(cat, hour, weekend) {
     default: return 1;
   }
 }
+// A sample day is the same every time for its date, so each is made once and kept.
+const samples = new Map();
 function sampleDay(key) {
+  let day = samples.get(key);
+  if (!day) samples.set(key, (day = makeSampleDay(key)));
+  return day;
+}
+
+// The tour's sample weeks, made ahead (behind the welcome): this week, last week and
+// the trend's range, a fortnight at a time so the page keeps breathing.
+async function warmSamples(report = () => {}) {
+  const start = startOfWeek(new Date());
+  const keys = [];
+  for (let w = 0; w <= state.trendWeeks; w++) keys.push(...weekDayKeys(addDays(start, -7 * w)));
+  for (let i = 0; i < keys.length; i += 14) {
+    keys.slice(i, i + 14).forEach(sampleDay);
+    report(Math.min(1, (i + 14) / keys.length));
+    await new Promise(r => setTimeout(r, 0));
+  }
+}
+
+function makeSampleDay(key) {
   const rnd = mulberry32(hashStr(`bloom:${key}`));
   const date = dateFromKey(key);
   const weekend = date.getDay() === 0 || date.getDay() === 6;

@@ -8,13 +8,31 @@
 
 import { reducedMotion, morph, dropShell, EASE_OUT, EASE_IN_OUT } from './shared/fx.js';
 import { LOGO, playLogo } from './shared/logo.js';
-import { createIntro, TIMES } from './welcome-intro.js';
+import { createIntro } from './welcome-intro.js';
 
 // the card reshapes from rest and settles softly (it's still when the words have gone)
 const RESHAPE = 'cubic-bezier(0.45, 0, 0.15, 1)';
 
 const PUZZLE = '<svg class="wel-ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M6.2 2.5a1.6 1.6 0 0 1 3.2 0V4h2.4c.4 0 .7.3.7.7v2.4h-1.1a1.6 1.6 0 0 0 0 3.2h1.1v2.4c0 .4-.3.7-.7.7H9.4v-1.1a1.6 1.6 0 0 0-3.2 0v1.1H3.8c-.4 0-.7-.3-.7-.7v-2.4h1.1a1.6 1.6 0 0 0 0-3.2H3.1V4.7c0-.4.3-.7.7-.7h2.4V2.5Z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>';
 const PIN = '<svg class="wel-ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M9.8 2.2 13.8 6.2 12.4 6.6 10.3 8.7 10.6 11.6 9.6 12.6 7 10 3.6 13.4M6 9 3.4 6.4 4.4 5.4 7.3 5.7 9.4 3.6 9.8 2.2" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+// Runs the page's work one step after another, telling whoever's listening how far
+// along it is (0…1, weighted by each step's share; a step can report its own progress).
+function loader(steps) {
+  const listeners = new Set();
+  const total = steps.reduce((sum, s) => sum + s.weight, 0) || 1;
+  const tell = p => listeners.forEach(fn => fn(p));
+  const promise = (async () => {
+    let done = 0;
+    for (const s of steps) {
+      const base = done;
+      try { await s.run(f => tell((base + s.weight * Math.min(1, Math.max(0, f))) / total)); } catch { /* on with the rest */ }
+      done += s.weight;
+      tell(done / total);
+    }
+  })();
+  return { promise, subscribe: fn => listeners.add(fn) };
+}
 
 // Resolves once the page has drawn three quick frames in a row (or after 400 ms):
 // heavy setup is done, so an animation started now won't stutter.
@@ -71,9 +89,10 @@ export function createWelcome() {
   /**
    * Plays the welcome in, waits for a choice, then leaves.
    * markTarget: the header logo the clock flies into (held hidden until it lands).
-   * onShown(): called just after it starts playing in: fill the page in behind the dim
-   *   then. Only compositor animations run here, so they don't stutter, and the page's
-   *   follow-up work is done long before the card has to reshape.
+   * load: the page's work to do behind it, [{ weight, run(report) }], run one after
+   *   another just after it starts (the week drawn, the sample weeks made…); the
+   *   opening's MEMOIR fills as it goes, and the card comes once it's done and the page
+   *   has settled. Only compositor animations run meanwhile, so they don't stutter.
    * onLeave(choice): called as it starts leaving, with 'tour' or 'skip'.
    * onHanded(): for 'tour', called once the card has become the tour's card (or the tour
    *   didn't come): render the page there, so its first render never runs during the reshape.
@@ -81,7 +100,7 @@ export function createWelcome() {
    * over: call handoff(tourCard) once its first card is placed, and the welcome card
    * becomes it. For 'skip' it's once everything is gone.
    */
-  function play({ markTarget = null, onShown = () => {}, onLeave = () => {}, onHanded = () => {} } = {}) {
+  function play({ markTarget = null, load = [], onLeave = () => {}, onHanded = () => {} } = {}) {
     return new Promise(resolve => {
       const go = root.querySelector('.wel-go');
       const skip = root.querySelector('.wel-skip');
@@ -90,12 +109,15 @@ export function createWelcome() {
       let leaving = false;
 
       requestAnimationFrame(() => requestAnimationFrame(async () => {
-        // with the opening, the card's own entrance waits for it (--intro, recap.css)
-        if (intro) await intro.play({ card, mark });
+        // the work starts just after the opening does (it waits for the page to settle last)
+        const pause = { weight: 0, run: () => new Promise(r => setTimeout(r, reducedMotion() ? 0 : 120)) };
+        const work = loader([pause, ...load, { weight: 1, run: calm }]);
+        // with the opening, the card's own entrance waits for it (.cascade, recap.css)
+        if (intro) await intro.play({ card, mark, progress: work });
         root.classList.add('on');
         if (!intro) playLogo(mark.querySelector('.logo'), { delay: 120 });
-        setTimeout(() => { if (!leaving) go.focus({ preventScroll: true }); }, reducedMotion() ? 0 : (intro ? TIMES.morph : 0) + 1300);
-        setTimeout(() => { if (!leaving) onShown(); }, reducedMotion() ? 0 : 120);
+        const ready = intro ? intro.landed.then(() => 300) : Promise.resolve(reducedMotion() ? 0 : 1300);
+        ready.then(ms => setTimeout(() => { if (!leaving) go.focus({ preventScroll: true }); }, ms));
       }));
 
       // during the opening, clicks and keys wait: nothing unseen gets pressed

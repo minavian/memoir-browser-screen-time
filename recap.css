@@ -2017,9 +2017,11 @@ body { overflow: hidden; }
 .wel.leaving { pointer-events: none; }
 
 /* ---------- welcome: the opening (welcome-intro.js) ---------- */
-/* Black, a light behind the word; WELCOME TO, and MEMOIR as the wordmark (theme.css).
-   The card's kicker, title and logo are where they all land, so the card's own entrance
-   for those is off, and the rest of it waits (--intro). */
+/* Black, a light behind the word; WELCOME TO, and MEMOIR as the wordmark (theme.css),
+   which is the loading bar: a faint ghost of it (.wi-track) that the letters fill from the left
+   through a sliding window (.wi-fill), coloured (their ::before) until it's full. The
+   card's kicker, title and logo are where it all lands, so the card's own entrance for
+   those is off, and the rest of it waits for .cascade (added as the letters fly). */
 .wi-bg { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; background: radial-gradient(130% 100% at 50% 46%, #0d0d0f, #040405 62%, #000); }
 .wi-light { position: absolute; background: radial-gradient(closest-side, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.04) 45%, transparent); opacity: 0; }
 .wi-type {
@@ -2044,14 +2046,37 @@ body { overflow: hidden; }
   color: rgba(216, 216, 221, 0.9);
   white-space: nowrap;
 }
-.wi-word { margin: 0; font-size: var(--wi-f); line-height: 1.2; white-space: nowrap; }
-.wi-kicker span, .wi-word span { display: inline-block; opacity: 0; }
+.wi-word { display: grid; margin: 0; font-size: var(--wi-f); line-height: 1.2; white-space: nowrap; }
+.wi-track, .wi-fill { grid-area: 1 / 1; }
+.wi-kicker span, .wi-out { display: inline-block; opacity: 0; }
+.wi-out { font-weight: 900; text-align: center; color: rgba(255, 255, 255, 0.075); }
+/* the window, with room for the glow (its padding, given back by the margin) */
+.wi-fill { display: inline-block; padding: 0.3em; margin: -0.3em; overflow: hidden; }
+.wi-fill.done { overflow: visible; }
+.wi-fill-in { display: inline-block; }
+.wi-fill-in .wordmark { text-align: center; }
+/* the colour the letters fill with, a slice of one gradient each, over the platinum */
+.wi-fill-in .wordmark::before {
+  content: attr(data-t) / "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  color: transparent;
+  background:
+    url("shared/grain.png") var(--wm-x, 0px) 0 / 96px 96px,
+    linear-gradient(90deg, #62e2ff, #7b8cff 36%, #b77aff 66%, #ff86c4) var(--wm-x, 0px) 0 / var(--wm-w, 100%) 100% no-repeat;
+  background-blend-mode: soft-light, normal;
+  -webkit-background-clip: text;
+  background-clip: text;
+}
 .wel.intro .wel-mark, .wel.intro .wel-title span, .wel.intro .wel-kicker { animation: none; }
 .wel.intro .wel-mark .logo::before { opacity: 0; }
-.wel.intro.on .wel-in { animation-delay: calc(var(--d) * 1ms + var(--intro) + 150ms); }
-.wel.intro.on .wel-card::before { animation-delay: calc(var(--intro) + 380ms); }
-.wel.intro.on .wel-pin { animation-delay: calc(var(--intro) + 1.4s); }
-.wel.intro.on .wel-arrow { animation-delay: calc(var(--intro) + 2.4s); }
+.wel.intro.on:not(.cascade) .wel-in, .wel.intro.on:not(.cascade) .wel-card::before, .wel.intro.on:not(.cascade) .wel-pin,
+.wel.intro.on:not(.cascade) .wel-arrow { animation: none; }
+.wel.intro.cascade .wel-in { animation-delay: calc(var(--d) * 1ms + 150ms); }
+.wel.intro.cascade .wel-card::before { animation-delay: 380ms; }
+.wel.intro.cascade .wel-pin { animation-delay: 1.4s; }
+.wel.intro.cascade .wel-arrow { animation-delay: 2.4s; }
 
 @media (max-width: 760px) {
   .wel-pin { display: none; }

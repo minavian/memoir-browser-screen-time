@@ -63,8 +63,9 @@ function watch() {
  * Plays the clock's entrance. A logo marked `hold` stays hidden until this runs.
  * delay: ms before it starts; pace: a multiplier on its length (under 1 is quicker);
  * face: false leaves the disc out (its caller brings it in);
- * gentle: the ring fades in at its own size and the knob settles without a bounce
- *   (taking an O's place, where anything that jumps catches the eye);
+ * gentle: the ring fades in slowly and evenly at its own size, barely turning, and the
+ *   knob settles without a bounce (taking an O's place: it crosses over with the O as
+ *   the O fades, so nothing seems to jump);
  * live: it shows the time (see above) instead of 10:10.
  */
 export function playLogo(logo, { delay = 0, pace = 1, face = true, gentle = false, live: isLive = false } = {}) {
@@ -86,16 +87,20 @@ export function playLogo(logo, { delay = 0, pace = 1, face = true, gentle = fals
   const sweep = { duration: t(1500), delay: delay + t(160), easing: SWEEP, fill: 'backwards' };
   // the ring grows in (or, gently, fades in at its size) as its fade turns round into
   // place; the knob clicks onto its seam (or settles there)
-  const turn = { duration: t(1150), delay: delay + t(60), easing: EASE_OUT, fill: 'backwards' };
-  const ringIn = gentle ? [{ opacity: 0 }, { opacity: 1, offset: 0.4 }, { opacity: 1 }] : [{ opacity: 0, transform: 'scale(0.8)' }, { opacity: 1, offset: 0.4 }, { opacity: 1, transform: 'none' }];
+  const turn = gentle
+    ? { duration: t(1300), delay: delay + t(60), easing: 'cubic-bezier(0.45, 0, 0.25, 1)', fill: 'backwards' }
+    : { duration: t(1150), delay: delay + t(60), easing: EASE_OUT, fill: 'backwards' };
+  const ringIn = gentle
+    ? [[{ opacity: 0 }, { opacity: 1 }], { duration: t(650), delay: delay + t(60), fill: 'backwards' }]
+    : [[{ opacity: 0, transform: 'scale(0.8)' }, { opacity: 1, offset: 0.4 }, { opacity: 1, transform: 'none' }], turn];
   const knobIn = gentle
     ? { duration: t(600), delay: delay + t(820), easing: EASE_OUT, fill: 'backwards' }
     : { duration: t(520), delay: delay + t(880), easing: POP, fill: 'backwards' };
   return Promise.all([
     face && logo.animate([{ opacity: 0, transform: 'scale(0.6)' }, { opacity: 1, transform: 'none' }],
       { duration: t(560), delay, easing: POP, fill: 'backwards', pseudoElement: '::before' }).finished,
-    part('ring').animate(ringIn, turn).finished,
-    part('ring').animate([{ rotate: '-160deg' }, { rotate: '0deg' }], { ...turn, pseudoElement: '::before' }).finished,
+    part('ring').animate(...ringIn).finished,
+    part('ring').animate([{ rotate: gentle ? '-40deg' : '-160deg' }, { rotate: '0deg' }], { ...turn, pseudoElement: '::before' }).finished,
     part('min').animate(hand(at.min), sweep).finished,
     part('hour').animate(handH(at.hour), sweep).finished,
     part('knob').animate([{ opacity: 0, transform: gentle ? 'scale(0.6)' : 'scale(0)' }, { opacity: 1, transform: 'none' }], knobIn).finished,
