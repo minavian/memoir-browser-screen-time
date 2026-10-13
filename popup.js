@@ -11,6 +11,7 @@ import { watchTheme } from './shared/theme.js';
 import { createGoalRing, openPicker } from './shared/goal.js';
 import { initCursor } from './shared/cursor.js';
 import { initContextMenu } from './shared/context-menu.js';
+import { playLogo } from './shared/logo.js';
 
 const $ = id => document.getElementById(id);
 const sumValues = o => Object.values(o).reduce((a, b) => a + b, 0);
@@ -73,6 +74,7 @@ async function main() {
   render();
   wire();
   reveal();
+  playLogo(document.querySelector('.top-mark'), { delay: 160, live: true });
 
   setTimeout(() => { state.liveReady = true; }, 1400);
   setInterval(tick, 1000);

@@ -29,39 +29,6 @@ body { overflow: hidden; }
 .head-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .mark { width: 40px; height: 40px; flex: none; }
 
-/* ---------- logo: the Memoir clock (shared/logo.js) ---------- */
-/* White on a black disc, in every theme (the clock's fades were tuned on that black).
-   The disc is 200 units across with the clock's 168-unit box in its middle: ring
-   centred (84, 84) from radius 59 to 76; the knob at (84, 16.5), 15.5 round with a 7
-   black middle; the hands turn about (84, 92), 11 thick, the minute 48
-   long and the hour 34. The ring and the minute hand fade out in opacity. */
-.logo { --lg-ink: 255 255 255; position: relative; display: block; aspect-ratio: 1; }
-.logo::before { content: ""; position: absolute; inset: 0; border-radius: 50%; background: #111114; }
-.lg-clock { position: absolute; inset: 8%; }
-.lg-clock > i, .lg-sec > i { position: absolute; display: block; }
-/* the knob rides on its own layer the size of the clock, so a live clock can turn it
-   round the ring (with the ring's fade) once a minute */
-.lg-sec { inset: 0; }
-.logo.hold::before, .logo.hold .lg-clock > i { opacity: 0; }
-/* The ring: its box (radius 76 about (84, 84) in the 168 box), the clockwise fade masked
-   to the band, 59 to 76 (77.632%: --lg-band, so the welcome's opening can thin it from an O). */
-@property --lg-band { syntax: "<percentage>"; inherits: true; initial-value: 77.632%; }
-.lg-ring { inset: 4.762%; border-radius: 50%; }
-.lg-ring::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: conic-gradient(rgb(var(--lg-ink) / 0.937), rgb(var(--lg-ink) / 0.84) 45deg, rgb(var(--lg-ink) / 0.676) 125deg,
-    rgb(var(--lg-ink) / 0.5) 205deg, rgb(var(--lg-ink) / 0.332) 285deg, rgb(var(--lg-ink) / 0.181));
-}
-.lg-ring::before, .lg-ring::after {
-  -webkit-mask-image: radial-gradient(circle closest-side, transparent calc(var(--lg-band) - 0.3px), #000 calc(var(--lg-band) + 0.3px), #000 calc(100% - 0.6px), transparent);
-}
-/* the knob covers the ring's seam; its middle is the disc's black */
-.lg-knob { left: 40.774%; top: 0.595%; width: 18.452%; height: 18.452%; border-radius: 50%; background: radial-gradient(circle closest-side, #111114 calc(45.161% - 0.4px), rgb(var(--lg-ink)) calc(45.161% + 0.4px)); }
-.lg-min, .lg-hour { left: 46.726%; top: 51.488%; height: 6.548%; border-radius: 99px; }
-.lg-min { width: 35.119%; transform-origin: 9.322% 50%; transform: rotate(-30deg); background: linear-gradient(90deg, rgb(var(--lg-ink)) 9.322%, rgb(var(--lg-ink) / 0.92) 33.729%, rgb(var(--lg-ink) / 0.513) 90.678%); }
-.lg-hour { width: 26.786%; transform-origin: 12.222% 50%; transform: rotate(215deg); background: rgb(var(--lg-ink)); }
 .head h1 { margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.03em; white-space: nowrap; }
 .title-text, .title-swap { display: inline-block; }
 .title-text.swap, .title-swap.swap { animation: swap 0.4s var(--ease-out); }
