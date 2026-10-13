@@ -327,24 +327,15 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
   or the tab is hidden. Specks are white; `--dust-ink` (a CSS filter token, recap.css) tints them per theme.
   Reduced motion: a still frame, instant reveal/hide.
 
-- The opening (5.1.5, `welcome-intro.js`): before the welcome card, on black, WELCOME TO and a big MEMOIR (the
-  wordmark) arrive letter by letter from left to right, MEMOIR first as a faint ghost: it's the loading bar. The
-  welcome runs the page's work behind it (`play({ load })`, recap.js: the week drawn, then the tour's sample weeks
-  made ahead, `warmSamples`, sample days are cached; then `calm()`), and the letters fill from the left as it goes,
-  in a cyan-to-pink gradient (each letter's `::before`, a slice of one gradient), a light riding the edge. The fill
-  is a wipe (`.wi-fill` and `.wi-fill-in` sliding against each other: compositor), never faster than 1.4 s for the
-  whole word, creeping on between steps so it never looks stuck (fast machine: full at ~2.3 s; CPU slowed 6x: ~3.5
-  s). Full: the colour settles into the platinum, the O thins (wght 900 to 300) and narrows to 0.921 (round, with
-  the ring's own stroke) as the clock's ring fades in exactly over it (playLogo `gentle`: an even fade, a small
-  turn, the knob settling without a bounce; the owner saw a snap-in as a jump), and the clock sets itself; then the
-  letters fly one after another, left to right, onto their own in the card's MEMOIR (the same face, so they land
-  exactly), the clock in the O's turn into the card's logo as its disc fades in, WELCOME TO onto the kicker; the
-  card's MEMOIR takes over when the R lands, and the black lifts off the page as they fly. The card's own entrance
-  waits for `.cascade` (added as they fly). Clicks and keys during it do nothing (owner: a click must not make it
-  jump); `.wel.landed` marks the end (~5.8 s on a fast machine). Reduced motion: no opening, the work just runs,
-  the card as before. Tried and dropped by the owner: sound, grain clouds, a clock ring starting as heavy as the O.
-  Its timing follows the loading, so recordings are made in slow motion (CDP Animation.setPlaybackRate) and put
-  back together by animation time.
+- The opening (5.1.5, `welcome-intro.js`): before the welcome card, on black with a light drifting in, WELCOME TO and
+  a big MEMOIR (the wordmark) arrive letter by letter from left to right while the welcome runs the page's work behind
+  it (`play({ load })`: the week drawn, the tour's sample weeks made ahead and cached, `calm()`). At 2.3 s (or once the
+  work is done, if later) it turns: the O thins (wght 900 to 300) and narrows to 0.921 (round, the ring's own stroke) as
+  the clock's ring fades in exactly over it (playLogo `gentle`), and the clock sets itself; then the letters fly one
+  after another, left to right, onto their own in the card's MEMOIR, the clock in the O's turn into the card's logo,
+  WELCOME TO onto the kicker, the black lifting off; the card's entrance waits for `.cascade`. Clicks and keys during
+  it do nothing; `.wel.landed` marks the end (~5.8 s). Reduced motion: no opening. Tried and dropped by the owner:
+  sound, grain clouds, a heavy ring thinning, and the word as a coloured loading bar ("too ugly").
 - The MEMOIR wordmark (5.1.5, `shared/theme.css`): wherever the name shows (popup header, welcome title and pin
   hint, tour, right-click menu title) it's the trailer's: Unbounded 900 capitals (`fonts/Unbounded-subset.woff2`,
   preloaded), platinum on Dark and graphite on Light (`--wm-fill`), a fine grain (soft-light tile), a tight glow

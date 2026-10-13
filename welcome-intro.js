@@ -1,27 +1,22 @@
-// The welcome's opening, before the card. On black, WELCOME TO and a big MEMOIR (the
-// trailer's wordmark) arrive letter by letter from left to right, MEMOIR as an outline
-// at first: it's the loading bar. As the page gets ready behind it (the week drawn, the
-// tour's sample weeks made, the page settled) the letters fill from the left with a
-// coloured gradient, a light riding the edge; full, the colour settles into the
-// platinum, the O thins out and the clock fades in in its place and sets itself; then it
-// all becomes the welcome card: the letters fly one after another, left to right (the
-// clock in the O's turn), onto the card's own MEMOIR, WELCOME TO into its kicker and the
-// clock into its logo, while the black lifts off the page.
-// The filling is a wipe (a window and its contents sliding against each other), so like
-// everything else here it's transform and opacity on layers painted once and keeps
-// moving while the page works; the O's weight is the one repaint, after loading. Clicks
-// and keys wait until the card has landed, so nothing unseen is pressed.
+// The welcome's opening, before the card. On black, with a light drifting in behind,
+// WELCOME TO and a big MEMOIR (the trailer's wordmark) arrive letter by letter from left
+// to right while the page gets ready behind them (the week drawn, the tour's sample
+// weeks made); then the O thins and rounds off into the clock's ring, the clock fades in
+// over it and sets itself, and it all becomes the welcome card: the letters fly one
+// after another, left to right (the clock in the O's turn), onto the card's own MEMOIR,
+// WELCOME TO into its kicker and the clock into its logo, while the black lifts off.
+// Transform and opacity on layers painted once (the O's weight is the one repaint, after
+// loading). Clicks and keys wait until the card has landed, so nothing unseen is pressed.
 
 import { EASE_OUT } from './shared/fx.js';
 import { playLogo } from './shared/logo.js';
 
-// ms: from the start, then from the moment the word is full
+// ms: from the start, then from the turn (the word has had its moment and the page is ready)
 export const TIMES = {
-  light: 250,     // the light behind the word comes in
+  light: 250,     // the light behind the word drifts in
   kicker: 300,    // WELCOME TO, letter by letter
-  word: 600,      // MEMOIR's outline, the same
-  fill: 900,      // the filling can start; a full word takes FILL_MS of it at least
-  settle: 450,    // full: the colour gives way to the platinum
+  word: 600,      // MEMOIR, the same
+  turn: 2300,     // the earliest the O can turn (later if the page isn't ready)
   thin: 400,      // the O thins out…
   clock: 650,     // …as the clock fades in in its place and sets itself (shared/logo.js)
   morph: 2050,    // everything turns into the card…
@@ -29,7 +24,6 @@ export const TIMES = {
   morphMs: 950,
 };
 const T = TIMES;
-const FILL_MS = 1400;
 const MORPH = 'cubic-bezier(0.5, 0, 0.15, 1)';
 const FONT = '"Memoir Unbounded"';
 
@@ -67,9 +61,8 @@ export function createIntro(root) {
   type.className = 'wi-type';
   type.setAttribute('aria-hidden', 'true');
   const kick = [...'WELCOME TO'].map(ch => `<span>${ch === ' ' ? '&nbsp;' : ch}</span>`).join('');
-  const letters = cls => [...'MEMOIR'].map(ch => `<span class="${cls}" data-t="${ch}">${ch}</span>`).join('');
-  type.innerHTML = `<p class="wi-kicker">${kick}</p>
-    <p class="wi-word"><span class="wi-track">${letters('wi-out')}</span><span class="wi-fill"><span class="wi-fill-in">${letters('wordmark wm-dark')}</span></span></p>`;
+  const word = [...'MEMOIR'].map(ch => `<span class="wordmark wm-dark" data-t="${ch}">${ch}</span>`).join('');
+  type.innerHTML = `<p class="wi-kicker">${kick}</p><p class="wi-word">${word}</p>`;
   root.querySelector('.wel-dim').after(bg);
   root.append(type);
   root.classList.add('intro');
@@ -78,9 +71,8 @@ export function createIntro(root) {
   const done = new Promise(r => { landed = r; });
 
   /**
-   * Plays it, filling as `progress` reports (subscribe(fn) with 0…1 as work is done;
-   * `promise` once all of it is), into the card's own MEMOIR, kicker and logo (found at
-   * rest). Resolves once it has begun: start the card's own entrance then; the rest of
+   * Plays it, turning once `progress.promise` (the page's work) is done, into the card's
+   * own MEMOIR, kicker and logo (found at rest). Resolves once it has begun: start the card's own entrance then; the rest of
    * the card waits for `.cascade`, which comes as the letters fly.
    */
   async function play({ card, mark, progress }) {
@@ -89,24 +81,18 @@ export function createIntro(root) {
     // ---- everything measured at rest, before anything moves
     const word = type.querySelector('.wi-word');
     const kicker = type.querySelector('.wi-kicker');
-    const fill = word.querySelector('.wi-fill');
-    const fillIn = word.querySelector('.wi-fill-in');
-    const outline = [...word.querySelectorAll('.wi-out')];
-    const big = [...fillIn.children];
+    const big = [...word.children];
     const O = big[3];
     O.style.width = `${O.getBoundingClientRect().width}px`;   // so it can thin without moving the I and R
-    outline[3].style.width = O.style.width;
     const F = parseFloat(getComputedStyle(word).fontSize);
     const cap = F * 0.75;                                      // Unbounded's cap height
-    const wr = fillIn.getBoundingClientRect();
-    const base = baseline(fillIn);
-    // the platinum (and the colour over it) runs across the whole word: each letter shows its slice
+    const wr = word.getBoundingClientRect();
+    const base = baseline(word);
+    // the platinum runs across the whole word: each letter shows its slice
     for (const L of big) {
       L.style.setProperty('--wm-w', `${wr.width}px`);
       L.style.setProperty('--wm-x', `${wr.left - L.getBoundingClientRect().left}px`);
     }
-    // the wipe's window is the word and its glow, the filled part from its left
-    const win = fill.getBoundingClientRect().width;
 
     // each letter flies onto its own in the card's MEMOIR: the same face, so it lands exactly
     const title = card.querySelector('.wel-title .wordmark');
@@ -134,70 +120,29 @@ export function createIntro(root) {
     const m = mark.getBoundingClientRect(), o = O.getBoundingClientRect();
     const markAt = `translate(${o.left + o.width / 2 - (m.left + m.width / 2)}px, ${base - F * 0.375 - (m.top + m.height / 2)}px) scale(${(F * 0.776) / (m.width * 0.76)})`;
 
-    // the light behind the word: it rides the filling edge, then settles between the M and the O
+    // the light behind the word drifts in from the left and settles between the M and the O
     const light = document.createElement('div');
     light.className = 'wi-light';
-    const rest = wr.left + wr.width * 0.6;
-    Object.assign(light.style, { left: `${rest - wr.width * 0.55}px`, top: `${base - cap * 0.92 - cap * 1.1}px`, width: `${wr.width * 1.1}px`, height: `${cap * 2.2}px` });
+    Object.assign(light.style, {
+      left: `${wr.left + wr.width * 0.6 - wr.width * 0.55}px`, top: `${base - cap * 0.92 - cap * 1.1}px`,
+      width: `${wr.width * 1.1}px`, height: `${cap * 2.2}px`,
+    });
     bg.append(light);
 
     // ---- the start, all at once
     const go = (el, kf, opts) => el.animate(kf, { fill: 'both', easing: 'linear', ...opts });
-    go(light, [{ opacity: 0 }, { opacity: 1 }], { duration: 900, delay: T.light });
+    go(light, [{ opacity: 0, transform: `translateX(${-wr.width * 0.5}px)`, easing: 'cubic-bezier(0.3, 0, 0.2, 1)' }, { opacity: 1, offset: 0.35 }, { opacity: 1, transform: 'none' }],
+      { duration: 2600, delay: T.light });
     [...kicker.children].forEach((L, i) => go(L, [{ opacity: 0, transform: 'translateX(-0.7em)' }, { opacity: 1, transform: 'none' }],
       { duration: 800, delay: T.kicker + i * 40, easing: EASE_OUT }));
-    outline.forEach((L, i) => go(L, [{ opacity: 0, transform: 'translateX(-0.16em) scale(0.96)' }, { opacity: 1, transform: 'none' }],
+    big.forEach((L, i) => go(L, [{ opacity: 0, transform: 'translateX(-0.16em) scale(0.96)' }, { opacity: 1, transform: 'none' }],
       { duration: 1000, delay: T.word + i * 105, easing: EASE_OUT }));
 
-    // ---- the filling: a wipe from the left, following the work, never faster than FILL_MS
-    // for the whole word; between steps it creeps on a little, so it never looks stuck
-    let shown = 0;        // how full it is now, 0…1
-    let target = 0;       // how much work is done
-    let moving = null;    // { from, to, anim }
-    const pose = p => ({ win: `translateX(${-(1 - p) * win}px)`, inner: `translateX(${(1 - p) * win}px)`, light: `translateX(${wr.left + p * wr.width - rest}px)` });
-    const now = () => {
-      if (!moving) return shown;
-      const tm = moving.anim.effect.getComputedTiming();
-      return moving.from + (moving.to - moving.from) * (tm.progress ?? (tm.currentIteration == null ? 1 : 0));
-    };
-    const slide = (to, ms, easing) => {
-      const from = now();
-      moving?.anims.forEach(a => a.cancel());
-      const a = pose(from), b = pose(to);
-      const o = { duration: ms, easing, fill: 'forwards' };
-      const anims = [go(fill, [{ transform: a.win }, { transform: b.win }], o), go(fillIn, [{ transform: a.inner }, { transform: b.inner }], o), go(light, [{ transform: a.light }, { transform: b.light }], { ...o, composite: 'replace' })];
-      moving = { from, to, anim: anims[0], anims };
-      shown = from;
-      return anims[0].finished.then(() => { if (moving?.anim === anims[0]) shown = to; }, () => {});
-    };
-    // the light only rides the edge once it's in: hold its start pose until the filling starts
-    const p0 = pose(0);
-    fill.style.transform = p0.win;
-    fillIn.style.transform = p0.inner;
-    light.style.transform = p0.light;
-    let full;
-    const filled = new Promise(r => { full = r; });
-    const step = () => {
-      const from = now();
-      if (target >= 1) {
-        slide(1, Math.max(260, (1 - from) * FILL_MS), 'cubic-bezier(0.3, 0, 0.25, 1)').then(() => { if (target >= 1 && now() >= 1) full(); });
-      } else if (target > from) {
-        // to what's done, then on towards the next step, slowly
-        slide(target, Math.max(260, (target - from) * FILL_MS), 'cubic-bezier(0.3, 0, 0.3, 1)')
-          .then(() => { if (now() < 1 && target < 1) slide(Math.min(0.97, target + (1 - target) * 0.4), 4000, 'cubic-bezier(0.1, 0.6, 0.3, 1)'); });
-      }
-    };
-    let started = false;
-    progress.subscribe(p => { target = Math.max(target, Math.min(1, p)); if (started) step(); });
-    at(fill, T.fill).then(() => { started = true; step(); });
-    progress.promise.then(() => { target = 1; if (started) step(); });
+    // ---- the turn: once the word has had its moment and the page's work is done
+    const filled = Promise.all([at(word, T.turn), progress.promise]);
 
-    // ---- full: the colour settles, the O becomes the clock, and it all becomes the card
+    // ---- the O becomes the clock, and it all becomes the card
     filled.then(() => {
-      fill.classList.add('done');
-      big.forEach(L => go(L, [{ opacity: 1 }, { opacity: 0 }], { duration: T.settle, pseudoElement: '::before', fill: 'forwards' }));
-      go(type.querySelector('.wi-track'), [{ opacity: 1 }, { opacity: 0 }], { duration: T.settle, fill: 'forwards' });
-      go(light, [{ transform: pose(1).light }, { transform: 'none' }], { duration: 1400, easing: 'cubic-bezier(0.45, 0, 0.2, 1)', fill: 'forwards' });
 
       // the O thins out and rounds off into the ring, which fades in over it, at its pace
       const thinning = { duration: 900, delay: T.thin, easing: 'cubic-bezier(0.45, 0, 0.2, 1)', fill: 'forwards' };
