@@ -69,7 +69,9 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
   is `.wel-card::before`, so the clock inside can fly off on its own. It flies home to the header and IS the header
   logo from then on (`flyMark`: the hidden one waiting there is replaced by it; `goLive` starts it showing the time on
   the way; halfway it takes the header logo's own 40 px size inside, scaled up, so it arrives drawn exactly as the
-  header's is; its start is allowed for being drawn from a whole pixel). One clock from the opening's O to the header,
+  header's is; its start is allowed for being drawn from a whole pixel; a strong ease in and out; heading for the tour
+  it darkens on the way to how it looks under the tour's dim, `underDim`, so landing under it changes nothing). One
+  clock from the opening's O to the header,
   nothing handed over (owner's rule). On a narrow window, with no header logo, it blurs away instead.
   "Take the tour" starts the tour at once, under the card, while the words fade; the dims swap in one frame
   (`.tour.handoff` skips the spot's fade); once the words are gone and the page is calm (`calm()`), a shell reshapes

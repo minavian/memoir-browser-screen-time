@@ -10,6 +10,22 @@ import { reducedMotion, morph, dropShell, EASE_OUT, EASE_IN_OUT } from './shared
 import { LOGO, playLogo, goLive, settleLogo } from './shared/logo.js';
 import { createIntro } from './welcome-intro.js';
 
+// the clock's flight home to the header: a strong ease in and out
+const FLY = 'cubic-bezier(0.76, 0, 0.24, 1)';
+const FLY_MS = 1000;
+
+// The brightness that makes the clock look as it will under the tour's dim (a near-black
+// at some alpha over the page): the clock is one colour (ink on Light), so a brightness
+// gives what the dim does to it; on Dark the dim is black, which any colour takes exactly.
+function underDim(logo) {
+  const nums = s => (s.match(/[\d.]+/g) || []).map(Number);
+  const [r, g, b, a = 1] = nums(getComputedStyle(document.documentElement).getPropertyValue('--tour-dim'));
+  const ink = nums(getComputedStyle(logo).getPropertyValue('--lg-ink'));
+  if (!ink.length || ink.some(v => !v)) return 1 - a;
+  const k = [r, g, b].map((c, i) => (ink[i] * (1 - a) + c * a) / ink[i]);
+  return (k[0] + k[1] + k[2]) / 3;
+}
+
 // the card reshapes from rest and settles softly (it's still when the words have gone)
 const RESHAPE = 'cubic-bezier(0.45, 0, 0.15, 1)';
 
@@ -143,9 +159,9 @@ export function createWelcome() {
 
       // the clock flies home to the header and is its logo from then on (the one that waited
       // there, hidden, goes): one clock from the opening's O to the header, nothing handed
-      // over. On the way it starts showing the time. (No header logo on a narrow window: it
-      // blurs away instead.)
-      function flyMark() {
+      // over, on a strong ease in and out. On the way it starts showing the time. (No header
+      // logo on a narrow window: it blurs away instead.)
+      function flyMark(choice) {
         const from = mark.getBoundingClientRect();
         const to = markTarget && markTarget.getClientRects().length ? markTarget.getBoundingClientRect() : null;
         mark.classList.add('flying');
@@ -165,11 +181,18 @@ export function createWelcome() {
         // the same), so it arrives drawn just as the header's is: a shrunk-down big clock is
         // drawn a hair differently, and that would show as it takes the header's place
         const W = from.width, w = to.width;
-        logo.animate([{ opacity: 1 }, { opacity: 1 }], { duration: 1, delay: 120 + 950 / 2 }).finished.then(() => {
+        logo.animate([{ opacity: 1 }, { opacity: 1 }], { duration: 1, delay: 120 + FLY_MS / 2 }).finished.then(() => {
           Object.assign(logo.style, { position: 'absolute', left: `${(W - w) / 2}px`, top: `${(W - w) / 2}px`, width: `${w}px`, height: `${w}px`, transform: `scale(${W / w})` });
         }).catch(() => {});
+        // heading for the tour, the page stays dimmed and the header's logo sits under the dim:
+        // the clock darkens on the way to just how it will look there, so going under it
+        // changes nothing (it flies above the dim, in the welcome)
+        if (choice === 'tour') {
+          mark.animate([{ filter: 'brightness(1)' }, { filter: `brightness(${underDim(logo)})` }],
+            { duration: FLY_MS, delay: 120, easing: FLY, fill: 'forwards' });
+        }
         return mark.animate([{ transform: 'none' }, { transform: `translate(${dx}px, ${dy}px) scale(${s})` }],
-          { duration: 950, delay: 120, easing: EASE_IN_OUT, fill: 'forwards' }).finished.then(() => {
+          { duration: FLY_MS, delay: 120, easing: FLY, fill: 'forwards' }).finished.then(() => {
           // home: it takes the header logo's place, looking just as it did in flight (the
           // opening's leftovers on it were all at rest)
           const ring = logo.querySelector('.lg-ring');
@@ -203,7 +226,7 @@ export function createWelcome() {
           el.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(-14px) scale(0.98)' }],
             { duration: 320, delay: i * 25, easing: EASE_OUT, fill: 'forwards' });
         });
-        const flown = flyMark().catch(() => {});
+        const flown = flyMark(choice).catch(() => {});
         const wordsGone = new Promise(r => setTimeout(r, 320 + parts.length * 25));
 
         if (choice === 'skip') {
