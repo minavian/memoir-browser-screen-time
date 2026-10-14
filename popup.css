@@ -224,3 +224,21 @@ h1 { margin: 0; font-size: 20px; font-weight: 700; line-height: 1.2; }
 .empty p { margin: 0; }
 
 .week-btn { margin-top: 12px; flex: none; width: 100%; }
+/* the first time the popup opens, once: a line, and a soft ring going out from the
+   button a few times once the popup is in (a layer of its own, so the button keeps its
+   entrance) */
+.week-tip { margin: 12px 0 0; flex: none; text-align: center; font-size: 12.5px; font-weight: 550; color: var(--label-2); }
+.week-tip:not([hidden]) + .week-btn { margin-top: 8px; }
+.week-btn.pulse::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  animation: week-pulse 1.6s var(--ease-out) 0.9s 3 both;
+}
+@keyframes week-pulse {
+  from { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 42%, transparent); }
+  to { box-shadow: 0 0 0 12px color-mix(in srgb, var(--accent) 0%, transparent); }
+}
+@media (prefers-reduced-motion: reduce) { .week-btn.pulse::after { animation: none; } }

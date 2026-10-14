@@ -53,13 +53,14 @@ async function main() {
   chrome.runtime.sendMessage({ type: 'sync' }).catch(() => {});
 
   const pastKeys = Array.from({ length: 7 }, (_, i) => dayKey(addDays(new Date(), -(i + 1))));
-  const [days, settings, overrides, session, origins, history] = await Promise.all([
+  const [days, settings, overrides, session, origins, history, { popupIntroduced }] = await Promise.all([
     getDays([state.todayKey, ...pastKeys]),
     getSettings(),
     getCategoryOverrides(),
     getSession(),
     getOrigins(),
     getGoalHistory(),
+    chrome.storage.local.get('popupIntroduced'),
   ]);
   state.today = days[state.todayKey];
   state.overrides = overrides;
@@ -71,6 +72,12 @@ async function main() {
   state.avg = past.length ? past.reduce((a, b) => a + b, 0) / past.length : 0;
 
   ring = createGoalRing($('goal-mini'), { variant: 'mini' });
+  // the first time it opens: a line and a soft pulse on the way to the week, once
+  if (!popupIntroduced) {
+    $('week-tip').hidden = false;
+    $('open-week').classList.add('pulse');
+    chrome.storage.local.set({ popupIntroduced: true }).catch(() => {});
+  }
   render();
   wire();
   reveal();
