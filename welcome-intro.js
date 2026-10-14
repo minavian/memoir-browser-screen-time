@@ -27,6 +27,17 @@ export const TIMES = {
 const T = TIMES;
 const MORPH = 'cubic-bezier(0.5, 0, 0.15, 1)';
 const LIFT = 'cubic-bezier(0.4, 0, 0.2, 1)';    // the black lifting off the page
+// a letter flying home is back to (a breath over) its own size this far into its flight,
+// and glides the rest: drawn big and shrunk, a letter is drawn a hair differently from
+// itself at its size, and the switch then happens in flight, unseen, not as it comes to
+// rest. The breath (0.2%, unseen) keeps it off whole pixels as it glides, so it doesn't
+// step a pixel at a time as it slows
+const SHRUNK = 0.72, BREATH = 1.002;
+// shrinks a letter (or the kicker) home from a size: to a breath over its own, then to it
+function shrink(el, from, start, ms) {
+  el.animate([{ scale: from }, { scale: `${BREATH}` }], { duration: ms * SHRUNK, delay: start, easing: MORPH, fill: 'both' });
+  return el.animate([{ scale: `${BREATH}` }, { scale: '1' }], { duration: ms * (1 - SHRUNK), delay: start + ms * SHRUNK, easing: 'cubic-bezier(0.2, 0, 0.2, 1)', fill: 'forwards' });
+}
 const FONT = '"Memoir Unbounded"';
 // Unbounded Black's O, in its size: 0.786 tall and 1.16 times as wide, its middle 0.375
 // above the baseline, its counter about 0.42 across (wght 900; its room is in recap.css)
@@ -40,13 +51,6 @@ function baseline(el) {
   const y = probe.getBoundingClientRect().top;
   probe.remove();
   return y;
-}
-
-function capHeight(el, ch) {
-  const s = getComputedStyle(el);
-  const c = document.createElement('canvas').getContext('2d');
-  c.font = `${s.fontWeight} ${s.fontSize} ${s.fontFamily}`;
-  return c.measureText(ch).actualBoundingBoxAscent;
 }
 
 // a promise for when an animation-timeline moment comes (it keeps time with the rest)
@@ -95,49 +99,48 @@ export function createIntro(root) {
     const cap = F * 0.75;                                      // Unbounded's cap height
     const wr = word.getBoundingClientRect();
     const base = baseline(word);
-    // the platinum runs across the whole word: each letter shows its slice
-    for (const L of big) {
-      L.style.setProperty('--wm-w', `${wr.width}px`);
-      L.style.setProperty('--wm-x', `${wr.left - L.getBoundingClientRect().left}px`);
-    }
 
-    // each letter flies onto its own in the card's MEMOIR: the same face, so it lands exactly.
-    // The card's MEMOIR is cut in three (the face has no kerning, so it reads the same), so
-    // its O can come in on its own, in the O's turn: the clock took the word's O
+    // The big word and its kicker are the card's own MEMOIR and WELCOME TO, made big: each
+    // of the card's letters is scaled up onto its place in the word (the word up there is
+    // only room, unseen) and flies home from it, so nothing hands over. The card's MEMOIR is
+    // cut into letters (the face has no kerning, so it reads the same); its O is the one
+    // letter not in the word (the clock took it) and comes in on its own, in the O's turn
     const whole = card.querySelector('.wel-title .wordmark');
-    const parts = [['Mem', 'MEM'], ['o', 'O'], ['ir', 'IR']].map(([text, t]) => {
+    const letters = [...'Memoir'].map(ch => {
       const p = document.createElement('span');
       p.className = 'wordmark';
-      p.dataset.t = t;
-      p.textContent = text;
+      p.dataset.t = ch.toUpperCase();
+      p.textContent = ch;
       return p;
     });
-    whole.replaceWith(...parts);
-    const tl = Math.min(...parts.map(p => p.getBoundingClientRect().left));
-    const tr = Math.max(...parts.map(p => p.getBoundingClientRect().right));
-    for (const p of parts) {
+    whole.replaceWith(...letters);
+    const tl = letters[0].getBoundingClientRect().left, tr = letters[5].getBoundingClientRect().right;
+    for (const p of letters) {
       p.style.setProperty('--wm-w', `${tr - tl}px`);
       p.style.setProperty('--wm-x', `${tl - p.getBoundingClientRect().left}px`);
     }
-    const [mem, titleO, ir] = parts;
-    const k = parseFloat(getComputedStyle(mem).fontSize) / F;
-    const tBase = baseline(mem.parentElement);
-    const range = document.createRange();
-    const flights = big.map((L, i) => {
-      const [node, at0] = i < 3 ? [mem.firstChild, i] : i === 3 ? [titleO.firstChild, 0] : [ir.firstChild, i - 4];
-      range.setStart(node, at0);
-      range.setEnd(node, at0 + 1);
-      const a = L.getBoundingClientRect(), b = range.getBoundingClientRect();
-      L.style.transformOrigin = `50% ${base - a.top}px`;
-      return { dx: b.left + b.width / 2 - (a.left + a.width / 2), dy: tBase - base };
+    const titleO = letters[3];
+    const k = parseFloat(getComputedStyle(letters[0]).fontSize) / F;
+    const tBase = baseline(letters[0].parentElement);
+    // a letter in the word: its baseline's middle on the word's letter's, scaled up (moved
+    // and sized apart, translate and scale, so it can be its own size before it stops)
+    const inBig = letters.map((L, i) => {
+      const a = big[i].getBoundingClientRect(), b = L.getBoundingClientRect();
+      L.style.transformOrigin = `50% ${tBase - b.top}px`;
+      return (nudge = 0, z = 1) => ({ translate: `${a.left + a.width / 2 + nudge - (b.left + b.width / 2)}px ${base - tBase}px`, scale: `${z / k}` });
     });
+    // the grain is a 96 px tile: scaled up, the card's letters take one as much finer, so the
+    // big word's grain is as fine as a word that size has; halfway home (in flight) they take
+    // their own back
+    for (const L of letters) L.style.setProperty('--wm-g', `${96 * k}px`);
+    // WELCOME TO, the same way: the card's kicker (in the opening's own type), letter by letter
     const kick = card.querySelector('.wel-kicker');
+    kick.innerHTML = [...kick.textContent].map(ch => `<span>${ch === ' ' ? '&nbsp;' : ch}</span>`).join('');
     const ka = kicker.getBoundingClientRect(), kb = kick.getBoundingClientRect();
     const kaBase = baseline(kicker), kbBase = baseline(kick);
-    kicker.style.transformOrigin = `50% ${kaBase - ka.top}px`;
     kick.style.transformOrigin = `50% ${kbBase - kb.top}px`;
-    const kk = capHeight(kick, 'W') / (parseFloat(getComputedStyle(kicker).fontSize) * 0.75);
-    const kdx = kb.left + kb.width / 2 - (ka.left + ka.width / 2), kdy = kbBase - kaBase;
+    const kickBig = { translate: `${ka.left + ka.width / 2 - (kb.left + kb.width / 2)}px ${kaBase - kbBase}px`, scale: `${parseFloat(getComputedStyle(kicker).fontSize) / parseFloat(getComputedStyle(kick).fontSize)}` };
+    const kickBigInk = getComputedStyle(kicker).color, kickInk = getComputedStyle(kick).color;
 
     // the card's clock is the O: one element, from the word to the card. In the word it's
     // scaled up to the O's height in the O's room, and its ring is the O, heavy (O_BAND) and
@@ -183,11 +186,12 @@ export function createIntro(root) {
     const go = (el, kf, opts) => el.animate(kf, { fill: 'both', easing: 'linear', ...opts });
     go(light, [{ opacity: 0, transform: `translateX(${-wr.width * 0.5}px)`, easing: 'cubic-bezier(0.3, 0, 0.2, 1)' }, { opacity: 1, offset: 0.35 }, { opacity: 1, transform: 'none' }],
       { duration: 2600, delay: T.light });
-    [...kicker.children].forEach((L, i) => go(L, [{ opacity: 0, transform: 'translateX(-0.7em)' }, { opacity: 1, transform: 'none' }],
+    go(kick, [{ opacity: 1, ...kickBig, color: kickBigInk }, { opacity: 1, ...kickBig, color: kickBigInk }], { duration: 1 });
+    [...kick.children].forEach((L, i) => go(L, [{ opacity: 0, transform: 'translateX(-0.7em)' }, { opacity: 1, transform: 'none' }],
       { duration: 800, delay: T.kicker + i * 40, easing: EASE_OUT }));
-    big.forEach((L, i) => go(i === 3 ? mark : L,
+    big.forEach((L, i) => go(i === 3 ? mark : letters[i],
       i === 3 ? [{ opacity: 0, transform: inWord(-0.16 * F, 0.96) }, { opacity: 1, transform: inWord() }]
-        : [{ opacity: 0, transform: 'translateX(-0.16em) scale(0.96)' }, { opacity: 1, transform: 'none' }],
+        : [{ opacity: 0, ...inBig[i](-0.16 * F, 0.96) }, { opacity: 1, ...inBig[i]() }],
       { duration: 1000, delay: T.word + i * 105, easing: EASE_OUT }));
 
     // ---- the turn: once the word has had its moment and the page's work is done
@@ -214,9 +218,8 @@ export function createIntro(root) {
         settle.push(go(logo, [{ '--lg-hole': '0%' }, { '--lg-hole': '4.605%' }], { duration: 420, delay: T.clock + 1000, easing: EASE_OUT }));
       }
 
-      // into the card, a letter at a time from the left: the clock goes on in the O's turn,
-      // from the word to its own place; when the R has landed, the card's MEMOIR takes over
-      const landing = T.morph + 5 * T.step + T.morphMs;
+      // home into the card, a letter at a time from the left: the clock goes on in the O's
+      // turn, from the word to its own place
       const flying = [];
       big.forEach((L, i) => {
         const start = T.morph + i * T.step;
@@ -226,28 +229,25 @@ export function createIntro(root) {
           if (!onLight) go(logo, [{ opacity: 0 }, { opacity: 1 }], { duration: 500, delay: start + 250, pseudoElement: '::before', fill: 'forwards' });
           return;
         }
-        const { dx, dy } = flights[i];
-        flying.push(go(L, [{ transform: 'none' }, { transform: `translate(${dx}px, ${dy}px) scale(${k})` }], { duration: T.morphMs, delay: start, easing: MORPH, fill: 'forwards' }));
-        go(L, [{ opacity: 1 }, { opacity: 0 }], { duration: 220, delay: landing - 120, fill: 'forwards' });
+        flying.push(go(letters[i], [{ translate: inBig[i]().translate }, { translate: '0px 0px' }], { duration: T.morphMs, delay: start, easing: MORPH }));
+        shrink(letters[i], inBig[i]().scale, start, T.morphMs);
+        at(letters[i], start + T.morphMs * 0.4).then(() => letters[i].style.removeProperty('--wm-g'));
       });
       // the card's O comes in as soon as the second M has landed (to the eye: two thirds into
       // its flight the long settle has it there), so the word fills in in order: M, E, M, O,
-      // I, R. The rest of the card's MEMOIR takes over from the flown letters when the R has
-      // landed (it's under them, exactly)
+      // I, R
       titleO.style.transformOrigin = `50% ${(tBase - titleO.getBoundingClientRect().top) - F * k * O_MID}px`;
       flying.push(go(titleO, [{ opacity: 0, transform: 'scale(0.6)' }, { opacity: 1, transform: 'none' }],
         { duration: 380, delay: T.morph + 2 * T.step + T.morphMs * 0.66, easing: EASE_OUT }));
-      for (const p of [mem, ir]) flying.push(go(p, [{ opacity: 0 }, { opacity: 1 }], { duration: 240, delay: landing - 160 }));
       // on Light, with no disc, the clock fills the disc's room as it flies (on the disc
       // it's 84% of it), so it lands as the Light logo is drawn
       if (onLight) {
         settle.push(go(logo.querySelector('.lg-clock'), [{ scale: '1' }, { scale: `${1 / 0.84}` }],
           { duration: T.morphMs, delay: T.morph + 3 * T.step, easing: MORPH, fill: 'forwards' }));
       }
-      go(kicker, [{ opacity: 1, transform: 'none' }, { opacity: 1, offset: 0.25 }, { opacity: 0, offset: 0.7 }, { opacity: 0, transform: `translate(${kdx}px, ${kdy}px) scale(${kk})` }],
-        { duration: T.morphMs, delay: T.morph, easing: MORPH, fill: 'forwards' });
-      go(kick, [{ opacity: 0, transform: `translate(${-kdx}px, ${-kdy}px) scale(${1 / kk})` }, { opacity: 0, offset: 0.3 }, { opacity: 1, offset: 0.8 }, { opacity: 1, transform: 'none' }],
-        { duration: T.morphMs, delay: T.morph, easing: MORPH });
+      flying.push(go(kick, [{ opacity: 1, translate: kickBig.translate, color: kickBigInk }, { opacity: 1, translate: '0px 0px', color: kickInk }],
+        { duration: T.morphMs, delay: T.morph, easing: MORPH }));
+      shrink(kick, kickBig.scale, T.morph, T.morphMs);
       // the black (on Light the white) lifts off the page as they fly, and the rest of the
       // card follows them in
       flying.push(go(bg, [{ opacity: 1 }, { opacity: 0 }], { duration: 750, delay: T.morph + 60, easing: LIFT, fill: 'forwards' }));
@@ -256,6 +256,7 @@ export function createIntro(root) {
         // from here it's the logo that follows the theme, as everywhere else (the same look)
         logo.classList.add('themed');
         settle.forEach(a => a.cancel());
+        for (const L of letters) L.style.removeProperty('--wm-g');
         logo.style.removeProperty('--lg-knob-mid');
         logo.style.removeProperty('--lg-ink');
         bg.remove();

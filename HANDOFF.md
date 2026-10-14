@@ -353,8 +353,12 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
   during it do nothing; `.wel.landed` marks the end (~5.8 s). Reduced motion: no opening. Tried and dropped by the
   owner: sound, grain clouds, the word as a coloured loading bar ("too ugly"), and an O glyph crossfading into a
   separate clock ("a small correction" showed as they swapped). Owner's rule: a thing that turns into another is one
-  element on one path, never two matched up (that breaks on high-DPI screens). The flying letters and the kicker still
-  hand over to the card's own at landing.
+  element on one path, never two matched up (that breaks on high-DPI screens). So the big MEMOIR and WELCOME TO are the
+  card's own title letters and kicker, scaled up onto the opening's word (`.wi-type` is only unseen room now) and flown
+  home: the card's MEMOIR is cut into letters (no kerning in the face), the kicker is in the opening's type (Unbounded
+  500, 0.34em tracking, 12 px). Each shrinks to a breath over its size 72% into its flight and glides the rest (`shrink`),
+  so Chrome's redraw from big to its own size happens in flight, not as it stops; their grain tile is set finer while
+  scaled up (`--wm-g`) and given back halfway. (Slow glides move in whole-pixel steps vertically: Chrome, as before.)
 - The MEMOIR wordmark (5.1.5, `shared/theme.css`): wherever the name shows (popup header, welcome title and pin
   hint, tour, right-click menu title) it's the trailer's: Unbounded 900 capitals (`fonts/Unbounded-subset.woff2`,
   preloaded), platinum on Dark and graphite on Light (`--wm-fill`), a fine grain (soft-light tile), a tight glow
