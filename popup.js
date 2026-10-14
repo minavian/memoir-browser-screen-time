@@ -193,26 +193,53 @@ function drawRing(cats, total) {
     CATEGORIES.filter(c => cats[c.id]).map(c => `${c.label} ${formatDuration(cats[c.id])}`).join(', ');
 }
 
+// Every category of the day, most first; more than fit scroll. Rebuilt only when which
+// categories there are changes (so a scroll isn't lost); the shares update in place.
 function renderLegend(cats, total, rows = 3) {
   const ul = $('legend');
-  ul.textContent = '';
-  const top = CATEGORIES.filter(c => cats[c.id]).sort((a, b) => cats[b.id] - cats[a.id]).slice(0, rows);
-  if (!top.length) { ul.innerHTML = '<li class="none"><span class="name">No browsing yet today</span></li>'; return; }
-  for (const cat of top) {
-    const li = document.createElement('li');
-    li.dataset.cat = cat.id;
-    li.title = cat.label;
-    if (cat.id === hoverCat) li.classList.add('on');
-    li.innerHTML = `<span class="dot" style="--c:${cat.color}"></span><span class="name">${cat.short}</span><b>${Math.round((cats[cat.id] / total) * 100)}%</b>`;
-    ul.appendChild(li);
+  const present = CATEGORIES.filter(c => cats[c.id]).sort((a, b) => cats[b.id] - cats[a.id]);
+  const share = id => `${Math.round((cats[id] / total) * 100)}%`;
+  const key = present.map(c => c.id).sort().join(',');
+  if (ul.dataset.key === key && ul.dataset.rows === String(rows)) {
+    for (const li of ul.querySelectorAll('[data-cat]')) li.querySelector('b').textContent = share(li.dataset.cat);
+    return;
   }
+  ul.dataset.key = key;
+  ul.dataset.rows = String(rows);
+  ul.textContent = '';
+  if (pickedCat && !cats[pickedCat]) pickedCat = null;
+  if (!present.length) {
+    ul.innerHTML = '<li class="none"><span class="name">No browsing yet today</span></li>';
+  } else {
+    for (const cat of present) {
+      const li = document.createElement('li');
+      li.dataset.cat = cat.id;
+      li.title = cat.label;
+      li.tabIndex = 0;
+      li.setAttribute('role', 'button');
+      li.setAttribute('aria-pressed', String(cat.id === pickedCat));
+      li.classList.toggle('on', cat.id === shownCat());
+      li.classList.toggle('picked', cat.id === pickedCat);
+      li.innerHTML = `<span class="dot" style="--c:${cat.color}"></span><span class="name">${cat.short}</span><b>${share(cat.id)}</b>`;
+      ul.appendChild(li);
+    }
+  }
+  // as many rows as there's room for, the rest scroll
+  const sc = makeScroller(ul);
+  const first = ul.firstElementChild;
+  const gap = parseFloat(getComputedStyle(ul).rowGap) || 0;
+  ul.parentElement.style.maxHeight = first ? `${rows * (first.offsetHeight + gap) - gap}px` : '';
+  sc.update();
 }
 
 // Only redraws when what's shown actually changes (the heartbeat updates the
 // session every minute, which must not replay the animation).
 function renderSites(visible) {
   const list = $('site-list');
-  const entries = Object.entries(visible).filter(([, ms]) => ms >= 1000).sort((a, b) => b[1] - a[1]);
+  const any = Object.entries(visible).filter(([, ms]) => ms >= 1000);
+  // a picked category: just its sites
+  const entries = (pickedCat ? any.filter(([d]) => categorize(d, state.overrides) === pickedCat) : any).sort((a, b) => b[1] - a[1]);
+  $('most-label').textContent = pickedCat ? `${CATEGORY_BY_ID[pickedCat].short} today` : 'Most used today';
   $('site-count').textContent = entries.length ? `${entries.length} site${entries.length === 1 ? '' : 's'}` : '';
   list.textContent = '';
   $('sites-empty').hidden = entries.length > 0;
@@ -330,18 +357,18 @@ function tick() {
   }
   const { visible, priv, all } = split(liveSites());
   const total = sumValues(visible);
-  if (state.liveReady && !hoverCat) {
+  const cats = categoryTotals(visible);
+  if (state.liveReady) {
     const el = $('today-total');
-    el._value = total;
-    const text = formatDuration(total);
-    if (el.textContent !== text) el.textContent = text;
+    const id = shownCat();
+    const v = id ? cats[id] || 0 : total;
+    el._value = v;
+    const text = formatDuration(v);
+    if (el.textContent !== text && !$('ring-center').classList.contains('swapping')) el.textContent = text;
   }
   renderCompare(all, priv);
-  const rows = priv >= 60_000 ? 2 : 3;
-  if (rows !== state.legendRows) {
-    state.legendRows = rows;
-    renderLegend(categoryTotals(visible), total, rows);
-  }
+  state.legendRows = priv >= 60_000 ? 2 : 3;
+  renderLegend(cats, total, state.legendRows);
   updateGoal(all);
   const s = state.session;
   if (s && !state.paused) {
@@ -377,7 +404,12 @@ function onStorage(changes, area) {
 // ---------- interactions ----------
 
 let swapTimer = 0;
+// under the pointer: a preview; picked (clicked): it stays, the list too, until it's
+// clicked again
 let hoverCat = null;
+let pickedCat = null;
+let centred = null;
+const shownCat = () => hoverCat || pickedCat;
 function setCenter(totalText, subText) {
   const c = $('ring-center');
   clearTimeout(swapTimer);
@@ -394,12 +426,30 @@ function setCenter(totalText, subText) {
 function focusCat(id) {
   if (hoverCat === id) return;
   hoverCat = id;
+  showCat();
+}
+
+function pickCat(id) {
+  pickedCat = pickedCat === id ? null : id;
+  showCat();
+  renderSites(split(liveSites()).visible);
+}
+
+// the ring, the legend and the ring's middle show the category in view (or the day)
+function showCat() {
+  const id = shownCat();
   const ringSvg = document.querySelector('.ring');
   ringSvg.classList.toggle('focus', !!id);
   for (const seg of ringSvg.querySelectorAll('.ring-seg')) seg.classList.toggle('on', seg.dataset.cat === id);
   const legend = $('legend');
   legend.classList.toggle('focus', !!id);
-  for (const li of legend.children) li.classList.toggle('on', li.dataset.cat === id);
+  for (const li of legend.querySelectorAll('[data-cat]')) {
+    li.classList.toggle('on', li.dataset.cat === id);
+    li.classList.toggle('picked', li.dataset.cat === pickedCat);
+    li.setAttribute('aria-pressed', String(li.dataset.cat === pickedCat));
+  }
+  if (id === centred) return;
+  centred = id;
   const { visible } = split(liveSites());
   const totals = categoryTotals(visible);
   if (id) setCenter(formatDuration(totals[id] || 0), CATEGORY_BY_ID[id].short);
@@ -433,6 +483,18 @@ function wire() {
     focusCat(el ? el.dataset.cat : null);
   });
   hero.addEventListener('pointerleave', () => focusCat(null));
+  // a category (in the legend or on the ring) picks; again, or the ring's middle, lets go
+  hero.addEventListener('click', e => {
+    const el = e.target.closest('[data-cat]');
+    if (el) pickCat(el.dataset.cat);
+    else if (pickedCat && e.target.closest('.ring-wrap')) pickCat(pickedCat);
+  });
+  hero.addEventListener('keydown', e => {
+    const el = e.target.closest('.legend [data-cat]');
+    if (!el || (e.key !== 'Enter' && e.key !== ' ')) return;
+    e.preventDefault();
+    pickCat(el.dataset.cat);
+  });
 
   $('goal-set').addEventListener('click', openGoal);
 
