@@ -1990,8 +1990,28 @@ body { overflow: hidden; }
 /* Black, a light behind the word; WELCOME TO, and MEMOIR as the wordmark (theme.css).
    The card's kicker, title and logo are where it all lands, so the card's own entrance
    for those is off, and the rest of it waits for .cascade (added as the letters fly). */
-.wi-bg { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; background: radial-gradient(130% 100% at 50% 46%, #0d0d0f, #040405 62%, #000); }
-.wi-light { position: absolute; background: radial-gradient(closest-side, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.04) 45%, transparent); opacity: 0; }
+/* It follows the theme: on Dark black with a soft light behind the word, the words in
+   platinum; on Light a soft white, a brighter spot drifting in behind the word, the words
+   in the wordmark's graphite (welcome-intro.js picks the word's and the clock's colours). */
+:root, [data-wave="light"] {
+  --wi-bg: radial-gradient(130% 100% at 50% 46%, #f7f7f9, #eeeef1 62%, #e3e3e7);
+  --wi-light: radial-gradient(closest-side, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.45) 45%, transparent);
+  --wi-kick: rgba(60, 60, 67, 0.72);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --wi-bg: radial-gradient(130% 100% at 50% 46%, #0d0d0f, #040405 62%, #000);
+    --wi-light: radial-gradient(closest-side, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.04) 45%, transparent);
+    --wi-kick: rgba(216, 216, 221, 0.9);
+  }
+}
+:root[data-theme="dark"], [data-wave="dark"] {
+  --wi-bg: radial-gradient(130% 100% at 50% 46%, #0d0d0f, #040405 62%, #000);
+  --wi-light: radial-gradient(closest-side, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.04) 45%, transparent);
+  --wi-kick: rgba(216, 216, 221, 0.9);
+}
+.wi-bg { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; background: var(--wi-bg); }
+.wi-light { position: absolute; background: var(--wi-light); opacity: 0; }
 .wi-type {
   --wi-f: min(14.2vw, 27vh, 214px);
   position: fixed;
@@ -2011,7 +2031,7 @@ body { overflow: hidden; }
   font-size: calc(var(--wi-f) * 0.115);
   font-weight: 500;
   letter-spacing: 0.34em;
-  color: rgba(216, 216, 221, 0.9);
+  color: var(--wi-kick);
   white-space: nowrap;
 }
 .wi-word { margin: 0; font-size: var(--wi-f); line-height: 1.2; white-space: nowrap; }

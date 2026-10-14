@@ -1,11 +1,11 @@
-// The welcome's opening, before the card. On black, with a light drifting in behind,
+// The welcome's opening, before the card. On black (on Light a soft white), a light drifting in behind,
 // WELCOME TO and a big MEMOIR (the trailer's wordmark) arrive letter by letter from left
 // to right while the page gets ready behind them (the week drawn, the tour's sample
 // weeks made). The O is the card's clock itself, nothing standing in for it: all ring at
-// first, heavy and wide in the wordmark's platinum, it thins and rounds off into the
+// first, heavy and wide in the wordmark's platinum (graphite on Light), it thins and rounds off into the
 // clock's own ring as the clock sets itself, then flies on into the card as its logo,
 // one element on one path. With it the letters fly one after another, left to right,
-// onto the card's own MEMOIR and WELCOME TO into its kicker, while the black lifts off.
+// onto the card's own MEMOIR and WELCOME TO into its kicker, while the black (white) lifts off.
 // Transform and opacity on layers painted once (the O's band is the one repaint, after
 // loading). Clicks and keys wait until the card has landed, so nothing unseen is pressed.
 
@@ -66,9 +66,11 @@ export function createIntro(root) {
   type.className = 'wi-type';
   type.setAttribute('aria-hidden', 'true');
   const kick = [...'WELCOME TO'].map(ch => `<span>${ch === ' ' ? '&nbsp;' : ch}</span>`).join('');
-  // the O is only room in the word: the card's clock takes it (play)
+  // the O is only room in the word: the card's clock takes it (play). The word is the
+  // wordmark in the theme's colours (platinum on Dark, graphite on Light)
+  const onLight = getComputedStyle(root).getPropertyValue('--logo-disc').trim() === 'transparent';
   const word = [...'MEMOIR'].map(ch => (ch === 'O' ? '<span class="wi-o"></span>'
-    : `<span class="wordmark wm-dark" data-t="${ch}">${ch}</span>`)).join('');
+    : `<span class="wordmark${onLight ? '' : ' wm-dark'}" data-t="${ch}">${ch}</span>`)).join('');
   type.innerHTML = `<p class="wi-kicker">${kick}</p><p class="wi-word">${word}</p>`;
   root.querySelector('.wel-dim').after(bg);
   root.append(type);
@@ -121,7 +123,9 @@ export function createIntro(root) {
 
     // the card's clock is the O: one element, from the word to the card. In the word it's
     // scaled up to the O's height in the O's room, and its ring is the O, heavy (O_BAND) and
-    // wide (O_WIDE), in the word's platinum across it, with the letters' glow
+    // wide (O_WIDE), in the word's colour across it, with the letters' glow. On Light the
+    // clock is the logo for light backgrounds all along: ink, no disc, the knob's middle a
+    // hole (it opens as the knob comes in)
     const logo = mark.querySelector('.logo');
     const ring = logo.querySelector('.lg-ring');
     const m = mark.getBoundingClientRect(), o = big[3].getBoundingClientRect(), r = ring.getBoundingClientRect();
@@ -130,7 +134,7 @@ export function createIntro(root) {
     const inWord = (nudge = 0, k = 1) => `translate(${ox + nudge - (m.left + m.width / 2)}px, ${oy - (m.top + m.height / 2)}px) scale(${s * k})`;
     const kx = s * O_WIDE, ky = s, lt = big[0].getBoundingClientRect();
     const left = ox - (r.width * kx) / 2, top = oy - (r.height * ky) / 2;
-    ring.classList.add('wm-dark');
+    if (!onLight) ring.classList.add('wm-dark');
     ring.style.setProperty('--wi-ox', `${(wr.left - left) / kx}px`);
     ring.style.setProperty('--wi-oy', `${(lt.top - top) / ky}px`);
     ring.style.setProperty('--wi-ow', `${wr.width / kx}px`);
@@ -138,7 +142,13 @@ export function createIntro(root) {
     ring.style.setProperty('--wi-og', `${96 / kx}px ${96 / ky}px`);
     ring.style.setProperty('--lg-band', O_BAND);
     ring.style.scale = `${O_WIDE} 1`;
-    const glow = a => `0 0 ${(0.045 * F) / s}px rgba(255, 255, 255, ${0.32 * a}), 0 0 ${(0.16 * F) / s}px rgba(255, 255, 255, ${0.12 * a})`;
+    const glow = onLight
+      ? a => `0 ${(0.02 * F) / s}px ${(0.06 * F) / s}px rgba(0, 0, 0, ${0.14 * a})`
+      : a => `0 0 ${(0.045 * F) / s}px rgba(255, 255, 255, ${0.32 * a}), 0 0 ${(0.16 * F) / s}px rgba(255, 255, 255, ${0.12 * a})`;
+    if (onLight) {
+      logo.style.setProperty('--lg-ink', getComputedStyle(logo).getPropertyValue('--logo-ink').trim());
+      logo.style.setProperty('--lg-knob-mid', 'transparent');
+    }
     ring.style.boxShadow = glow(1);
     mark.classList.add('as-o');                                // hands and knob wait for the turn
 
@@ -167,8 +177,6 @@ export function createIntro(root) {
 
     // ---- the O becomes the clock, and it all becomes the card
     filled.then(() => {
-      // on Light the card's logo is the one for light backgrounds (shared/logo.css .themed)
-      const onLight = getComputedStyle(logo).getPropertyValue('--logo-disc').trim() === 'transparent';
 
       // the O thins and rounds off into the clock's ring (band and width in one animation,
       // so they keep step), its platinum giving way to the ring's own fade, as the clock sets itself
@@ -180,6 +188,13 @@ export function createIntro(root) {
       go(ring, [{ boxShadow: glow(1) }, { boxShadow: glow(0) }], tint);
       mark.classList.remove('as-o');
       playLogo(logo, { delay: T.clock, face: false, fromO: true });
+      const settle = [];
+      if (onLight) {
+        // the knob's hole opens through the ring once the knob is mostly in (shared/logo.js
+        // brings it 820 ms on, for 600), so the ring never shows a hole without it
+        at(logo, T.clock + 820).then(() => logo.classList.add('cut'));
+        settle.push(go(logo, [{ '--lg-hole': '0%' }, { '--lg-hole': '4.605%' }], { duration: 420, delay: T.clock + 1000, easing: EASE_OUT }));
+      }
 
       // into the card, a letter at a time from the left: the clock goes on in the O's turn,
       // from the word to its own place; when the R has landed, the card's MEMOIR takes over
@@ -189,7 +204,7 @@ export function createIntro(root) {
         const start = T.morph + i * T.step;
         if (i === 3) {
           flying.push(go(mark, [{ opacity: 1, transform: inWord() }, { opacity: 1, transform: 'none' }], { duration: T.morphMs, delay: start, easing: MORPH }));
-          // its disc comes in as it flies (on Light it has none: below)
+          // its disc comes in as it flies (on Light it has none)
           if (!onLight) go(logo, [{ opacity: 0 }, { opacity: 1 }], { duration: 500, delay: start + 250, pseudoElement: '::before', fill: 'forwards' });
           return;
         }
@@ -198,28 +213,18 @@ export function createIntro(root) {
         go(L, [{ opacity: 1 }, { opacity: 0 }], { duration: 220, delay: landing - 120, fill: 'forwards' });
       });
       flying.push(go(title, [{ opacity: 0 }, { opacity: 1 }], { duration: 240, delay: landing - 160 }));
-      // on Light it becomes the logo for light backgrounds as it flies: no disc, and the
-      // clock turns from white to ink with the page as the black lifts, a little behind it
-      // (white while the page is still dark, ink once it's light), filling the disc's room
-      // as it goes (on the disc it's 84% of it). Its knob's middle becomes a hole through to
-      // the page first, while the page is still black (unseen: the same black)
-      const settle = [];
+      // on Light, with no disc, the clock fills the disc's room as it flies (on the disc
+      // it's 84% of it), so it lands as the Light logo is drawn
       if (onLight) {
-        at(logo, T.morph).then(() => {
-          logo.classList.add('cut');
-          logo.style.setProperty('--lg-knob-mid', 'transparent');
-        });
-        settle.push(
-          go(logo, [{ '--lg-ink': '255 255 255' }, { '--lg-ink': getComputedStyle(logo).getPropertyValue('--logo-ink').trim() }],
-            { duration: 300, delay: T.morph + 300, easing: 'cubic-bezier(0.4, 0, 0.6, 1)', fill: 'forwards' }),
-          go(logo.querySelector('.lg-clock'), [{ scale: '1' }, { scale: `${1 / 0.84}` }],
-            { duration: T.morphMs, delay: T.morph + 3 * T.step, easing: MORPH, fill: 'forwards' }));
+        settle.push(go(logo.querySelector('.lg-clock'), [{ scale: '1' }, { scale: `${1 / 0.84}` }],
+          { duration: T.morphMs, delay: T.morph + 3 * T.step, easing: MORPH, fill: 'forwards' }));
       }
       go(kicker, [{ opacity: 1, transform: 'none' }, { opacity: 1, offset: 0.25 }, { opacity: 0, offset: 0.7 }, { opacity: 0, transform: `translate(${kdx}px, ${kdy}px) scale(${kk})` }],
         { duration: T.morphMs, delay: T.morph, easing: MORPH, fill: 'forwards' });
       go(kick, [{ opacity: 0, transform: `translate(${-kdx}px, ${-kdy}px) scale(${1 / kk})` }, { opacity: 0, offset: 0.3 }, { opacity: 1, offset: 0.8 }, { opacity: 1, transform: 'none' }],
         { duration: T.morphMs, delay: T.morph, easing: MORPH });
-      // the black lifts off the page as they fly, and the rest of the card follows them in
+      // the black (on Light the white) lifts off the page as they fly, and the rest of the
+      // card follows them in
       flying.push(go(bg, [{ opacity: 1 }, { opacity: 0 }], { duration: 750, delay: T.morph + 60, easing: LIFT, fill: 'forwards' }));
       at(bg, T.morph).then(() => root.classList.add('cascade'));
       Promise.all(flying.map(a => a.finished)).catch(() => {}).then(() => {
@@ -227,6 +232,7 @@ export function createIntro(root) {
         logo.classList.add('themed');
         settle.forEach(a => a.cancel());
         logo.style.removeProperty('--lg-knob-mid');
+        logo.style.removeProperty('--lg-ink');
         bg.remove();
         type.remove();
         root.classList.add('landed');

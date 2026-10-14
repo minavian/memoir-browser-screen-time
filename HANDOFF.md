@@ -331,7 +331,10 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
   or the tab is hidden. Specks are white; `--dust-ink` (a CSS filter token, recap.css) tints them per theme.
   Reduced motion: a still frame, instant reveal/hide.
 
-- The opening (5.1.5, `welcome-intro.js`): before the welcome card, on black with a light drifting in, WELCOME TO and
+- The opening (5.1.5, `welcome-intro.js`): it follows the theme (tokens `--wi-bg`, `--wi-light`, `--wi-kick` in
+  recap.css). Dark: black, a soft light, platinum words, a white clock that gets its disc as it flies. Light: a soft
+  white, a brighter spot, the wordmark's graphite, and the clock the Light logo all along (ink, no disc, the knob's hole
+  opening through the ring once the knob is mostly in, `--lg-hole`). Before the welcome card, WELCOME TO and
   a big MEMOIR (the wordmark) arrive letter by letter from left to right while the welcome runs the page's work behind
   it (`play({ load })`: the week drawn, the tour's sample weeks made ahead and cached, `calm()`). The O is not a letter:
   the word keeps only its room (`.wi-o`, the O's advance) and the card's own clock (`.wel-mark`) sits in it, scaled up,
@@ -341,9 +344,8 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
   gives way to the ring's fade and the clock sets itself (playLogo `fromO`); then the letters fly one after another
   (0.6 s after the clock is set), left to right, onto their own in the card's MEMOIR, the clock in the O's turn on to
   its own place (the same element, one transform to `none`: nothing hands over, so nothing can jump; owner's rule, see
-  below), WELCOME TO onto the kicker, the black lifting off (on Light the clock has no disc and turns from white to
-  ink with the page as it lifts, a little behind it, landing as the Light logo, `.themed`); the card's entrance waits
-  for `.cascade`. Clicks and keys
+  below), WELCOME TO onto the kicker, the black (or white) lifting off; it lands as the logo that follows the theme
+  (`.themed`; on Light it fills the disc's room as it flies); the card's entrance waits for `.cascade`. Clicks and keys
   during it do nothing; `.wel.landed` marks the end (~5.8 s). Reduced motion: no opening. Tried and dropped by the
   owner: sound, grain clouds, the word as a coloured loading bar ("too ugly"), and an O glyph crossfading into a
   separate clock ("a small correction" showed as they swapped). Owner's rule: a thing that turns into another is one
