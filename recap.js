@@ -2827,14 +2827,7 @@ function updateGoal() {
   const limit = limitOn(state.goalHistory, state.todayKey);
   const locked = limitLocked(state.goalHistory, state.todayKey);
   const used = usedToday();
-  const level = goalRing.update({ used, limit, locked });
-  const chip = $('goal-chip');
-  if (!limit) { chip.hidden = true; return; }
-  chip.hidden = false;
-  chip.dataset.level = level;
-  const text = level === 'over' ? 'Over the limit' : `${Math.min(100, pct(used, limit))}% used`;
-  const html = `<span class="dot"></span>${text}`;
-  if (chip.innerHTML !== html) chip.innerHTML = html;
+  goalRing.update({ used, limit, locked });
 }
 
 function goalTick() {

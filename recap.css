@@ -620,20 +620,6 @@ body { overflow: hidden; }
 
 .goal-card { contain: size; padding-bottom: 14px !important; }
 .goal-head { align-items: center; margin-bottom: 2px; }
-.goal-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  height: 22px;
-  padding: 0 9px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--gc) 16%, transparent);
-  font-size: 11.5px;
-  font-weight: 600;
-  white-space: nowrap;
-  transition: background-color 0.5s var(--ease);
-}
-.goal-chip .dot { width: 7px; height: 7px; background: var(--gc); transition: background-color 0.5s var(--ease); }
 .goal-host { flex: 1; min-height: 0; padding: 8px; container-type: size; display: grid; place-items: center; }
 .goal-ring { width: min(100cqw, 100cqh); height: min(100cqw, 100cqh); }
 .goal-ring .gr { width: 100%; height: 100%; }
