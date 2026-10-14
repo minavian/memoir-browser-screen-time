@@ -33,8 +33,8 @@ h1 { margin: 0; font-size: 20px; font-weight: 700; line-height: 1.2; }
 .hero-side { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
 .legend { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
 /* every category of the day; when there are more than fit (three rows, two when the
-   private line takes the third's room) they scroll. Each one picks: the ring and the list
-   show just it, until it's clicked again */
+   private line takes the third's room) they scroll. Each one opens its sites (as in the
+   report: shared/pop.css) */
 .hero-side > .scroller { margin: 0 -6px; }
 .legend li {
   display: grid;
@@ -49,8 +49,7 @@ h1 { margin: 0; font-size: 20px; font-weight: 700; line-height: 1.2; }
   cursor: var(--cursor-hand);
   transition: background-color 0.2s var(--ease), opacity 0.2s var(--ease);
 }
-.legend li:hover, .legend li.on { background: var(--fill-1); }
-.legend li.picked { background: var(--fill-2); color: var(--label); }
+.legend li:hover, .legend li.on, .legend li[aria-expanded="true"] { background: var(--fill-1); }
 .legend li:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 .legend.focus li:not(.on) { opacity: 0.4; }
 .legend b { color: var(--label); font-weight: 600; font-variant-numeric: tabular-nums; }
@@ -201,3 +200,6 @@ h1 { margin: 0; font-size: 20px; font-weight: 700; line-height: 1.2; }
   to { box-shadow: 0 0 0 12px color-mix(in srgb, var(--accent) 0%, transparent); }
 }
 @media (prefers-reduced-motion: reduce) { .week-btn.pulse::after { animation: none; } }
+
+/* the category popover in the popup's room: as wide as fits, never past its edges */
+.pop { width: min(310px, calc(100vw - 24px)); max-height: calc(100vh - 24px); }

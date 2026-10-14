@@ -7,6 +7,7 @@
   <link rel="preload" href="fonts/Unbounded-subset.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="shared/theme.css">
   <link rel="stylesheet" href="shared/logo.css">
+  <link rel="stylesheet" href="shared/pop.css">
   <link rel="stylesheet" href="shared/goal.css">
   <link rel="stylesheet" href="popup.css">
 </head>
@@ -62,7 +63,7 @@
 
     <section class="most" data-anim style="--i:3">
       <div class="most-head">
-        <p class="overline" id="most-label">Most used today</p>
+        <p class="overline">Most used today</p>
         <span class="caption" id="site-count"></span>
       </div>
       <div class="card list-card" id="list-card">
@@ -79,6 +80,7 @@
       <svg class="chev" viewBox="0 0 12 12" aria-hidden="true"><path d="M4.5 2.5 8 6l-3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </button>
   </main>
+  <div class="pop" id="cat-pop" role="dialog" aria-label="Sites in this category" hidden></div>
   <script type="module" src="popup.js"></script>
 </body>
 </html>

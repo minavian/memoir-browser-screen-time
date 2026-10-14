@@ -5,7 +5,7 @@ import {
   getGoalHistory, limitOn, limitLocked, commitLimit, removeLimit,
 } from './shared/core.js';
 import {
-  animateNumber, reveal, faviconTile, tween, slicePath, initPetals, setOrigins, siteLinkHtml, replay, reducedMotion, POP, makeScroller, initSmoothScrolling, disableTitleTooltips,
+  animateNumber, reveal, faviconTile, tween, slicePath, initPetals, setOrigins, siteLinkHtml, replay, reducedMotion, POP, makeScroller, initSmoothScrolling, disableTitleTooltips, MorphPopover,
 } from './shared/fx.js';
 import { watchTheme } from './shared/theme.js';
 import { createGoalRing, openPicker } from './shared/goal.js';
@@ -207,7 +207,6 @@ function renderLegend(cats, total, rows = 3) {
   ul.dataset.key = key;
   ul.dataset.rows = String(rows);
   ul.textContent = '';
-  if (pickedCat && !cats[pickedCat]) pickedCat = null;
   if (!present.length) {
     ul.innerHTML = '<li class="none"><span class="name">No browsing yet today</span></li>';
   } else {
@@ -217,9 +216,9 @@ function renderLegend(cats, total, rows = 3) {
       li.title = cat.label;
       li.tabIndex = 0;
       li.setAttribute('role', 'button');
-      li.setAttribute('aria-pressed', String(cat.id === pickedCat));
-      li.classList.toggle('on', cat.id === shownCat());
-      li.classList.toggle('picked', cat.id === pickedCat);
+      li.setAttribute('aria-haspopup', 'dialog');
+      li.setAttribute('aria-expanded', String(cat.id === popCat));
+      li.classList.toggle('on', cat.id === hoverCat);
       li.innerHTML = `<span class="dot" style="--c:${cat.color}"></span><span class="name">${cat.short}</span><b>${share(cat.id)}</b>`;
       ul.appendChild(li);
     }
@@ -236,10 +235,7 @@ function renderLegend(cats, total, rows = 3) {
 // session every minute, which must not replay the animation).
 function renderSites(visible) {
   const list = $('site-list');
-  const any = Object.entries(visible).filter(([, ms]) => ms >= 1000);
-  // a picked category: just its sites
-  const entries = (pickedCat ? any.filter(([d]) => categorize(d, state.overrides) === pickedCat) : any).sort((a, b) => b[1] - a[1]);
-  $('most-label').textContent = pickedCat ? `${CATEGORY_BY_ID[pickedCat].short} today` : 'Most used today';
+  const entries = Object.entries(visible).filter(([, ms]) => ms >= 1000).sort((a, b) => b[1] - a[1]);
   $('site-count').textContent = entries.length ? `${entries.length} site${entries.length === 1 ? '' : 's'}` : '';
   list.textContent = '';
   $('sites-empty').hidden = entries.length > 0;
@@ -360,7 +356,7 @@ function tick() {
   const cats = categoryTotals(visible);
   if (state.liveReady) {
     const el = $('today-total');
-    const id = shownCat();
+    const id = hoverCat;
     const v = id ? cats[id] || 0 : total;
     el._value = v;
     const text = formatDuration(v);
@@ -404,12 +400,9 @@ function onStorage(changes, area) {
 // ---------- interactions ----------
 
 let swapTimer = 0;
-// under the pointer: a preview; picked (clicked): it stays, the list too, until it's
-// clicked again
+// under the pointer: the ring's middle shows it
 let hoverCat = null;
-let pickedCat = null;
 let centred = null;
-const shownCat = () => hoverCat || pickedCat;
 function setCenter(totalText, subText) {
   const c = $('ring-center');
   clearTimeout(swapTimer);
@@ -429,25 +422,69 @@ function focusCat(id) {
   showCat();
 }
 
-function pickCat(id) {
-  pickedCat = pickedCat === id ? null : id;
-  showCat();
-  renderSites(split(liveSites()).visible);
+// ---------- a category's sites: grows out of the word or slice you clicked (as in the report) ----------
+
+const catPop = new MorphPopover($('cat-pop'), { radius: 16 });
+let popCat = null;
+
+function openCatPop(catId, anchor) {
+  if (popCat === catId && catPop.isOpen) { closeCatPop(); return; }
+  const cat = CATEGORY_BY_ID[catId];
+  if (!cat) return;
+  const { visible } = split(liveSites());
+  const total = sumValues(visible);
+  const sites = Object.entries(visible).filter(([d, ms]) => ms >= 1000 && categorize(d, state.overrides) === catId).sort((a, b) => b[1] - a[1]);
+  const mine = sites.reduce((n, [, ms]) => n + ms, 0);
+  const el = $('cat-pop');
+  el.innerHTML = `<div class="pop-head"><span class="pop-title"><span class="dot" style="--c:${cat.color}"></span>${cat.label}</span><span class="pop-meta num">${formatDuration(mine)} · ${total ? Math.round((mine / total) * 100) : 0}%</span></div>`;
+  const list = document.createElement('ol');
+  list.className = 'rows';
+  const max = sites.length ? sites[0][1] : 1;
+  sites.slice(0, 80).forEach(([domain, ms], i) => {
+    const li = document.createElement('li');
+    li.className = 'row';
+    li.style.setProperty('--i', Math.min(i, 12));
+    const w = Math.max(2, (ms / max) * 100).toFixed(2);
+    li.innerHTML = `<div class="row-main"><span class="row-name">${siteLinkHtml(domain)}</span><span class="row-cat"><span class="dot" style="--c:${cat.color}"></span>${cat.label}</span></div>
+      <span class="row-time">${formatDuration(ms, { seconds: true })}</span>
+      <div class="row-bar"><i style="--c:${cat.color};--d:${260 + Math.min(i, 12) * 45}ms" data-w="${w}"></i></div>`;
+    li.prepend(faviconTile(domain, cat.color));
+    list.appendChild(li);
+  });
+  el.appendChild(list);
+  makeScroller(list);
+  setExpanded(catId);
+  const wasOpen = catPop.isOpen;
+  popCat = catId;
+  const go = () => catPop.open(anchor, { fromRadius: anchor instanceof SVGElement ? 12 : 6 }).then(() => {
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      for (const i of el.querySelectorAll('.row-bar i[data-w]')) i.style.setProperty('--w', `${i.dataset.w}%`);
+    }));
+  });
+  if (wasOpen) catPop.close({ instant: true }).then(go);
+  else go();
 }
 
-// the ring, the legend and the ring's middle show the category in view (or the day)
+function closeCatPop() {
+  if (!catPop.isOpen) return;
+  popCat = null;
+  setExpanded(null);
+  catPop.close();
+}
+
+function setExpanded(id) {
+  for (const li of $('legend').querySelectorAll('[data-cat]')) li.setAttribute('aria-expanded', String(li.dataset.cat === id));
+}
+
+// the ring, the legend and the ring's middle show the category under the pointer (or the day)
 function showCat() {
-  const id = shownCat();
+  const id = hoverCat;
   const ringSvg = document.querySelector('.ring');
   ringSvg.classList.toggle('focus', !!id);
   for (const seg of ringSvg.querySelectorAll('.ring-seg')) seg.classList.toggle('on', seg.dataset.cat === id);
   const legend = $('legend');
   legend.classList.toggle('focus', !!id);
-  for (const li of legend.querySelectorAll('[data-cat]')) {
-    li.classList.toggle('on', li.dataset.cat === id);
-    li.classList.toggle('picked', li.dataset.cat === pickedCat);
-    li.setAttribute('aria-pressed', String(li.dataset.cat === pickedCat));
-  }
+  for (const li of legend.querySelectorAll('[data-cat]')) li.classList.toggle('on', li.dataset.cat === id);
   if (id === centred) return;
   centred = id;
   const { visible } = split(liveSites());
@@ -483,17 +520,23 @@ function wire() {
     focusCat(el ? el.dataset.cat : null);
   });
   hero.addEventListener('pointerleave', () => focusCat(null));
-  // a category (in the legend or on the ring) picks; again, or the ring's middle, lets go
+  // a category (in the legend or on the ring) opens its sites; again, or anywhere else, closes
   hero.addEventListener('click', e => {
     const el = e.target.closest('[data-cat]');
-    if (el) pickCat(el.dataset.cat);
-    else if (pickedCat && e.target.closest('.ring-wrap')) pickCat(pickedCat);
+    if (el) openCatPop(el.dataset.cat, el);
   });
   hero.addEventListener('keydown', e => {
     const el = e.target.closest('.legend [data-cat]');
     if (!el || (e.key !== 'Enter' && e.key !== ' ')) return;
     e.preventDefault();
-    pickCat(el.dataset.cat);
+    openCatPop(el.dataset.cat, el);
+  });
+  document.addEventListener('pointerdown', e => {
+    if (catPop.isOpen && !e.target.closest('#cat-pop') && !e.target.closest('.hero [data-cat]')) closeCatPop();
+  });
+  // its sites' links open in a new tab; the popup closes itself behind them
+  $('cat-pop').addEventListener('click', e => {
+    if (e.target.closest('a.site-link')) setTimeout(() => window.close(), 60);
   });
 
   $('goal-set').addEventListener('click', openGoal);
