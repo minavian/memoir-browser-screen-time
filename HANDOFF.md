@@ -347,7 +347,9 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
   (0.6 s after the clock is set), left to right, onto their own in the card's MEMOIR, the clock in the O's turn on to
   its own place (the same element, one transform to `none`: nothing hands over, so nothing can jump; owner's rule, see
   below), WELCOME TO onto the kicker, the black (or white) lifting off; it lands as the logo that follows the theme
-  (`.themed`; on Light it fills the disc's room as it flies); the card's entrance waits for `.cascade`. Clicks and keys
+  (`.themed`; on Light it fills the disc's room as it flies). The card's MEMOIR is cut in three (MEM, O, IR; the
+  face has no kerning) so its O pops in as the second M lands to the eye, two thirds into its flight: the word fills
+  in M, E, M, O, I, R. The card's entrance waits for `.cascade`. Clicks and keys
   during it do nothing; `.wel.landed` marks the end (~5.8 s). Reduced motion: no opening. Tried and dropped by the
   owner: sound, grain clouds, the word as a coloured loading bar ("too ugly"), and an O glyph crossfading into a
   separate clock ("a small correction" showed as they swapped). Owner's rule: a thing that turns into another is one

@@ -101,14 +101,32 @@ export function createIntro(root) {
       L.style.setProperty('--wm-x', `${wr.left - L.getBoundingClientRect().left}px`);
     }
 
-    // each letter flies onto its own in the card's MEMOIR: the same face, so it lands exactly
-    const title = card.querySelector('.wel-title .wordmark');
-    const k = parseFloat(getComputedStyle(title).fontSize) / F;
-    const tBase = baseline(title.parentElement);
+    // each letter flies onto its own in the card's MEMOIR: the same face, so it lands exactly.
+    // The card's MEMOIR is cut in three (the face has no kerning, so it reads the same), so
+    // its O can come in on its own, in the O's turn: the clock took the word's O
+    const whole = card.querySelector('.wel-title .wordmark');
+    const parts = [['Mem', 'MEM'], ['o', 'O'], ['ir', 'IR']].map(([text, t]) => {
+      const p = document.createElement('span');
+      p.className = 'wordmark';
+      p.dataset.t = t;
+      p.textContent = text;
+      return p;
+    });
+    whole.replaceWith(...parts);
+    const tl = Math.min(...parts.map(p => p.getBoundingClientRect().left));
+    const tr = Math.max(...parts.map(p => p.getBoundingClientRect().right));
+    for (const p of parts) {
+      p.style.setProperty('--wm-w', `${tr - tl}px`);
+      p.style.setProperty('--wm-x', `${tl - p.getBoundingClientRect().left}px`);
+    }
+    const [mem, titleO, ir] = parts;
+    const k = parseFloat(getComputedStyle(mem).fontSize) / F;
+    const tBase = baseline(mem.parentElement);
     const range = document.createRange();
     const flights = big.map((L, i) => {
-      range.setStart(title.firstChild, i);
-      range.setEnd(title.firstChild, i + 1);
+      const [node, at0] = i < 3 ? [mem.firstChild, i] : i === 3 ? [titleO.firstChild, 0] : [ir.firstChild, i - 4];
+      range.setStart(node, at0);
+      range.setEnd(node, at0 + 1);
       const a = L.getBoundingClientRect(), b = range.getBoundingClientRect();
       L.style.transformOrigin = `50% ${base - a.top}px`;
       return { dx: b.left + b.width / 2 - (a.left + a.width / 2), dy: tBase - base };
@@ -212,7 +230,14 @@ export function createIntro(root) {
         flying.push(go(L, [{ transform: 'none' }, { transform: `translate(${dx}px, ${dy}px) scale(${k})` }], { duration: T.morphMs, delay: start, easing: MORPH, fill: 'forwards' }));
         go(L, [{ opacity: 1 }, { opacity: 0 }], { duration: 220, delay: landing - 120, fill: 'forwards' });
       });
-      flying.push(go(title, [{ opacity: 0 }, { opacity: 1 }], { duration: 240, delay: landing - 160 }));
+      // the card's O comes in as soon as the second M has landed (to the eye: two thirds into
+      // its flight the long settle has it there), so the word fills in in order: M, E, M, O,
+      // I, R. The rest of the card's MEMOIR takes over from the flown letters when the R has
+      // landed (it's under them, exactly)
+      titleO.style.transformOrigin = `50% ${(tBase - titleO.getBoundingClientRect().top) - F * k * O_MID}px`;
+      flying.push(go(titleO, [{ opacity: 0, transform: 'scale(0.6)' }, { opacity: 1, transform: 'none' }],
+        { duration: 380, delay: T.morph + 2 * T.step + T.morphMs * 0.66, easing: EASE_OUT }));
+      for (const p of [mem, ir]) flying.push(go(p, [{ opacity: 0 }, { opacity: 1 }], { duration: 240, delay: landing - 160 }));
       // on Light, with no disc, the clock fills the disc's room as it flies (on the disc
       // it's 84% of it), so it lands as the Light logo is drawn
       if (onLight) {
