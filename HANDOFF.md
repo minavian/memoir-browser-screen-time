@@ -391,6 +391,21 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
   set for light and dark toolbars (the owner wanted the black behind it, as on the site); small sizes are drawn
   with thicker strokes (16 px has no hole in the knob).
 
+## Over the limit: the flame's moment (`shared/overshow.js`, styles in `shared/goal.css`)
+When the popup opens over the daily limit, and when the report opens from the over-limit notification
+(`recap.html#over`, from `openRecap(null, { over })` in background.js; with the report already open the hash change
+plays it, the flame rising out of its ring), the ring's own flame takes the stage: a dim with a warm glow comes up at
+once (220 ms), the flame grows at the middle with "42m over · your 1h daily limit", holds, then flies home into its
+ring. Four sizes by how far over (each flickers harder): under 30m small, 30m big, 1h bigger plus a dry line (10 in
+`OVER_LINES`, never the same twice running), 2h a wall of fire taller than the stage, rising from below; embers off
+the two biggest. Holds are long enough to read (2 to 3.8 s). One element (owner's rule): the flame leaves its spot
+(an empty `.gr-flame-slot` its size keeps the room), plays, lands back in it. Made flawless frame by frame: its own
+laid-out size (the ring may be scaling it in), the spot measured once the flame has left it, home measured as the
+flight starts, start and home on Chrome's whole pixels, size reached before the end (it glides the last stretch, so
+the big-to-small redraw is in flight), the starting look set before its animations first draw, the ring's flicker
+(shape and core opacity) carried over when it rises out, and its own flicker at rest exactly as it lands. Clicks go
+through; reduced motion: none.
+
 ## Popup's first open
 The first time the popup opens (storage key `popupIntroduced`), once: a line above Weekly Report ("Your whole week,
 day by day, is one click away.") and a soft ring going out from the button three times once the popup is in (its own

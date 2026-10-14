@@ -314,3 +314,26 @@
    at the end when the animation lets go */
 .pc-title, .pc-sub, .pc-limit, .pc-actions .btn { will-change: transform, opacity; }
 .pc-yes path { stroke-dasharray: 1; }
+
+/* ---------- over the limit: the flame's moment (overshow.js) ---------- */
+/* A dim with a warm glow behind the flame, its words under it, embers off the bigger ones.
+   Over everything, and clicks go through: it's a moment, not a wall. */
+.os { position: fixed; inset: 0; z-index: 7000; pointer-events: none; overflow: hidden; }
+.os-back {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  background: radial-gradient(circle at 50% var(--os-cy), rgba(255, 96, 40, var(--os-glow)), transparent 60%), rgba(8, 4, 3, 0.86);
+}
+.os[data-tier="wall"] .os-back { background: radial-gradient(130% 90% at 50% 100%, rgba(255, 90, 30, var(--os-glow)), transparent 72%), rgba(14, 5, 3, 0.86); }
+/* the flame under its embers and its words */
+.os > .gr-flame { z-index: 1; }
+.os-embers { position: absolute; inset: 0; z-index: 2; }
+.os-text { position: absolute; z-index: 3; left: 50%; width: min(86vw, 520px); text-align: center; color: #fff; opacity: 0; }
+.os-big { margin: 0; font-family: var(--font-display); font-size: clamp(24px, 7vmin, 44px); font-weight: 700; line-height: 1.1; letter-spacing: -0.03em; }
+.os-sub { margin: 4px 0 0; font-size: clamp(12px, 2.6vmin, 15px); font-weight: 500; color: rgba(255, 255, 255, 0.72); }
+.os-line { margin: 12px auto 0; max-width: 30ch; font-size: clamp(13px, 3vmin, 17px); font-weight: 600; line-height: 1.35; color: #ffd9a8; text-wrap: balance; }
+.os[data-tier="wall"] .os-text { text-shadow: 0 1px 2px rgba(80, 0, 0, 0.5), 0 4px 24px rgba(60, 0, 0, 0.55); }
+.os[data-tier="wall"] .os-sub { color: rgba(255, 255, 255, 0.86); }
+.os[data-tier="wall"] .os-line { color: #fff3dd; }
+.os-embers i { position: absolute; border-radius: 50%; background: radial-gradient(circle, #ffe08a 0, #ff7a2e 55%, transparent 72%); opacity: 0; }

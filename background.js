@@ -234,9 +234,10 @@ async function weeklyReminder(alarm) {
   await chrome.alarms.create('weekly', { when: nextReminderTime(settings, new Date(Date.now() + 60_000)) });
 }
 
-async function openRecap(weekKey) {
+// over: the report opens with the flame's moment (shared/overshow.js)
+async function openRecap(weekKey, { over = false } = {}) {
   const base = chrome.runtime.getURL('recap.html');
-  const url = weekKey ? `${base}#week=${weekKey}` : base;
+  const url = weekKey ? `${base}#week=${weekKey}` : over ? `${base}#over` : base;
   const tabs = await chrome.tabs.query({});
   const existing = tabs.find(t => t.url && t.url.startsWith(base));
   if (existing) {
@@ -249,7 +250,7 @@ async function openRecap(weekKey) {
 
 chrome.notifications.onClicked.addListener(id => {
   if (id.startsWith('weekly-recap')) openRecap(id.split(':')[1]);
-  else if (id.startsWith('goal-')) openRecap();
+  else if (id.startsWith('goal-')) openRecap(null, { over: id.startsWith('goal-over') });
   else return;
   chrome.notifications.clear(id);
 });

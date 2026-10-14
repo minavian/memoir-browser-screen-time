@@ -22,6 +22,7 @@ import { playLogo } from './shared/logo.js';
 import { initCursor, setCursorPref, cursorEnabled, cursorSmooth, setCursorSmooth } from './shared/cursor.js';
 import { createDust } from './shared/dust.js';
 import { initContextMenu } from './shared/context-menu.js';
+import { playOverShow } from './shared/overshow.js';
 
 const $ = id => document.getElementById(id);
 const sum = arr => arr.reduce((a, b) => a + b, 0);
@@ -142,6 +143,9 @@ async function init() {
     startQueue();
     await render({});
     updateGoal();
+    boardShown = true;
+    // opened from the over-the-limit notification: the flame's moment, before it's drawn
+    if (overPending) { overPending = false; overShow(false); }
     reveal();
     if (!welcome) playLogo(headMark, { delay: 160, live: true });
   };
@@ -183,6 +187,13 @@ async function init() {
   }, 60_000);
   setInterval(goalTick, 5000);
   window.addEventListener('hashchange', () => {
+    // the over-the-limit notification, with the report already open: the flame rises out of its ring
+    if (location.hash === '#over') {
+      window.history.replaceState(null, '', location.pathname);
+      if (boardShown) overShow(true);
+      else overPending = true;
+      return;
+    }
     const mm = location.hash.match(/week=(\d{4}-\d{2}-\d{2})/);
     if (!mm) return;
     const ws = startOfWeek(dateFromKey(mm[1]));
@@ -2815,6 +2826,18 @@ function placeHeatFrame({ instant = false } = {}) {
 }
 
 // ---------- today's limit ----------
+
+// From the over-the-limit notification (recap.html#over): the ring's flame takes the stage,
+// then flies home (shared/overshow.js). lifted: the ring is already on screen.
+let overPending = location.hash === '#over';
+if (overPending) window.history.replaceState(null, '', location.pathname);
+let boardShown = false;
+function overShow(lifted) {
+  const limit = limitOn(state.goalHistory, state.todayKey);
+  const used = usedToday();
+  if (!limit || used <= limit) return;
+  playOverShow({ flame: document.querySelector('#goal-ring .gr-flame'), overMs: used - limit, limitMs: limit, lifted });
+}
 
 function usedToday() {
   const d = cloneDay(state.todayRec);

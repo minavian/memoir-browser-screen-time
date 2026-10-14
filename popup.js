@@ -12,6 +12,7 @@ import { createGoalRing, openPicker } from './shared/goal.js';
 import { initCursor } from './shared/cursor.js';
 import { initContextMenu } from './shared/context-menu.js';
 import { playLogo } from './shared/logo.js';
+import { playOverShow } from './shared/overshow.js';
 
 const $ = id => document.getElementById(id);
 const sumValues = o => Object.values(o).reduce((a, b) => a + b, 0);
@@ -76,6 +77,8 @@ async function main() {
     chrome.storage.local.set({ popupIntroduced: true }).catch(() => {});
   }
   render();
+  // over the limit: the flame's moment, set going before anything is drawn
+  overShow();
   wire();
   reveal();
   playLogo(document.querySelector('.top-mark'), { delay: 160, live: true });
@@ -279,6 +282,14 @@ function renderSites(visible) {
 }
 
 // ---------- daily limit ----------
+
+// Over the limit, the ring's flame takes the stage as the popup opens, then flies home.
+function overShow() {
+  const limit = limitOn(state.goalHistory, state.todayKey);
+  const used = split(liveSites()).all;
+  if (!limit || used <= limit) return;
+  playOverShow({ flame: document.querySelector('#goal-mini .gr-flame'), overMs: used - limit, limitMs: limit });
+}
 
 function updateGoal(all, initial = false) {
   const limit = limitOn(state.goalHistory, state.todayKey);
