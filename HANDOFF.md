@@ -63,7 +63,8 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
 - Sample week uses the user's real limit (no fake limit).
 - First run (4.3.0): a fresh install opens `recap.html` (`onInstalled`, reason `install`). While `onboarded`
   is unset the report shows the welcome (`welcome.js`): the clock pops and sets itself, letters rise, cards cascade,
-  pin hint points at the toolbar. "Take the tour" flies the clock into the header logo while the page
+  pin hint points at the toolbar. Behind it the board is the tour's sample week (a new week is empty); "Skip for now"
+  goes from it to your own week the way the tour's end does (`resetView` + `render`). "Take the tour" flies the clock into the header logo while the page
   reveals, then the tutorial runs; "Skip for now" (or Esc) just sets `onboarded`. Replay the tour from Settings.
 - Welcome (5.1.2): a single card on the tour's own dim (`--tour-dim`, no colour orbs, no feature cards). Its surface
   is `.wel-card::before`, so the clock inside can fly off on its own. It flies home to the header and IS the header

@@ -134,11 +134,11 @@ async function init() {
   const headMark = document.querySelector('.head .mark');
   if (welcome) headMark.classList.add('hold');
   // the first render starts every entrance, so it happens right when the page is
-  // shown: straight away, or (first visit) as the welcome leaves, not behind it.
-  // Heading for the tour, the first thing rendered is the tour's sample week, so
-  // the tour doesn't swap the whole board out the moment it starts.
-  const show = async choice => {
-    if (choice === 'tour') useTourWeek();
+  // shown: straight away, or (first visit) behind the welcome. On a first visit the
+  // board is the tour's sample week (a new week is empty): the tour walks it, and Skip
+  // goes from it to your own week, as the tour's end does.
+  const show = async () => {
+    if (welcome) useTourWeek();
     startQueue();
     await render({});
     updateGoal();
@@ -157,16 +157,19 @@ async function init() {
       markTarget: headMark,
       // behind the opening: the week drawn, then the tour's sample weeks made
       load: [{ weight: 5, run: showOnce }, { weight: 3, run: warmSamples }],
-      onLeave: choice => (choice === 'tour' ? useTourWeek() : showOnce()),
-      onHanded: async () => {
-        if (!shown) { await showOnce(); return; } // first render: the sample week already
-        await shown;
-        resetView({ instant: true });
-        await render({});
-      },
-    }).then(({ choice, handoff }) => {
-      if (choice === 'tour') startTour({ prepared: true, handoff });
-      else chrome.storage.local.set({ onboarded: true });
+      onLeave: () => showOnce(),
+      // the board already shows the tour's week
+      onHanded: () => showOnce(),
+    }).then(async ({ choice, handoff }) => {
+      if (choice === 'tour') { startTour({ prepared: true, handoff }); return; }
+      chrome.storage.local.set({ onboarded: true });
+      // Skip: from the sample week to your own, the way the tour's end goes there
+      await showOnce();
+      state.demo = false;
+      state.demoOverrides = {};
+      state.weekStart = startOfWeek(new Date());
+      resetView({ instant: true });
+      await render({});
     });
   } else {
     await show();
