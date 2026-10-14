@@ -169,12 +169,13 @@ h1 { margin: 0; font-size: 20px; font-weight: 700; line-height: 1.2; }
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
   color: var(--label-2);
   font-size: 13px;
+  text-align: center;
 }
-.empty svg { width: 26px; height: 26px; color: var(--label-3); }
 .empty p { margin: 0; }
+/* nothing listed: the (empty) scroller keeps out of the way, so the words sit in the middle */
+.list-card:has(> .empty:not([hidden])) > .scroller { display: none; }
 
 .week-btn { margin-top: 12px; flex: none; width: 100%; }
 /* the first time the popup opens, once: a line, and a soft ring going out from the
