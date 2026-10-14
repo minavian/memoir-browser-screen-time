@@ -1,7 +1,7 @@
 import {
   CATEGORIES, CATEGORY_BY_ID, isPrivate, categorize, dayKey, addDays, getDays, normalizeDay,
   getSettings, updateSettings, getCategoryOverrides, getSession, unsavedMs, getOrigins,
-  formatDuration, formatClock, storageKeyForDay, dayTotal,
+  formatDuration, storageKeyForDay, dayTotal,
   getGoalHistory, limitOn, limitLocked, commitLimit, removeLimit,
 } from './shared/core.js';
 import {
@@ -20,8 +20,6 @@ const R_OUT = 56;
 const TAU = Math.PI * 2;
 const GAP = 3 / 50;
 
-const GLYPH_PAUSE = '<svg viewBox="0 0 16 16"><path d="M5.5 3.5v9M10.5 3.5v9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
-const GLYPH_IDLE = '<svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.6" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 5v3.2l2 1.3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
 
 const state = {
   todayKey: dayKey(new Date()),
@@ -31,7 +29,6 @@ const state = {
   paused: false,
   avg: 0,
   liveReady: false,
-  nowMode: '',
   goalHistory: [],
   goalKey: '',
   legendRows: 3,
@@ -133,7 +130,6 @@ function render() {
   // the private-sites line takes the third legend row's place
   state.legendRows = priv >= 60_000 ? 2 : 3;
   renderLegend(cats, total, state.legendRows);
-  renderNow(false);
   renderSites(visible);
   updateGoal(all, true);
 }
@@ -214,39 +210,6 @@ function renderLegend(cats, total, rows = 3) {
 
 // Only redraws when what's shown actually changes (the heartbeat updates the
 // session every minute, which must not replay the animation).
-function renderNow(animate) {
-  const s = state.session;
-  const mode = state.paused ? 'paused' : s ? `live:${s.domain}` : 'idle';
-  if (mode === state.nowMode) return;
-  if (!state.nowMode) animate = false;
-  state.nowMode = mode;
-
-  const icon = $('now-icon');
-  icon.textContent = '';
-  icon.classList.toggle('live', mode.startsWith('live'));
-  if (mode === 'paused') {
-    icon.innerHTML = `<span class="now-glyph">${GLYPH_PAUSE}</span>`;
-    $('now-eyebrow').textContent = 'Paused';
-    $('now-domain').textContent = 'Tracking is off';
-    $('now-timer').textContent = '';
-  } else if (s) {
-    const priv = isPrivate(s.domain);
-    const cat = CATEGORY_BY_ID[categorize(s.domain, state.overrides)];
-    icon.appendChild(faviconTile(s.domain, cat.color));
-    $('now-eyebrow').textContent = 'Now';
-    $('now-domain').textContent = priv ? 'Private site' : s.domain;
-    $('now-timer').textContent = formatClock(Date.now() - s.since);
-  } else {
-    icon.innerHTML = `<span class="now-glyph">${GLYPH_IDLE}</span>`;
-    $('now-eyebrow').textContent = 'Now';
-    $('now-domain').textContent = 'Nothing to track on this page';
-    $('now-timer').textContent = '';
-  }
-  if (animate) {
-    for (const el of [icon, $('now-eyebrow').parentElement, $('now-timer')]) replay(el, 'swap-in');
-  }
-}
-
 function renderSites(visible) {
   const list = $('site-list');
   const entries = Object.entries(visible).filter(([, ms]) => ms >= 1000).sort((a, b) => b[1] - a[1]);
@@ -382,7 +345,6 @@ function tick() {
   updateGoal(all);
   const s = state.session;
   if (s && !state.paused) {
-    $('now-timer').textContent = formatClock(Date.now() - s.since);
     if (!isPrivate(s.domain)) {
       const row = $('site-list').querySelector(`[data-domain="${CSS.escape(s.domain)}"] .site-time`);
       if (row) row.textContent = formatDuration(visible[s.domain] || 0, { seconds: true });
@@ -393,7 +355,6 @@ function tick() {
 function onStorage(changes, area) {
   if (area === 'session' && changes.session) {
     state.session = changes.session.newValue || null;
-    renderNow(true);
   }
   if (area !== 'local') return;
   const key = storageKeyForDay(state.todayKey);
@@ -409,7 +370,6 @@ function onStorage(changes, area) {
       state.paused = paused;
       $('track-toggle').checked = !paused;
       $('switch-wrap').title = paused ? 'Tracking is paused' : 'Tracking is on';
-      renderNow(true);
     }
   }
 }
@@ -460,13 +420,11 @@ function wire() {
     const on = toggle.checked;
     state.paused = !on;
     $('switch-wrap').title = on ? 'Tracking is on' : 'Tracking is paused';
-    if (!on) renderNow(true);
     await updateSettings({ paused: !on });
     try { await chrome.runtime.sendMessage({ type: 'sync' }); } catch { /* ignore */ }
     const [session, days] = await Promise.all([getSession(), getDays([state.todayKey])]);
     state.session = session;
     state.today = days[state.todayKey];
-    renderNow(true);
   });
 
   const hero = document.querySelector('.hero');

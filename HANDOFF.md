@@ -36,7 +36,9 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
   sites (see "Never track, hidden" below).
 - `shared/logo.js` — the clock logo's markup, its entrance (`playLogo`) and the live clocks (see "The clock logo"
   below).
-- `popup.*` — 380×600 "today" popup.
+- `popup.*` — 380×600 "today" popup. No "Now" row (removed 5.1.5): opening the popup takes focus from the browser
+  window, so the tracker always paused and it only ever said "Nothing to track on this page". The owner kept the rest
+  as it was (a simplified, centred redesign was tried and turned down).
 - `recap.html/css/js` — the weekly report (main orchestrator, ~3000 lines).
 - `trend.js` — Trend over time line chart. `tour.js` — guided tutorial. `gauntlet.js` — "reset the limit" questions.
 - `welcome.js` — first-run welcome screen (styles at the end of `recap.css`). `welcome-intro.js` — its opening;
