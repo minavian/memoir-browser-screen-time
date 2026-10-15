@@ -181,6 +181,13 @@ async function checkGoal(now) {
   }
 }
 
+// unpacked builds (Settings > Developer): the over-limit notification, as if this far over
+async function devNotify(overMs) {
+  const limit = limitOn(await getGoalHistory(), dayKey(new Date())) || 3600_000;
+  await notify(`goal-over-dev:${overMs}:${Date.now()}`, 'You’ve gone over your daily limit',
+    `Your ${formatDuration(limit)} limit is used up — you’re ${formatDuration(overMs)} over.`);
+}
+
 async function notify(id, title, message) {
   try {
     await chrome.notifications.create(id, { type: 'basic', iconUrl: 'icons/icon128.png', title, message, priority: 1 });
@@ -234,10 +241,11 @@ async function weeklyReminder(alarm) {
   await chrome.alarms.create('weekly', { when: nextReminderTime(settings, new Date(Date.now() + 60_000)) });
 }
 
-// over: the report opens with the flame's moment (shared/overshow.js)
+// over: the report opens with the flame's moment (shared/overshow.js); a number: a test
+// one, that many ms over
 async function openRecap(weekKey, { over = false } = {}) {
   const base = chrome.runtime.getURL('recap.html');
-  const url = weekKey ? `${base}#week=${weekKey}` : over ? `${base}#over` : base;
+  const url = weekKey ? `${base}#week=${weekKey}` : over ? `${base}#over${over === true ? '' : `=${over}`}` : base;
   const tabs = await chrome.tabs.query({});
   const existing = tabs.find(t => t.url && t.url.startsWith(base));
   if (existing) {
@@ -250,6 +258,7 @@ async function openRecap(weekKey, { over = false } = {}) {
 
 chrome.notifications.onClicked.addListener(id => {
   if (id.startsWith('weekly-recap')) openRecap(id.split(':')[1]);
+  else if (id.startsWith('goal-over-dev:')) openRecap(null, { over: Number(id.split(':')[1]) });
   else if (id.startsWith('goal-')) openRecap(null, { over: id.startsWith('goal-over') });
   else return;
   chrome.notifications.clear(id);
@@ -329,6 +338,10 @@ chrome.alarms.onAlarm.addListener(alarm => {
 chrome.runtime.onMessage.addListener((msg, _sender, reply) => {
   if (msg && msg.type === 'sync') {
     sync().then(() => reply({ ok: true }));
+    return true;
+  }
+  if (msg && msg.type === 'devNotify' && !('update_url' in chrome.runtime.getManifest()) && msg.overMs > 0) {
+    devNotify(msg.overMs).then(() => reply({ ok: true }));
     return true;
   }
   if (msg && msg.type === 'openRecap') {

@@ -188,10 +188,12 @@ async function init() {
   setInterval(goalTick, 5000);
   window.addEventListener('hashchange', () => {
     // the over-the-limit notification, with the report already open: the flame rises out of its ring
-    if (location.hash === '#over') {
-      window.history.replaceState(null, '', location.pathname);
-      if (boardShown) overShow(true);
-      else overPending = true;
+    if (takeOverHash()) {
+      if (!boardShown) { overPending = true; return; }
+      // (a test one may only now put the ring over: then the flame comes up at the middle)
+      const was = goalRing.el.dataset.level === 'over';
+      updateGoal();
+      overShow(was);
       return;
     }
     const mm = location.hash.match(/week=(\d{4}-\d{2}-\d{2})/);
@@ -2829,17 +2831,33 @@ function placeHeatFrame({ instant = false } = {}) {
 
 // From the over-the-limit notification (recap.html#over): the ring's flame takes the stage,
 // then flies home (shared/overshow.js). lifted: the ring is already on screen.
-let overPending = location.hash === '#over';
-if (overPending) window.history.replaceState(null, '', location.pathname);
+// Unpacked builds (Settings > Developer) send a test one, recap.html#over=<ms over>: the
+// ring then shows that far over (your limit, or an hour), until the page is reloaded.
+const DEV = !('update_url' in chrome.runtime.getManifest());
+let devOver = null;
+function takeOverHash() {
+  const m = location.hash.match(/^#over(?:=(\d+))?$/);
+  if (!m) return false;
+  window.history.replaceState(null, '', location.pathname);
+  devOver = m[1] && DEV ? Number(m[1]) : null;
+  return true;
+}
+let overPending = takeOverHash();
 let boardShown = false;
 function overShow(lifted) {
-  const limit = limitOn(state.goalHistory, state.todayKey);
+  const limit = goalLimit();
   const used = usedToday();
   if (!limit || used <= limit) return;
   playOverShow({ flame: document.querySelector('#goal-ring .gr-flame'), overMs: used - limit, limitMs: limit, lifted });
 }
 
+function goalLimit() {
+  const limit = limitOn(state.goalHistory, state.todayKey);
+  return devOver != null ? limit || 3600_000 : limit;
+}
+
 function usedToday() {
+  if (devOver != null) return goalLimit() + devOver;
   const d = cloneDay(state.todayRec);
   if (state.session && !state.settings.paused) mergeSession(d, state.session);
   return dayTotal(d);
@@ -2847,7 +2865,7 @@ function usedToday() {
 
 function updateGoal() {
   if (!goalRing) return;
-  const limit = limitOn(state.goalHistory, state.todayKey);
+  const limit = goalLimit();
   const locked = limitLocked(state.goalHistory, state.todayKey);
   const used = usedToday();
   goalRing.update({ used, limit, locked });
@@ -4213,6 +4231,16 @@ function wire() {
     setTimeout(() => startTour(), reducedMotion() ? 0 : 380);
   });
   $('limit-reset').addEventListener('click', e => openResetGauntlet(e.currentTarget));
+  // unpacked builds: a test over-limit notification, as if this far over
+  if (DEV) {
+    $('dev-block').hidden = false;
+    $('dev-notify').addEventListener('click', e => {
+      const b = e.target.closest('[data-over]');
+      if (!b) return;
+      chrome.runtime.sendMessage({ type: 'devNotify', overMs: Number(b.dataset.over) * 60_000 }).catch(() => {});
+      toast(`Sent: ${b.textContent}. Click the notification`);
+    });
+  }
 }
 
 async function addExcluded(site) {
