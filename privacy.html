@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Memoir · Privacy</title>
+  <link rel="icon" href="icons/icon32.png">
+  <script src="shared/theme-boot.js"></script>
+  <link rel="preload" href="fonts/Unbounded-subset.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="shared/theme.css">
+  <!-- The privacy policy, as in PRIVACY.md (keep the two the same) -->
+  <style>
+    body { margin: 0; background: var(--bg); color: var(--label); font-family: var(--font-text, var(--font-display)); }
+    main { max-width: 640px; margin: 0 auto; padding: 56px 24px 72px; font-size: 15px; line-height: 1.6; }
+    .kicker { margin: 0 0 6px; font-size: 12px; letter-spacing: 0.08em; color: var(--label-3); }
+    h1 { margin: 0; font: 600 32px/1.15 var(--font-display); letter-spacing: -0.02em; }
+    .when { margin: 6px 0 28px; color: var(--label-3); font-size: 13px; }
+    .short { margin: 0 0 8px; padding: 16px 18px; border-radius: 14px; background: var(--surface); color: var(--label); }
+    h2 { margin: 36px 0 8px; font: 600 18px/1.3 var(--font-display); letter-spacing: -0.01em; }
+    p, ul { margin: 0 0 12px; color: var(--label-2); }
+    ul { padding-left: 20px; }
+    li { margin: 0 0 6px; }
+    b { color: var(--label); font-weight: 600; }
+    code { font: 13px ui-monospace, Consolas, monospace; }
+    a { color: inherit; }
+  </style>
+</head>
+<body>
+  <main>
+    <p class="kicker"><span class="wordmark-plain">Memoir</span></p>
+    <h1>Privacy</h1>
+    <p class="when">Effective 15 October 2026</p>
+
+    <p class="short"><b>In short:</b> everything Memoir records stays in your browser, on your computer. Memoir has no servers, no accounts, no analytics and no ads. It never sends your data anywhere, so nobody else can see it, including the developer.</p>
+
+    <h2>What Memoir records</h2>
+    <p>To show where your browsing time goes, Memoir keeps these in your browser:</p>
+    <ul>
+      <li><b>Which website you’re on, and for how long.</b> It keeps the site’s name (for example <code>youtube.com</code>), the time you spent there and the hours of the day it was in. It does not keep the addresses of the pages you visit, unless you turn on Page titles.</li>
+      <li><b>Page titles and their addresses, only if you turn on “Page titles”</b> in Settings (it’s off unless you turn it on). They are kept for 4 weeks unless you choose 8, 12 or 16, and are then deleted automatically. The time you spent stays.</li>
+      <li><b>Each site’s home address</b> (for example <code>https://www.youtube.com</code>), so its icon and link work.</li>
+      <li><b>Your settings</b>: your daily limit and when it changed, your reminder day and time, categories you changed, sites you never track, and your theme and cursor choices.</li>
+    </ul>
+    <p>To know when to stop counting, Memoir asks Chrome whether your computer is active, idle or locked. It only learns that state, never what you type or click.</p>
+    <p><b>What Memoir never records:</b> what you type or click, what’s on the pages, passwords, form entries, cookies or your location.</p>
+    <p>Time on sites on your <b>Never track</b> list counts only towards one combined “Private” total, with no site names, titles or addresses. If you let Memoir run in private (Incognito) windows, their time is counted the same way.</p>
+
+    <h2>Where it’s kept</h2>
+    <ul>
+      <li><b>On your computer only</b>, in Chrome’s storage for the extension. It is not synced to your Google account or your other devices.</li>
+      <li><b>Memoir makes no network requests.</b> Site icons come from Chrome’s own icon cache, so the sites themselves aren’t contacted.</li>
+      <li><b>Notifications</b> (your daily limit, the weekly reminder) are made on your computer.</li>
+    </ul>
+
+    <h2>How it’s used</h2>
+    <p>Your data is used only to show you your own time: in the popup, the weekly report, the limit warnings and the weekly reminder.</p>
+    <p>It is never sold or shared. It is never used for advertising, and never used to decide creditworthiness or for lending. The developer never receives it.</p>
+
+    <h2>Your choices</h2>
+    <ul>
+      <li><b>Pause tracking</b> at any time, with the switch in the popup or in Settings.</li>
+      <li><b>Never track</b> particular sites.</li>
+      <li><b>Choose how long to keep history</b>: forever, 1 year, 6 months or 3 months. Older days are deleted automatically.</li>
+      <li><b>Export</b> everything as a file, or <b>import</b> a file you exported earlier. The file goes wherever you save it; Memoir doesn’t upload it.</li>
+      <li><b>Clear all</b> deletes everything at once. <b>Removing the extension</b> deletes everything too.</li>
+    </ul>
+
+    <h2>Links and email</h2>
+    <ul>
+      <li>Links in the report, to a site or a page, open only when you click them. Those sites’ own privacy policies then apply.</li>
+      <li>The “bug report” link in Settings opens your own email app with a new message. The message’s subject is Memoir’s version number and nothing else is filled in. Nothing is sent until you send it yourself.</li>
+    </ul>
+
+    <h2>Children</h2>
+    <p>Memoir is not aimed at children under 13 and collects no data about anyone.</p>
+
+    <h2>Changes</h2>
+    <p>If this policy changes, the new version will appear here with a new date. If Memoir ever needed to send any data off your computer, it would ask you first.</p>
+
+    <h2>Contact</h2>
+    <p>Mina Vian · <a href="mailto:iamminavian@gmail.com">iamminavian@gmail.com</a></p>
+  </main>
+</body>
+</html>

@@ -1408,6 +1408,7 @@ body { overflow: hidden; }
   transform: scale(0.88);
   transition: opacity 0.18s var(--ease), transform 0.3s var(--ease-out);
 }
+a.p-author { text-decoration: none; }
 .p-author:hover, .p-author:focus-visible, .p-author[aria-expanded="true"] { color: var(--label); }
 .p-author:hover::before, .p-author:focus-visible::before, .p-author[aria-expanded="true"]::before { opacity: 1; transform: none; }
 .p-author:focus-visible::before { box-shadow: var(--ring); }
