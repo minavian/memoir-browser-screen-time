@@ -1,19 +1,21 @@
-// The privacy page: the report's cursor and scrolling, the live clock beside the name, and
-// the text popping on.
+// The privacy page: the report's cursor and scrolling, the live clock beside the name, the
+// text popping on, and the address to copy (the same popover as the report's "Made by").
 
 import { initCursor } from './shared/cursor.js';
 import { initSmoothScrolling } from './shared/scroll.js';
 import { playLogo } from './shared/logo.js';
+import { mailPop } from './shared/mail-pop.js';
 
 initSmoothScrolling();
 initCursor();
 playLogo(document.querySelector('.brand .logo'), { delay: 160, live: true });
+mailPop(document.getElementById('mail'), document.getElementById('mail-pop'), { address: 'iamminavian@gmail.com', dismiss: true });
 
 // The text pops on: the headline word by word, then each heading, paragraph and point as
 // it comes into view; those that come into view together go one after another
-// (the page starts hidden for it: <html class="pop">)
+// (the page starts hidden for it: <html class="pv-pop">)
 if (matchMedia('(prefers-reduced-motion: reduce)').matches || !('IntersectionObserver' in window)) {
-  document.documentElement.classList.remove('pop');
+  document.documentElement.classList.remove('pv-pop');
 } else {
   // (from here the script reveals each part: the fallback that shows everything is off)
   document.documentElement.classList.add('armed');

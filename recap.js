@@ -22,6 +22,7 @@ import { playLogo } from './shared/logo.js';
 import { initCursor, setCursorPref, cursorEnabled, cursorSmooth, setCursorSmooth } from './shared/cursor.js';
 import { createDust } from './shared/dust.js';
 import { initContextMenu } from './shared/context-menu.js';
+import { mailPop } from './shared/mail-pop.js';
 import { playOverShow } from './shared/overshow.js';
 
 const $ = id => document.getElementById(id);
@@ -80,7 +81,13 @@ const pages = {
   get isOpen() { return this.state === 'opening' || this.state === 'open'; },
 };
 const importPop = new MorphPopover($('import-pop'), { radius: 16 });
-const authorPop = new MorphPopover($('author-pop'), { radius: 16, onClose: () => $('author').setAttribute('aria-expanded', 'false') });
+// the author's name in Settings: where bug reports go (shared/mail-pop.js)
+const author = mailPop($('author'), $('author-pop'), {
+  address: 'iamminavian@gmail.com',
+  mailto: `mailto:iamminavian@gmail.com?subject=${encodeURIComponent(`Memoir ${chrome.runtime.getManifest().version} bug report`)}`,
+  onCopyFail: address => toast(`Couldn’t copy. The address is ${address}`),
+});
+const authorPop = author.popover;
 
 // On the first load (and when the board switches between an empty week and a
 // full one) the cards come in 110 ms apart (see the end of recap.css) and what's
@@ -4184,7 +4191,6 @@ function wire() {
     if (!$('import-pop').hidden) importPop.place($('import').getBoundingClientRect());
     if (!$('author-pop').hidden) authorPop.place($('author').getBoundingClientRect());
   }, { passive: true });
-  wireAuthor();
   $('nuke').addEventListener('click', async () => {
     const step = +$('data-row').dataset.step;
     if (step === 0) setNukeStep(1);
@@ -4435,66 +4441,10 @@ function answerImport(mode, instant = false) {
   if (resolve) resolve(mode);
 }
 
-// ----- the author's name in Settings: where bug reports go -----
+// ----- the author's name in Settings (its popover: shared/mail-pop.js) -----
 
-let authorTimer = 0;
-let copyTimer = 0;
-let authorQuiet = false;
-// focus going back to the name (after Escape or leaving the popover) mustn't reopen it
-function focusAuthor() {
-  authorQuiet = true;
-  $('author').focus({ preventScroll: true });
-  authorQuiet = false;
-}
-function closeAuthor(instant = false) {
-  clearTimeout(authorTimer);
-  if (!$('author-pop').hidden) authorPop.close({ instant });
-}
-function wireAuthor() {
-  const name = $('author');
-  const pop = $('author-pop');
-  const addr = $('ap-addr');
-  const copy = $('ap-copy');
-  addr.href = `mailto:iamminavian@gmail.com?subject=${encodeURIComponent(`Memoir ${chrome.runtime.getManifest().version} bug report`)}`;
-  const open = delay => {
-    clearTimeout(authorTimer);
-    if (authorPop.isOpen) return;
-    authorTimer = setTimeout(() => { name.setAttribute('aria-expanded', 'true'); authorPop.open(name); }, delay);
-  };
-  // moving between the name and the popover keeps it open; leaving both closes it
-  const leave = () => { clearTimeout(authorTimer); authorTimer = setTimeout(() => closeAuthor(), 220); };
-  // hover intent only from rest: coming back while it's closing reverses it at once
-  name.addEventListener('pointerenter', () => open(pop.hidden ? 120 : 0));
-  name.addEventListener('pointerleave', leave);
-  pop.addEventListener('pointerenter', () => clearTimeout(authorTimer));
-  pop.addEventListener('pointerleave', leave);
-  name.addEventListener('click', () => open(0));
-  name.addEventListener('focus', () => { if (!authorQuiet && name.matches(':focus-visible')) open(0); });
-  name.addEventListener('blur', e => { if (!pop.contains(e.relatedTarget)) leave(); });
-  pop.addEventListener('focusout', e => { if (!pop.contains(e.relatedTarget) && e.relatedTarget !== name) leave(); });
-  // the popover sits outside the panel: Tab steps into it and back out
-  name.addEventListener('keydown', e => {
-    if (e.key === 'Tab' && !e.shiftKey && !pop.hidden) { e.preventDefault(); addr.focus({ preventScroll: true }); }
-  });
-  pop.addEventListener('keydown', e => {
-    if (e.key !== 'Tab') return;
-    if (e.shiftKey && document.activeElement === addr) { e.preventDefault(); focusAuthor(); }
-    else if (!e.shiftKey && document.activeElement === copy) { e.preventDefault(); closeAuthor(); focusAuthor(); }
-  });
-  copy.addEventListener('click', async () => {
-    const label = copy.querySelector('.ap-copy-label');
-    try {
-      await navigator.clipboard.writeText('iamminavian@gmail.com');
-    } catch {
-      toast('Couldn’t copy. The address is iamminavian@gmail.com');
-      return;
-    }
-    label.textContent = 'Copied';
-    replay(label, 'swap');
-    clearTimeout(copyTimer);
-    copyTimer = setTimeout(() => { label.textContent = 'Copy'; replay(label, 'swap'); }, 1600);
-  });
-}
+function focusAuthor() { author.focusTrigger(); }
+function closeAuthor(instant = false) { author.close(instant); }
 
 async function enterDemo() {
   if (state.demo) return;

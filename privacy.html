@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" class="pop">
+<html lang="en" class="pv-pop">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -9,6 +9,7 @@
   <link rel="preload" href="fonts/Unbounded-subset.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="shared/theme.css">
   <link rel="stylesheet" href="shared/logo.css">
+  <link rel="stylesheet" href="shared/pop.css">
   <link rel="stylesheet" href="privacy.css">
   <script type="module" src="privacy.js"></script>
 </head>
@@ -71,7 +72,16 @@
     <p>If this policy changes, the new version will appear here with a new date. If Memoir ever needed to send any data off your computer, it would ask you first.</p>
 
     <h2>Contact</h2>
-    <p>Mina Vian · <a href="mailto:iamminavian@gmail.com">iamminavian@gmail.com</a></p>
+    <p>Mina Vian · <button class="p-author" id="mail" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="mail-pop">iamminavian@gmail.com</button></p>
   </main>
+
+  <!-- your address, to copy (shared/mail-pop.js, as the report's "Made by" name) -->
+  <div class="pop author-pop" id="mail-pop" role="dialog" aria-labelledby="mail-title" hidden>
+    <p class="ap-title" id="mail-title">Copy my email</p>
+    <div class="ap-mail">
+      <a class="ap-addr" href="mailto:iamminavian@gmail.com">iamminavian@gmail.com</a>
+      <button class="ap-copy" type="button" aria-label="Copy email address"><span class="ap-copy-label">Copy</span></button>
+    </div>
+  </div>
 </body>
 </html>
