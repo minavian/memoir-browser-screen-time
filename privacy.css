@@ -37,3 +37,20 @@ li { margin: 0 0 6px; }
 b { color: var(--label); font-weight: 600; }
 code { font: 0.87em ui-monospace, Consolas, monospace; }
 a { color: inherit; }
+
+/* the text pops on (privacy.js): the headline word by word, then each heading, paragraph
+   and point as it comes into view, a beat after the one before. Hidden from the start
+   (<html class="pop">), so nothing shows first and then vanishes; if the script never
+   runs, it all simply appears after a moment */
+.pop :is(.brand, .kicker, h1:not(.split), h1 .w, .lead, .when, h2, main > p, li) { opacity: 0; animation: pv-shown 0s 2.5s forwards; }
+.pop h1 .w { display: inline-block; }
+.pop :is(.brand, .kicker, h1 .w, .lead, .when, h2, main > p, li).on { animation: pv-pop 0.62s cubic-bezier(0.32, 1.24, 0.5, 1) var(--d, 0ms) both; }
+@keyframes pv-pop {
+  from { opacity: 0; transform: translateY(0.5em) scale(0.97); }
+  60% { opacity: 1; }
+  to { opacity: 1; transform: none; }
+}
+@keyframes pv-shown { to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .pop :is(.brand, .kicker, h1, h1 .w, .lead, .when, h2, main > p, li) { opacity: 1; animation: none; }
+}
