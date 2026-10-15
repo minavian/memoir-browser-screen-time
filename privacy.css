@@ -8,7 +8,7 @@
   --pv-lead: clamp(16.5px, 14px + 0.45vw, 23px);
   --pv-h2: clamp(18px, 15px + 0.35vw, 25px);
   --pv-small: clamp(12.5px, 11.5px + 0.15vw, 15px);
-  --pv-mark: clamp(30px, 24px + 0.6vw, 46px);        /* the clock */
+  --pv-mark: clamp(42px, 30px + 1.4vw, 72px);        /* the clock */
 }
 
 body { margin: 0; background: var(--bg); color: var(--label); }
@@ -21,9 +21,9 @@ main {
 }
 
 /* the clock and the name, as in the popup */
-.brand { display: flex; align-items: center; gap: 10px; margin: 0 0 clamp(36px, 5vw, 72px); }
+.brand { display: flex; align-items: center; gap: calc(var(--pv-mark) * 0.3); margin: 0 0 clamp(36px, 5vw, 72px); }
 .brand .logo { width: var(--pv-mark); height: var(--pv-mark); flex: none; }
-.brand .wordmark { font-size: calc(var(--pv-mark) * 0.56); }
+.brand .wordmark { font-size: calc(var(--pv-mark) * 0.62); }
 
 .kicker { margin: 0; font-size: var(--pv-small); font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--label-3); }
 h1 { margin: 12px 0 0; font: 700 var(--pv-title)/1.04 var(--font-display); letter-spacing: -0.035em; text-wrap: balance; }
