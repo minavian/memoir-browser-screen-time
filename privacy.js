@@ -15,6 +15,8 @@ playLogo(document.querySelector('.brand .logo'), { delay: 160, live: true });
 if (matchMedia('(prefers-reduced-motion: reduce)').matches || !('IntersectionObserver' in window)) {
   document.documentElement.classList.remove('pop');
 } else {
+  // (from here the script reveals each part: the fallback that shows everything is off)
+  document.documentElement.classList.add('armed');
   const h1 = document.querySelector('h1');
   h1.innerHTML = h1.textContent.trim().split(/\s+/).map(w => `<span class="w">${w}</span>`).join(' ');
   h1.classList.add('split');
@@ -26,6 +28,6 @@ if (matchMedia('(prefers-reduced-motion: reduce)').matches || !('IntersectionObs
       el.classList.add('on');
       seen.unobserve(el);
     });
-  }, { rootMargin: '0px 0px -4% 0px' });
+  }, { rootMargin: '0px 0px -8% 0px' });
   for (const el of parts) seen.observe(el);
 }

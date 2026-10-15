@@ -40,16 +40,16 @@ a { color: inherit; }
 
 /* the text pops on (privacy.js): the headline word by word, then each heading, paragraph
    and point as it comes into view, a beat after the one before. Hidden from the start
-   (<html class="pop">), so nothing shows first and then vanishes; if the script never
-   runs, it all simply appears after a moment */
-.pop :is(.brand, .kicker, h1:not(.split), h1 .w, .lead, .when, h2, main > p, li) { opacity: 0; animation: pv-shown 0s 2.5s forwards; }
+   (<html class="pop">), so nothing shows first and then vanishes, and each stays hidden
+   until it's on screen. Only if the script never runs (it marks the page "armed" as it
+   starts) does it all simply appear after a moment */
+.pop :is(.brand, .kicker, h1:not(.split), h1 .w, .lead, .when, h2, main > p, li) { opacity: 0; }
+.pop:not(.armed) :is(.brand, .kicker, h1:not(.split), h1 .w, .lead, .when, h2, main > p, li) { animation: pv-shown 0s 2.5s forwards; }
 .pop h1 .w { display: inline-block; }
-.pop :is(.brand, .kicker, h1 .w, .lead, .when, h2, main > p, li).on { animation: pv-pop 0.62s cubic-bezier(0.32, 1.24, 0.5, 1) var(--d, 0ms) both; }
-@keyframes pv-pop {
-  from { opacity: 0; transform: translateY(0.5em) scale(0.97); }
-  60% { opacity: 1; }
-  to { opacity: 1; transform: none; }
-}
+.pop :is(.brand, .kicker, h1 .w, .lead, .when, h2, main > p, li).on { animation: pv-rise 0.62s cubic-bezier(0.32, 1.24, 0.5, 1) var(--d, 0ms) both, pv-fade 0.42s cubic-bezier(0.22, 1, 0.36, 1) var(--d, 0ms) both; }
+/* rising with a soft pop, fading in on a curve of its own (so it never jumps) */
+@keyframes pv-rise { from { transform: translateY(0.5em) scale(0.97); } to { transform: none; } }
+@keyframes pv-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes pv-shown { to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) {
   .pop :is(.brand, .kicker, h1, h1 .w, .lead, .when, h2, main > p, li) { opacity: 1; animation: none; }
