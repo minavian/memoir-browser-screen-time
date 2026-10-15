@@ -44,6 +44,10 @@ It is never sold or shared. It is never used for advertising, and never used to 
 - Links in the report, to a site or a page, open only when you click them. Those sites' own privacy policies then apply.
 - The "bug report" link in Settings opens your own email app with a new message. The message's subject is Memoir's version number and nothing else is filled in. Nothing is sent until you send it yourself.
 
+## Updates
+
+New versions of Memoir come through the Chrome Web Store. Google Chrome checks for them and installs them itself, the same way it updates all your extensions; that check is Chrome's own, under Google's privacy policy. Memoir doesn't download anything or update itself, and none of your Memoir data is sent along. Your records and settings stay as they are after an update.
+
 ## Changes
 
 If this policy changes, the new version will appear here with a new date. If Memoir ever needed to send any data off your computer, it would ask you first.
