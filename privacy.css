@@ -1,102 +1,88 @@
-/* The privacy policy page (privacy.html): the report's look, from theme.css. Its sizes
-   live together at the top. */
+/* The privacy policy page (privacy.html): plain text on a sheet, dressed in a few
+   black-and-white line drawings of what Memoir is about, each drawn in as it comes into
+   view (privacy.js). Its sizes live together at the top. */
 
 .pv {
-  --pv-pad: 40px;          /* the page's side margins */
+  --pv-pad: 32px;          /* round the sheet */
+  --pv-gutter: 200px;      /* the sheet's margins, where the drawings sit */
+  --pv-text: 680px;        /* the text's column */
   --pv-title: 56px;
-  --pv-lead: 19px;
+  --pv-lead: 18px;
   --pv-body: 15.5px;
-  --pv-h2: 21px;
-  --pv-small: 13px;
-  --pv-gap: 56px;          /* between the big parts */
-  position: relative;
-  max-width: 1080px;
-  margin: 0 auto;
-  padding: 28px var(--pv-pad) 64px;
+  --pv-h2: 20px;
+  --pv-small: 12.5px;
+  --pv-gap: 48px;
+  --pv-mark: 34px;         /* the clock */
+  padding: 40px var(--pv-pad) 56px;
 }
+
+/* the sheet: a hairline frame, a mark at each corner */
+.pv-sheet {
+  position: relative;
+  max-width: calc(var(--pv-text) + var(--pv-gutter) * 2);
+  margin: 0 auto;
+  padding: 36px var(--pv-gutter) 40px;
+  border: 1px solid var(--sep);
+  animation: pv-in 0.7s var(--ease-out) both;
+}
+.pv-corner { position: absolute; width: 13px; height: 13px; }
+.pv-corner::before, .pv-corner::after { content: ""; position: absolute; background: var(--label); }
+.pv-corner::before { left: 0; right: 0; top: 6px; height: 1px; }
+.pv-corner::after { top: 0; bottom: 0; left: 6px; width: 1px; }
+.pv-corner:nth-of-type(1) { left: -7px; top: -7px; }
+.pv-corner:nth-of-type(2) { right: -7px; top: -7px; }
+.pv-corner:nth-of-type(3) { left: -7px; bottom: -7px; }
+.pv-corner:nth-of-type(4) { right: -7px; bottom: -7px; }
 
 /* the clock and the name, as in the popup */
-.pv-top { display: flex; align-items: center; gap: 12px; }
-.pv-top .logo { width: 36px; height: 36px; flex: none; }
-.pv-top .wordmark { font-size: 20px; }
+.pv-head { padding-bottom: 18px; border-bottom: 1px solid var(--sep); }
+.pv-brand { display: flex; align-items: center; gap: 10px; }
+.pv-brand .logo { width: var(--pv-mark); height: var(--pv-mark); flex: none; }
+.pv-brand .wordmark { font-size: calc(var(--pv-mark) * 0.56); }
 
-.pv-hero { max-width: 780px; margin: 72px 0 var(--pv-gap); }
-.pv-kicker { margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--label-3); }
-.pv-hero h1 {
-  margin: 12px 0 0;
-  font: 700 var(--pv-title)/1.04 var(--font-display);
-  letter-spacing: -0.035em;
-  text-wrap: balance;
-}
-.pv-lead { margin: 20px 0 0; max-width: 48ch; font-size: var(--pv-lead); line-height: 1.5; color: var(--label-2); text-wrap: pretty; }
-.pv-when { margin: 16px 0 0; font-size: var(--pv-small); color: var(--label-3); }
-
-/* in short: four promises */
-.pv-promises { list-style: none; margin: 0 0 var(--pv-gap); padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
-.pv-promise { padding: 20px 20px 22px; border-radius: 20px; background: var(--surface); box-shadow: var(--shadow); }
-.pv-promise svg { display: block; width: 26px; height: 26px; fill: none; stroke: var(--label); stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
-.pv-promise b { display: block; margin-top: 16px; font: 600 16px/1.25 var(--font-display); letter-spacing: -0.01em; }
-.pv-promise span { display: block; margin-top: 5px; font-size: var(--pv-small); line-height: 1.45; color: var(--label-2); }
-
-/* the contents beside the sections; it follows along (privacy.js) */
-.pv-body { display: grid; grid-template-columns: 196px minmax(0, 1fr); gap: 44px; align-items: start; }
-.pv-toc { position: sticky; top: 28px; display: flex; flex-direction: column; gap: 2px; }
-.pv-toc a {
-  padding: 7px 12px;
-  border-radius: 10px;
-  font-size: 13.5px;
-  color: var(--label-2);
-  text-decoration: none;
-  transition: background-color 0.2s var(--ease), color 0.2s var(--ease);
-}
-.pv-toc a:hover, .pv-toc a:focus-visible { background: var(--fill-1); color: var(--label); outline: none; }
-.pv-toc a[aria-current="true"] { background: var(--fill-2); color: var(--label); font-weight: 600; }
-
-.pv-main { min-width: 0; }
-.pv-sec { padding: 28px 30px 30px; border-radius: 22px; background: var(--surface); box-shadow: var(--shadow); scroll-margin-top: 24px; }
-.pv-sec + .pv-sec { margin-top: 16px; }
-.pv-sec h2 { margin: 0 0 14px; font: 600 var(--pv-h2)/1.25 var(--font-display); letter-spacing: -0.015em; }
-.pv-sec p, .pv-sec li { font-size: var(--pv-body); line-height: 1.62; color: var(--label-2); text-wrap: pretty; }
-.pv-sec p { margin: 0 0 14px; }
-.pv-sec > :last-child { margin-bottom: 0; }
-.pv-sec b { color: var(--label); font-weight: 600; }
-.pv-sec a { color: var(--label); text-underline-offset: 3px; }
-.pv-sec code { padding: 1px 6px; border-radius: 6px; background: var(--fill-1); font: 0.88em/1 ui-monospace, "Cascadia Mono", Consolas, monospace; color: var(--label); }
-
-/* a tick before each point */
-.pv-list { list-style: none; margin: 0 0 16px; padding: 0; display: grid; gap: 12px; }
-.pv-list li { position: relative; padding-left: 32px; }
-.pv-list li::before, .pv-never li::before { content: ""; position: absolute; left: 0; top: 0.22em; width: 20px; height: 20px; border-radius: 50%; background: var(--fill-2); }
-.pv-list li::after, .pv-never li::after {
-  content: "";
-  position: absolute;
-  left: 4px;
-  top: calc(0.22em + 4px);
-  width: 12px;
+.pv-title { position: relative; margin-top: var(--pv-gap); }
+.pv-kicker { margin: 0; font-size: var(--pv-small); font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--label-3); }
+.pv-title h1 { margin: 12px 0 0; font: 700 var(--pv-title)/1.04 var(--font-display); letter-spacing: -0.035em; text-wrap: balance; }
+/* under it, a ruler of minutes: a tick a minute, a longer one every five */
+.pv-ruler {
   height: 12px;
-  background: var(--label);
-  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.6 6.3l2.3 2.3 4.6-5' fill='none' stroke='%23000' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
-  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.6 6.3l2.3 2.3 4.6-5' fill='none' stroke='%23000' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+  margin: 22px 0 22px;
+  opacity: 0.55;
+  background:
+    linear-gradient(var(--label), var(--label)) bottom / 100% 1px no-repeat,
+    repeating-linear-gradient(90deg, var(--label) 0 1px, transparent 1px 60px) bottom / 100% 12px no-repeat,
+    repeating-linear-gradient(90deg, var(--label) 0 1px, transparent 1px 12px) bottom / 100% 6px no-repeat;
 }
+.pv .pv-lead { margin: 0; max-width: 46ch; font-size: var(--pv-lead); line-height: 1.55; color: var(--label-2); }
+.pv .pv-when { margin: 14px 0 var(--pv-gap); font-size: var(--pv-small); color: var(--label-3); }
 
-/* never recorded: crossed out, side by side */
-.pv-never { margin: 4px 0 18px; padding: 16px 18px 18px; border-radius: 16px; background: var(--fill-1); }
-.pv-never p { margin: 0 0 12px; }
-.pv-never ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
-.pv-never li { position: relative; padding: 5px 12px 5px 34px; border-radius: 999px; background: var(--surface); font-size: var(--pv-small); line-height: 1.4; color: var(--label); }
-.pv-never li::before { left: 7px; top: 50%; translate: 0 -50%; width: 20px; height: 20px; background: var(--danger-soft); }
-.pv-never li::after {
-  left: 11px;
-  top: 50%;
-  translate: 0 -50%;
-  background: var(--danger);
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3.5 3.5l5 5M8.5 3.5l-5 5' fill='none' stroke='%23000' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E");
-  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3.5 3.5l5 5M8.5 3.5l-5 5' fill='none' stroke='%23000' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E");
-}
+.pv section { position: relative; padding: 28px 0 10px; border-top: 1px solid var(--sep); }
+.pv h2 { display: flex; align-items: baseline; gap: 14px; margin: 0 0 12px; font: 600 var(--pv-h2)/1.3 var(--font-display); letter-spacing: -0.01em; }
+.pv-n { font: 500 var(--pv-small)/1 ui-monospace, "Cascadia Mono", Consolas, monospace; letter-spacing: 0.04em; color: var(--label-3); }
+.pv p, .pv li { font-size: var(--pv-body); line-height: 1.65; color: var(--label-2); text-wrap: pretty; }
+.pv p { margin: 0 0 14px; }
+.pv ul { list-style: none; margin: 0 0 14px; padding: 0; }
+.pv li { position: relative; margin: 0 0 10px; padding-left: 22px; }
+.pv li::before { content: ""; position: absolute; left: 0; top: 0.82em; width: 10px; height: 1px; background: var(--label-3); }
+.pv b { color: var(--label); font-weight: 600; }
+.pv a { color: var(--label); text-underline-offset: 3px; }
+.pv code { font: 0.9em ui-monospace, "Cascadia Mono", Consolas, monospace; color: var(--label); }
 
-.pv-foot { margin: var(--pv-gap) 0 0; text-align: center; font-size: 12.5px; color: var(--label-3); }
+.pv-foot { margin-top: 30px; padding-top: 22px; border-top: 1px solid var(--sep); text-align: center; font-size: var(--pv-small); color: var(--label-3); }
 
-/* coming in: each part rises into place, in turn */
-.pv-in { animation: pv-in 0.8s var(--ease-out) both; animation-delay: calc(80ms + var(--i, 0) * 55ms); }
-@keyframes pv-in { from { opacity: 0; transform: translateY(14px); } }
-@media (prefers-reduced-motion: reduce) { .pv-in { animation: none; } }
+/* the drawings: thin lines in the margin beside their part */
+.pv-art { position: absolute; top: 26px; width: calc(var(--pv-gutter) * 0.6); height: auto; overflow: visible; fill: none; stroke: var(--label); stroke-width: 1.3; stroke-linecap: round; stroke-linejoin: round; opacity: 0.55; }
+.pv-art[data-side="right"] { left: calc(100% + var(--pv-gutter) * 0.2); }
+.pv-art[data-side="left"] { right: calc(100% + var(--pv-gutter) * 0.2); }
+.pv-title .pv-art { top: 4px; width: calc(var(--pv-gutter) * 0.72); left: calc(100% + var(--pv-gutter) * 0.14); }
+.pv-art.pv-glass { position: static; display: block; width: 22px; margin: 0 auto 12px; }
+
+/* drawn in: each line traced from its start, one after another (privacy.js sets them up) */
+.pv.draw .pv-art > * { stroke-dasharray: 1 1; stroke-dashoffset: 1; }
+.pv.draw .pv-art > [stroke-dasharray] { stroke-dasharray: 3 5; stroke-dashoffset: 0; opacity: 0; }
+.pv.draw .pv-art.on > * { animation: pv-draw 1.3s var(--ease-out) forwards; animation-delay: var(--d, 0ms); }
+.pv.draw .pv-art.on > [stroke-dasharray] { animation: pv-show 0.8s var(--ease) forwards; animation-delay: var(--d, 0ms); }
+@keyframes pv-draw { to { stroke-dashoffset: 0; } }
+@keyframes pv-show { to { opacity: 1; } }
+@keyframes pv-in { from { opacity: 0; transform: translateY(10px); } }
+@media (prefers-reduced-motion: reduce) { .pv-sheet { animation: none; } }
