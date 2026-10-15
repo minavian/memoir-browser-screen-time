@@ -24,13 +24,12 @@ export const OVER_LINES = [
 // By how far over: the flame's height (a share of the stage's smaller side, capped), how
 // hard and fast it flickers, its embers, its glow, and how long it holds the stage. Past
 // two hours it's a wall of fire, taller than the stage. Each holds long enough to read its words
-// (the dry line, from an hour, a second more). From an hour the stage's whole edge burns
-// too (edge: how deep, a share of its smaller side).
+// (the dry line, from an hour, a second more).
 const TIERS = [
   { name: 'small', at: 0, share: 0.24, cap: 120, amp: 1, period: 1100, embers: 0, glow: 0.18, hold: 2000 },
   { name: 'big', at: 30 * 60e3, share: 0.42, cap: 220, amp: 1.7, period: 820, embers: 0, glow: 0.28, hold: 2200 },
-  { name: 'huge', at: 60 * 60e3, share: 0.56, cap: 320, amp: 2.4, period: 640, embers: 22, glow: 0.38, hold: 3400, edge: 0.07 },
-  { name: 'wall', at: 120 * 60e3, share: 1.3, cap: Infinity, amp: 3.2, period: 520, embers: 48, glow: 0.55, hold: 3800, edge: 0.11 },
+  { name: 'huge', at: 60 * 60e3, share: 0.56, cap: 320, amp: 2.4, period: 640, embers: 22, glow: 0.38, hold: 3400 },
+  { name: 'wall', at: 120 * 60e3, share: 1.3, cap: Infinity, amp: 3.2, period: 520, embers: 48, glow: 0.55, hold: 3800 },
 ];
 export function overTier(overMs) {
   return TIERS.reduce((t, x) => (overMs >= x.at ? x : t), TIERS[0]);
@@ -55,154 +54,6 @@ function line() {
 }
 
 let playing = null;
-
-// keyframes eased one by one, so a flicker turns softly at every value
-const soft = (...o) => o.map(([opacity, offset]) => ({ opacity, offset, easing: 'ease-in-out' }));
-
-/**
- * The stage's edge on fire, past an hour (gone with the dim, well before the flame lands,
- * then taken away, so the landing frame has nothing else to redraw). An hour: it's hot, a
- * glow all round that closes in from past the edges and breathes. Two: it burns (burn()).
- */
-function edgeFire(stage, { edge, hold }, { vw, vh, short, intro, home, wall }) {
-  const D = short * edge;
-  const out = intro + hold, total = out + home * 0.6;
-  const box = document.createElement('div');
-  box.className = 'os-edge';
-  box.style.setProperty('--e', `${Math.round(D)}px`);
-  box.innerHTML = `<div class="os-edge-in">${wall ? '' : '<i class="os-glow"></i>'}</div>`;
-  stage.querySelector('.os-back').after(box);
-  const inner = box.firstElementChild;
-  box.animate([
-    { opacity: 0, easing: 'ease-out' },
-    { opacity: 1, offset: (wall ? 380 : 520) / total },
-    { opacity: 1, offset: (out - 120) / total, easing: 'ease-in-out' },
-    { opacity: 0 },
-  ], { duration: total, fill: 'forwards' }).finished.then(() => box.remove(), () => {});
-
-  if (wall) { burn(inner, { vw, vh, D, intro, out, total }); return; }
-  inner.animate([{ scale: '1.14' }, { scale: '1' }], { duration: 1100, easing: IN });
-  inner.firstElementChild.animate([{ opacity: 1, scale: '1' }, { opacity: 0.55, scale: '1.035' }, { opacity: 1, scale: '1' }],
-    { duration: 1700, delay: 900, iterations: Infinity, easing: 'ease-in-out' });
-}
-
-/**
- * Two hours over: the stage's edge burns away like paper. Black char eats in from every
- * side (deepest at the bottom, where the wall of fire is) to a ragged rim burning orange
- * to white hot, never the same twice. It creeps in from past the edges as the wall rises,
- * flares as the wall is up, and keeps eating in, slowly, while the words are read; its heat
- * flickers. Drawn once, on two canvases (the char and its rim; the heat, soft, at half the
- * resolution), then only scaled and faded: two layers, whatever the size of the stage.
- */
-function burn(inner, { vw, vh, D, intro, out, total }) {
-  const O = 0.06;                                   // room past each edge, for the creeping
-  const W = vw * (1 + 2 * O), H = vh * (1 + 2 * O), x0 = vw * O, y0 = vh * O, x1 = x0 + vw, y1 = y0 + vh;
-  // the stage's edge, its corners rounded, walked all round: each step's spot and the way in
-  const R = Math.min(D * 2.2, Math.min(vw, vh) / 2 - 1);
-  const arc = (cx, cy, t) => [cx + R * Math.cos(t), cy + R * Math.sin(t), -Math.cos(t), -Math.sin(t)];
-  const q = (Math.PI * R) / 2;
-  const sides = [
-    [vw - 2 * R, t => [x0 + R + t, y0, 0, 1]], [q, t => arc(x1 - R, y0 + R, -Math.PI / 2 + t / R)],
-    [vh - 2 * R, t => [x1, y0 + R + t, -1, 0]], [q, t => arc(x1 - R, y1 - R, t / R)],
-    [vw - 2 * R, t => [x1 - R - t, y1, 0, -1]], [q, t => arc(x0 + R, y1 - R, Math.PI / 2 + t / R)],
-    [vh - 2 * R, t => [x0, y1 - R - t, 1, 0]], [q, t => arc(x0 + R, y0 + R, Math.PI + t / R)],
-  ];
-  const L = sides.reduce((n, [l]) => n + l, 0), N = Math.round(L / 4);
-  // how far it's eaten in: waves of three sizes, each a whole number of times round, so the
-  // line closes on itself. The smaller ones ridged (sharp where they reach in), so the edge
-  // is ragged, not wavy; the rim's width wanders too, from a hairline to thick
-  const waves = (n, len) => Array.from({ length: n }, () => ({ k: Math.max(1, Math.round(L / (len * (0.6 + Math.random() * 0.8)))), p: Math.random() * 2 * Math.PI, a: 0.4 + Math.random() }));
-  const wave = ({ k, p }, s) => Math.sin((2 * Math.PI * k * s) / L + p);
-  const sum = (ws, s, f = x => x) => ws.reduce((v, w) => v + w.a * f(wave(w, s)), 0) / ws.reduce((n, w) => n + w.a, 0);
-  const ridge = x => 1 - 2 * Math.abs(x);
-  const big = waves(3, D * 9), mid = waves(4, D * 2.2), fine = waves(5, D * 0.6), rim = waves(3, D * 1.8);
-  const A = [], B = [], C = [], E = [];
-  let side = 0, from = 0, deepest = 0;
-  for (let i = 0; i < N; i++) {
-    const s = (i * L) / N;
-    while (side < 7 && s - from > sides[side][0]) from += sides[side++][0];
-    const [x, y, nx, ny] = sides[side][1](s - from);
-    const low = Math.min(1, Math.max(0, ((y - y0) / vh - 0.55) / 0.45));
-    const d = D * (0.62 + 0.3 * sum(big, s) + 0.17 * sum(mid, s, ridge) + 0.08 * sum(fine, s, ridge)) * (1 + 0.8 * low * low * (3 - 2 * low));
-    const w = D * (0.025 + 0.16 * Math.max(0, sum(rim, s)) ** 1.4);
-    deepest = Math.max(deepest, d);
-    A.push([x + nx * d, y + ny * d]);                       // where it's burning
-    C.push([x + nx * (d - w * 0.4), y + ny * (d - w * 0.4)]); // white hot to here
-    B.push([x + nx * (d - w), y + ny * (d - w)]);             // orange to here
-    E.push([x + nx * (d - w - D * 0.22), y + ny * (d - w - D * 0.22)]); // scorched to here
-  }
-  const trace = (g, pts, back = false) => {
-    const list = back ? [...pts].reverse() : pts;
-    g.moveTo(list[0][0], list[0][1]);
-    for (let i = 1; i < list.length; i++) g.lineTo(list[i][0], list[i][1]);
-    g.closePath();
-  };
-  const band = (g, a, b, fill) => {
-    g.beginPath();
-    g.moveTo(a[0][0], a[0][1]);
-    for (const [x, y] of a) g.lineTo(x, y);
-    for (let i = b.length - 1; i >= 0; i--) g.lineTo(b[i][0], b[i][1]);
-    g.closePath();
-    g.fillStyle = fill;
-    g.fill();
-  };
-  const sheet = res => {
-    const c = document.createElement('canvas');
-    c.width = Math.round(W * res); c.height = Math.round(H * res);
-    Object.assign(c.style, { left: `${-x0}px`, top: `${-y0}px`, width: `${W}px`, height: `${H}px` });
-    const g = c.getContext('2d');
-    g.scale(res, res);
-    return [c, g];
-  };
-
-  // the char, scorched red near the rim (fading into it), the rim
-  const res = Math.min(devicePixelRatio, 1.5);
-  const [char, g] = sheet(res);
-  g.beginPath();
-  g.rect(0, 0, W, H);
-  trace(g, A);
-  g.fillStyle = '#070201';
-  g.fill('evenodd');
-  g.filter = `blur(${Math.max(1.5, D * 0.09 * res)}px)`;
-  band(g, B, E, 'rgba(128, 22, 4, 0.75)');
-  g.filter = 'none';
-  band(g, A, B, '#ff6a1c');
-  band(g, A, C, '#ffd88a');
-  // its heat: glowing both ways, into the char and onto the page
-  const [heat, h] = sheet(0.5);
-  h.filter = `blur(${Math.max(2, D * 0.12)}px)`;
-  h.lineJoin = 'round';
-  for (const [width, colour] of [[D * 1.1, 'rgba(255, 84, 20, 0.42)'], [D * 0.45, 'rgba(255, 150, 60, 0.55)'], [D * 0.14, 'rgba(255, 220, 140, 0.8)']]) {
-    h.beginPath();
-    trace(h, A);
-    h.lineWidth = width;
-    h.strokeStyle = colour;
-    h.stroke();
-  }
-  const glow = document.createElement('div');
-  glow.className = 'os-heat';
-  glow.appendChild(heat);
-  inner.append(char, glow);
-
-  // it creeps in from past the edges with the wall (from just out of sight), then on, slowly
-  const cx = vw / 2, cy = vh / 2;
-  const s0 = Math.min(1.6, 1.04 * Math.max(cx / Math.max(1, cx - deepest), cy / Math.max(1, cy - deepest)));
-  inner.animate([
-    { scale: `${s0}`, easing: GROW },
-    { scale: '1', offset: intro / out, easing: 'ease-in-out' },
-    { scale: '0.975' },
-  ], { duration: out, fill: 'forwards' });
-  // its heat flares as the wall is up, then flickers
-  glow.animate([
-    { opacity: 0, easing: 'ease-in' },
-    { opacity: 0.7, offset: (intro * 0.6) / total, easing: 'ease-in' },
-    { opacity: 1, offset: intro / total, easing: 'ease-out' },
-    { opacity: 0.72, offset: (intro + 700) / total },
-    { opacity: 0.72 },
-  ], { duration: total, fill: 'forwards' });
-  heat.animate(soft([1, 0], [0.62, 0.16], [0.95, 0.33], [0.55, 0.52], [0.9, 0.7], [0.7, 0.85], [1, 1]),
-    { duration: 1100, iterations: Infinity });
-}
 
 /**
  * Plays it. flame: the ring's .gr-flame (the ring must show "over"). lifted: the flame is
@@ -310,11 +161,8 @@ export function playOverShow({ flame, overMs, limitMs, lifted = false }) {
   // straight away; it goes as the flame flies home
   const DIM = 220;
   const back = stage.querySelector('.os-back');
-  // (each layer of the stage is taken away once it's gone, so as the flame lands it's the
-  // only thing left to redraw)
-  const backEnd = intro + tier.hold + home * 0.7;
-  back.animate([{ opacity: 0, easing: 'ease-out' }, { opacity: 1, offset: DIM / backEnd }, { opacity: 1, offset: (intro + tier.hold) / backEnd }, { opacity: 0 }],
-    { duration: backEnd, fill: 'forwards', easing: 'ease-in-out' }).finished.then(() => back.remove(), () => {});
+  back.animate([{ opacity: 0, easing: 'ease-out' }, { opacity: 1, offset: DIM / total }, { opacity: 1, offset: (intro + tier.hold) / total }, { opacity: 0, offset: (intro + tier.hold + home * 0.7) / total }, { opacity: 0 }],
+    { duration: total, fill: 'forwards', easing: 'ease-in-out' });
   text.animate([
     { opacity: 0, transform: 'translate(-50%, 10px)' },
     { opacity: 0, transform: 'translate(-50%, 10px)', offset: DIM / total, easing: IN },
@@ -323,8 +171,6 @@ export function playOverShow({ flame, overMs, limitMs, lifted = false }) {
     { opacity: 0, transform: 'translate(-50%, -6px)', offset: (intro + tier.hold - 40) / total },
     { opacity: 0, transform: 'translate(-50%, -6px)' },
   ], { duration: total, fill: 'forwards' });
-
-  if (tier.edge) edgeFire(stage, tier, { vw, vh, short, intro, home, wall });
 
   // embers, rising off it while it holds the stage (gone before it flies)
   const embers = stage.querySelector('.os-embers');
@@ -351,8 +197,6 @@ export function playOverShow({ flame, overMs, limitMs, lifted = false }) {
     show.finished.then(() => {
       // home: to where its spot is now (measured now, so an entrance that moved the card
       // since doesn't matter), its own size again
-      text.remove();
-      embers.remove();
       const t = slot.getBoundingClientRect();
       const dx = snap(t.left) - left, dy = snap(t.top) - top;
       // (these take over from the show's last values, which hold until they start)

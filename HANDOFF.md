@@ -398,15 +398,7 @@ plays it, the flame rising out of its ring), the ring's own flame takes the stag
 once (220 ms), the flame grows at the middle with "42m over · your 1h daily limit", holds, then flies home into its
 ring. Four sizes by how far over (each flickers harder): under 30m small, 30m big, 1h bigger plus a dry line (10 in
 `OVER_LINES`, never the same twice running), 2h a wall of fire taller than the stage, rising from below; embers off
-the two biggest. From an hour the stage's edge is on fire (`edgeFire`): at 1h it's hot, a glow all round that closes in
-from past the edges and breathes; at 2h it burns away like paper (`burn`): black char eats in from every side
-(deepest at the bottom, by the wall) to a ragged rim burning orange to white hot, a new shape each time (periodic
-waves round the edge, the smaller ones ridged so it's ragged, not wavy). It creeps in from out of sight as the wall
-rises, its heat flares as the wall is up and then flickers, and it keeps eating in slowly while the words are read.
-Drawn once on two canvases (char and rim; the heat at half resolution), about 10 ms, then only scaled and faded:
-two layers at any size (the owner turned down a row of repeated flames: it looked lazy and cost a layer each). It
-fades with the dim and is taken away before the flame lands, as are the words, embers and dim once each has gone,
-so the landing frame redraws nothing else. Holds are long enough to read (2 to 3.8 s). One element (owner's rule): the flame leaves its spot
+the two biggest. Holds are long enough to read (2 to 3.8 s). One element (owner's rule): the flame leaves its spot
 (an empty `.gr-flame-slot` its size keeps the room), plays, lands back in it. Made flawless frame by frame: its own
 laid-out size (the ring may be scaling it in), the spot measured once the flame has left it, home measured as the
 flight starts, start and home on Chrome's whole pixels, size reached before the end (it glides the last stretch, so
