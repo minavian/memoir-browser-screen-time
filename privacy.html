@@ -75,13 +75,9 @@
     <p>Mina Vian · <button class="p-author" id="mail" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="mail-pop">iamminavian@gmail.com</button></p>
   </main>
 
-  <!-- your address, to copy (shared/mail-pop.js, as the report's "Made by" name) -->
-  <div class="pop author-pop" id="mail-pop" role="dialog" aria-labelledby="mail-title" hidden>
-    <p class="ap-title" id="mail-title">Copy my email</p>
-    <div class="ap-mail">
-      <a class="ap-addr" href="mailto:iamminavian@gmail.com">iamminavian@gmail.com</a>
-      <button class="ap-copy" type="button" aria-label="Copy email address"><span class="ap-copy-label">Copy</span></button>
-    </div>
+  <!-- your address, to copy: just the button (shared/mail-pop.js, as the report's "Made by" name) -->
+  <div class="pop author-pop copy-only" id="mail-pop" role="dialog" aria-label="Copy my email" hidden>
+    <button class="ap-copy" type="button" aria-label="Copy my email"><span class="ap-copy-label">Copy</span></button>
   </div>
 </body>
 </html>

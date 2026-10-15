@@ -51,7 +51,7 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
 - `PRIVACY.md` — the privacy policy; `privacy.html/css/js` — the same text in the extension: plain text in one column, the clock
   and MEMOIR on top, the report's cursor and scrolling; sizes follow the window; the text pops on (the
   headline word by word, the rest as it comes into view; `<html class="pv-pop">` hides it from the start; not `pop`, which shared/pop.css styles as a
-  popover); hovering the address opens the same "copy my email" popover as the report's "Made by" name
+  popover); hovering the address opens the report's "Made by" popover, holding just its Copy button
   (`shared/mail-pop.js`, styles in `shared/pop.css`). Opened from the footer of
   Settings ("Your data never leaves this browser"). Keep the two the same. `store/chrome-web-store-privacy.md` — the
   Web Store's Privacy practices answers (single purpose, why each permission, data use), checked against the code.
