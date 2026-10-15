@@ -1,0 +1,102 @@
+/* The privacy policy page (privacy.html): the report's look, from theme.css. Its sizes
+   live together at the top. */
+
+.pv {
+  --pv-pad: 40px;          /* the page's side margins */
+  --pv-title: 56px;
+  --pv-lead: 19px;
+  --pv-body: 15.5px;
+  --pv-h2: 21px;
+  --pv-small: 13px;
+  --pv-gap: 56px;          /* between the big parts */
+  position: relative;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 28px var(--pv-pad) 64px;
+}
+
+/* the clock and the name, as in the popup */
+.pv-top { display: flex; align-items: center; gap: 12px; }
+.pv-top .logo { width: 36px; height: 36px; flex: none; }
+.pv-top .wordmark { font-size: 20px; }
+
+.pv-hero { max-width: 780px; margin: 72px 0 var(--pv-gap); }
+.pv-kicker { margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--label-3); }
+.pv-hero h1 {
+  margin: 12px 0 0;
+  font: 700 var(--pv-title)/1.04 var(--font-display);
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+}
+.pv-lead { margin: 20px 0 0; max-width: 48ch; font-size: var(--pv-lead); line-height: 1.5; color: var(--label-2); text-wrap: pretty; }
+.pv-when { margin: 16px 0 0; font-size: var(--pv-small); color: var(--label-3); }
+
+/* in short: four promises */
+.pv-promises { list-style: none; margin: 0 0 var(--pv-gap); padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.pv-promise { padding: 20px 20px 22px; border-radius: 20px; background: var(--surface); box-shadow: var(--shadow); }
+.pv-promise svg { display: block; width: 26px; height: 26px; fill: none; stroke: var(--label); stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.pv-promise b { display: block; margin-top: 16px; font: 600 16px/1.25 var(--font-display); letter-spacing: -0.01em; }
+.pv-promise span { display: block; margin-top: 5px; font-size: var(--pv-small); line-height: 1.45; color: var(--label-2); }
+
+/* the contents beside the sections; it follows along (privacy.js) */
+.pv-body { display: grid; grid-template-columns: 196px minmax(0, 1fr); gap: 44px; align-items: start; }
+.pv-toc { position: sticky; top: 28px; display: flex; flex-direction: column; gap: 2px; }
+.pv-toc a {
+  padding: 7px 12px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  color: var(--label-2);
+  text-decoration: none;
+  transition: background-color 0.2s var(--ease), color 0.2s var(--ease);
+}
+.pv-toc a:hover, .pv-toc a:focus-visible { background: var(--fill-1); color: var(--label); outline: none; }
+.pv-toc a[aria-current="true"] { background: var(--fill-2); color: var(--label); font-weight: 600; }
+
+.pv-main { min-width: 0; }
+.pv-sec { padding: 28px 30px 30px; border-radius: 22px; background: var(--surface); box-shadow: var(--shadow); scroll-margin-top: 24px; }
+.pv-sec + .pv-sec { margin-top: 16px; }
+.pv-sec h2 { margin: 0 0 14px; font: 600 var(--pv-h2)/1.25 var(--font-display); letter-spacing: -0.015em; }
+.pv-sec p, .pv-sec li { font-size: var(--pv-body); line-height: 1.62; color: var(--label-2); text-wrap: pretty; }
+.pv-sec p { margin: 0 0 14px; }
+.pv-sec > :last-child { margin-bottom: 0; }
+.pv-sec b { color: var(--label); font-weight: 600; }
+.pv-sec a { color: var(--label); text-underline-offset: 3px; }
+.pv-sec code { padding: 1px 6px; border-radius: 6px; background: var(--fill-1); font: 0.88em/1 ui-monospace, "Cascadia Mono", Consolas, monospace; color: var(--label); }
+
+/* a tick before each point */
+.pv-list { list-style: none; margin: 0 0 16px; padding: 0; display: grid; gap: 12px; }
+.pv-list li { position: relative; padding-left: 32px; }
+.pv-list li::before, .pv-never li::before { content: ""; position: absolute; left: 0; top: 0.22em; width: 20px; height: 20px; border-radius: 50%; background: var(--fill-2); }
+.pv-list li::after, .pv-never li::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: calc(0.22em + 4px);
+  width: 12px;
+  height: 12px;
+  background: var(--label);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.6 6.3l2.3 2.3 4.6-5' fill='none' stroke='%23000' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.6 6.3l2.3 2.3 4.6-5' fill='none' stroke='%23000' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+/* never recorded: crossed out, side by side */
+.pv-never { margin: 4px 0 18px; padding: 16px 18px 18px; border-radius: 16px; background: var(--fill-1); }
+.pv-never p { margin: 0 0 12px; }
+.pv-never ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.pv-never li { position: relative; padding: 5px 12px 5px 34px; border-radius: 999px; background: var(--surface); font-size: var(--pv-small); line-height: 1.4; color: var(--label); }
+.pv-never li::before { left: 7px; top: 50%; translate: 0 -50%; width: 20px; height: 20px; background: var(--danger-soft); }
+.pv-never li::after {
+  left: 11px;
+  top: 50%;
+  translate: 0 -50%;
+  background: var(--danger);
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3.5 3.5l5 5M8.5 3.5l-5 5' fill='none' stroke='%23000' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3.5 3.5l5 5M8.5 3.5l-5 5' fill='none' stroke='%23000' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+
+.pv-foot { margin: var(--pv-gap) 0 0; text-align: center; font-size: 12.5px; color: var(--label-3); }
+
+/* coming in: each part rises into place, in turn */
+.pv-in { animation: pv-in 0.8s var(--ease-out) both; animation-delay: calc(80ms + var(--i, 0) * 55ms); }
+@keyframes pv-in { from { opacity: 0; transform: translateY(14px); } }
+@media (prefers-reduced-motion: reduce) { .pv-in { animation: none; } }
