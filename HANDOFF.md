@@ -48,9 +48,8 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
 - `welcome.js` — first-run welcome screen (styles at the end of `recap.css`). `welcome-intro.js` — its opening;
   `fonts/Unbounded-subset.woff2` — the trailer's face, MEMOIR/WELCOME TO only.
 - `fonts/` — Inter variable subset (OFL) used by the Clear-all label.
-- `PRIVACY.md` — the privacy policy; `privacy.html/css/js` — the same text in the extension: plain text on a
-  hairline sheet, the clock and MEMOIR, a ruler of minutes under the headline, and black-and-white line drawings
-  of Memoir's things in the margins (traced in as they're seen); the report's cursor and scrolling. Opened from the footer of
+- `PRIVACY.md` — the privacy policy; `privacy.html/css/js` — the same text in the extension: plain text in one column, the clock
+  and MEMOIR on top, the report's cursor and scrolling. Opened from the footer of
   Settings ("Your data never leaves this browser"). Keep the two the same. `store/chrome-web-store-privacy.md` — the
   Web Store's Privacy practices answers (single purpose, why each permission, data use), checked against the code.
   If a permission, a stored field or a data flow changes, update all of these.
