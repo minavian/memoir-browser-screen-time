@@ -1619,6 +1619,8 @@ body { overflow: hidden; }
 .tour-content.out { position: absolute; left: 0; right: 0; top: 0; pointer-events: none; }
 .tour.on .tour-card { opacity: 1; }
 .tour.leaving .tour-card, .tour.leaving .tour-spot { opacity: 0; }
+/* the welcome's card is still turning into this one */
+.tour.arriving .tour-card { opacity: 0; transition: none; }
 .tour-body { position: relative; }
 .tour-kicker { margin: 0 0 3px; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--label-3); }
 .tour-title { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -0.02em; }

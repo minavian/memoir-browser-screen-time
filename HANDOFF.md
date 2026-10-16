@@ -90,7 +90,11 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
   nothing handed over (owner's rule). On a narrow window, with no header logo, it blurs away instead.
   "Take the tour" starts the tour at once, under the card, while the words fade; the dims swap in one frame
   (`.tour.handoff` skips the spot's fade); once the words are gone and the page is calm (`calm()`), a shell reshapes
-  the card into the tour's first card (`handoff(card)` from `runTour`). The board's first render waits until it has
+  the card into the tour's first card (`handoff(card, { onMove, onLand })` from `runTour`). That card is "Your weeks",
+  beside the lit week arrows: there's no intro card of its own any more (a "This is Memoir" card repeated the welcome
+  and cost a click; dropped 2026-10-16, its sample-week note moved onto "Your weeks"). Till the shell sets off the
+  tour card is unseen (`.tour.arriving`) and the light shut at the arrows' middle; it opens on the reshape's own clock
+  (`RESHAPE_MS`, `RESHAPE`), and the card shows in the frame the shell lands. The board's first render waits until it has
   landed (`onHanded`), so it never competes with the reshape. The real week renders behind the dim just after the
   welcome starts playing in (`onShown`, 120 ms), so the page isn't blank and its follow-up work (about 2.5 s of
   small tasks) is done before most clicks; the tour path redraws it as the sample week after landing.

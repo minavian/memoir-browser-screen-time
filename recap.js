@@ -4561,8 +4561,7 @@ async function startTour({ prepared = false, handoff = null } = {}) {
   const canTryLimit = !limitLocked(state.goalHistory, dayKey(new Date()));
 
   const steps = [
-    { kicker: 'Quick tour', title: 'This is <span class="wordmark">Memoir</span>', text: 'A quick look around, on a <b>sample week</b>, so nothing of yours is touched. When a step says <b>Try</b>, go ahead: everything in the light is live.', next: 'Start', before: toWeek, settle: 0 },
-    { title: 'Your weeks', text: 'Step back through past weeks with the arrows. The <b>←</b> and <b>→</b> keys work too.', target: () => q('.week-nav'), before: toWeek, settle: 0, radius: 12, tasks: [
+    { title: 'Your weeks', text: 'Step back through past weeks with the arrows. The <b>←</b> and <b>→</b> keys work too. This is a <b>sample week</b>: nothing of yours is touched.', target: () => q('.week-nav'), before: toWeek, settle: 0, radius: 12, tasks: [
       { text: 'Click <b>‹</b> to see the week before', watch: onClick('#prev-week') },
       { text: 'Then <b>›</b> to come back', watch: onClick('#next-week') },
     ] },

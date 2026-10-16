@@ -29,8 +29,11 @@ const overlap = (a, b) => Math.max(0, Math.min(a.r, b.r) - Math.max(a.l, b.l)) *
 const join = (a, b) => ({ l: Math.min(a.l, b.l), t: Math.min(a.t, b.t), r: Math.max(a.r, b.r), b: Math.max(a.b, b.b) });
 const apart = (a, b) => Math.hypot(Math.max(0, a.l - b.r, b.l - a.r), Math.max(0, a.t - b.b, b.t - a.b));
 
-// handoff(card): called with the first card once it's placed, before it's seen, so a
-// welcome screen can turn into it (the tour's dim then appears at once, no fade).
+// handoff(card, { onMove, onLand }): called with the first card once it's placed, before
+// it's seen, so a welcome screen can turn into it (the tour's dim then appears at once, no
+// fade). It returns true if it does: the card then stays unseen and the light shut until
+// the welcome's card sets off (onMove({ duration, easing }): the light opens on that clock)
+// and lands as this one (onLand).
 // avoid(): what's up on the page right now that the card must leave visible (popovers,
 // menus a try opened). A step's follow() lists what its tries opened elsewhere (the
 // trend graph, a day the highlights opened): it joins the light, so you see it, and the
@@ -71,6 +74,7 @@ export function runTour(steps, { handoff = null, avoid = () => [] } = {}) {
     const doneBy = steps.map(() => new Set()); // tasks done, per step (kept when going back)
     let watchers = [];
     let reflowTimers = [];
+    let shut = false; // the light waits for the welcome's card to set off
 
 
     // spot and card move together, straight away, on one heavy ease
@@ -81,7 +85,7 @@ export function runTour(steps, { handoff = null, avoid = () => [] } = {}) {
       const r = els.length ? unionRect(els) : null;
       const pad = step.pad != null ? step.pad : 8;
       // hands-on steps leave a hole in the blocker over the spotlight, so what's lit can be used
-      const open = !!r && !!((step.tasks && step.tasks.length) || step.interactive);
+      const open = !shut && !!r && !!((step.tasks && step.tasks.length) || step.interactive);
       if (open) {
         const x0 = Math.max(0, r.left - pad);
         const y0 = Math.max(0, r.top - pad);
@@ -91,14 +95,17 @@ export function runTour(steps, { handoff = null, avoid = () => [] } = {}) {
       } else {
         blocker.style.clipPath = '';
       }
-      if (r) {
+      if (r && !shut) {
         const radius = step.radius != null ? step.radius : 18;
         Object.assign(spot.style, {
           left: `${r.left - pad}px`, top: `${r.top - pad}px`, width: `${r.width + pad * 2}px`, height: `${r.height + pad * 2}px`, borderRadius: `${radius}px`,
         });
         spot.classList.remove('none');
       } else {
-        Object.assign(spot.style, { left: `${innerWidth / 2}px`, top: `${innerHeight / 2}px`, width: '0px', height: '0px', borderRadius: '50%' });
+        // no light (or not yet): shut, at the middle of what it lights, so it opens from there
+        const cx = r ? r.left + r.width / 2 : innerWidth / 2;
+        const cy = r ? r.top + r.height / 2 : innerHeight / 2;
+        Object.assign(spot.style, { left: `${cx}px`, top: `${cy}px`, width: '0px', height: '0px', borderRadius: '50%' });
         spot.classList.add('none');
       }
       const cw = card.offsetWidth;
@@ -306,13 +313,35 @@ export function runTour(steps, { handoff = null, avoid = () => [] } = {}) {
         // very first step: put the card in place before it's ever seen
         card.classList.add('instant');
         spot.classList.add('instant');
+        // from the welcome, its card turns into this one: till then this card stays unseen
+        // and the light shut, so nothing shows twice
+        if (handoff) {
+          shut = true;
+          root.classList.add('handoff', 'arriving');
+        }
         place(step, finalH);
         void card.offsetWidth;
         card.classList.remove('instant');
         spot.classList.remove('instant');
         if (handoff) {
-          root.classList.add('handoff');
-          handoff(card);
+          // the card shows in the frame the welcome's lands, with no fade
+          const show = () => {
+            card.style.transition = 'none';
+            root.classList.remove('arriving');
+            void card.offsetWidth;
+            card.style.transition = '';
+          };
+          // the light opens on the welcome card's own clock, so the two arrive together
+          const opens = ({ duration = 0, easing = HEAVY } = {}) => {
+            shut = false;
+            if (ended || index < 0) return;
+            if (duration && !reducedMotion()) {
+              spot.style.transition = `${['left', 'top', 'width', 'height', 'border-radius'].map(p => `${p} ${duration}ms ${easing}`).join(', ')}, opacity 0.4s var(--ease), box-shadow 0.9s var(--ease)`;
+              setTimeout(() => { spot.style.transition = ''; }, duration + 50);
+            }
+            place(steps[index]);
+          };
+          if (handoff(card, { onMove: opens, onLand: show }) !== true) { opens(); show(); }
           requestAnimationFrame(() => requestAnimationFrame(() => root.classList.remove('handoff')));
         }
         root.classList.add('on');
