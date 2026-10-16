@@ -2963,8 +2963,7 @@ function openCatMenu(btn) {
   menu.innerHTML = `<p class="menu-title">${escapeHtml(domain)}</p>` + CATEGORIES.map(c => `
     <button class="menu-item" role="menuitemradio" aria-checked="${c.id === current}" data-cat="${c.id}">
       <span class="dot" style="--c:${c.color}"></span>${c.label}${c.id === current ? '<svg><use href="#i-check"/></svg>' : ''}
-    </button>`).join('') + (state.demo ? '' : `<div class="menu-sep"></div>
-    <button class="menu-item danger" role="menuitem" data-exclude="1"><svg><use href="#i-private"/></svg>Never track this site</button>`);
+    </button>`).join('');
   menu.hidden = false;
   menu.classList.remove('closing');
   const r = btn.getBoundingClientRect();
@@ -3115,6 +3114,7 @@ function closeSettings(focusTrigger = false) {
   setReveal('detail-confirm', false);
   setReveal('ret-confirm', false);
   pendingRetention = null;
+  cancelExclude();
   $('ex-form').classList.remove('invalid');
   tip.hide();
   // the sites under Never track hide again as you leave; the dust rests once the panel is shut
@@ -3639,6 +3639,77 @@ async function chooseRetention(days) {
   await applyRetention(days);
 }
 
+// ----- Never track: two presses, like Keep history, since a site's past time turns Private
+// for good. Adding it to the list is the only way (the category menu has no Never track). -----
+
+let pendingExclude = null;
+let exTimer = 0;
+function armExclude(on) {
+  const btn = $('ex-yes');
+  const msg = $('ex-msg');
+  clearTimeout(exTimer);
+  const was = btn.dataset.armed === '1';
+  btn.dataset.armed = on ? '1' : '0';
+  const text = on ? 'Yes, never track' : 'Never track';
+  const note = on
+    ? 'Sure? Its past time turns Private too, for good. Press again to never track it.'
+    : `Never track ${pendingExclude}? Its time still counts, but only as Private.`;
+  if (btn.textContent !== text || msg.textContent !== note) {
+    let lead = 0;
+    animateHeight($('ex-confirm').querySelector('.reveal-inner'), () => {
+      btn.textContent = text;
+      msg.textContent = note;
+      if ($('ex-confirm').classList.contains('open')) lead = relight(330);
+    }, { duration: 300, delay: () => lead });
+  }
+  btn.setAttribute('aria-label', on ? `Press again to never track ${pendingExclude}` : `Never track ${pendingExclude}`);
+  if (on) {
+    exTimer = setTimeout(() => armExclude(false), 9000);
+    if (!was && !reducedMotion()) btn.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.06)' }, { transform: 'scale(1)' }], { duration: 420, easing: EASE_OUT });
+  }
+}
+function askExclude(site) {
+  // asked again about the same site: the question just nods, it doesn't move on
+  if (pendingExclude === site) {
+    if (!reducedMotion()) $('ex-confirm').querySelector('.inline-confirm').animate([{ transform: 'scale(1)' }, { transform: 'scale(1.025)' }, { transform: 'scale(1)' }], { duration: 360, easing: EASE_OUT });
+    return;
+  }
+  pendingExclude = site;
+  armExclude(false);
+  setReveal('ex-confirm', true);
+}
+function cancelExclude(focus = false) {
+  if (pendingExclude == null) return;
+  pendingExclude = null;
+  clearTimeout(exTimer);
+  $('ex-yes').dataset.armed = '0';
+  setReveal('ex-confirm', false);
+  if (focus) $('ex-input').focus({ preventScroll: true });
+}
+async function commitExclude() {
+  const site = pendingExclude;
+  if (site == null) return;
+  pendingExclude = null;
+  clearTimeout(exTimer);
+  $('ex-yes').dataset.armed = '0';
+  setReveal('ex-confirm', false);
+  const exForm = $('ex-form');
+  const exInput = $('ex-input');
+  // the typed words lift off at once (the field empties under them) and fly into the chip once it's made
+  if (!reducedMotion()) {
+    exFlights.set(site, liftTyped(site));
+    exForm.classList.add('sent');
+    setTimeout(() => exForm.classList.remove('sent'), 420);
+  }
+  exInput.value = '';
+  exForm.classList.remove('has-text');
+  await addExcluded(site);
+  // words that found no chip to land in just fade
+  const stray = exFlights.get(site);
+  exFlights.delete(site);
+  if (stray) stray.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200, fill: 'forwards' }).finished.then(() => stray.remove(), () => stray.remove());
+}
+
 async function applyRetention(days) {
   pendingRetention = null;
   clearTimeout(retTimer);
@@ -3779,6 +3850,7 @@ function wire() {
       else if (authorPop.isOpen) { closeAuthor(); focusAuthor(); }
       else if ($('settings').classList.contains('open')) {
         if ($('data-row').dataset.step !== '0') setNukeStep(0);
+        else if (pendingExclude != null) cancelExclude(true);
         else closeSettings(true);
       } else if (state.view.type !== 'week') goBack();
       return;
@@ -3953,8 +4025,7 @@ function wire() {
     if (!item || !menuFor) return;
     const domain = menuFor.dataset.domain;
     closeCatMenu();
-    if (item.dataset.exclude) addExcluded(domain);
-    else applyCategory(domain, item.dataset.cat);
+    applyCategory(domain, item.dataset.cat);
   });
   $('cat-menu').addEventListener('keydown', e => {
     if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
@@ -4002,8 +4073,10 @@ function wire() {
   exInput.addEventListener('input', () => {
     exForm.classList.toggle('has-text', exInput.value.trim().length > 0);
     exForm.classList.remove('invalid');
+    // the site being asked about was changed: the question goes
+    if (pendingExclude != null && normalizeSite(exInput.value) !== pendingExclude) cancelExclude();
   });
-  exForm.addEventListener('submit', async e => {
+  exForm.addEventListener('submit', e => {
     e.preventDefault();
     const site = normalizeSite(exInput.value);
     if (!site) {
@@ -4011,23 +4084,19 @@ function wire() {
       toast('That doesn’t look like a website');
       return;
     }
-    // a new site: the typed words lift off at once (the field empties under them) and
-    // fly into the chip once it's made
-    if (!state.settings.excluded.includes(site) && !reducedMotion()) {
-      exFlights.set(site, liftTyped(site));
+    if (state.settings.excluded.includes(site)) {
+      toast(`${site} is already private`);
       exInput.value = '';
       exForm.classList.remove('has-text');
-      exForm.classList.add('sent');
-      setTimeout(() => exForm.classList.remove('sent'), 420);
+      return;
     }
-    if (await addExcluded(site)) {
-      exInput.value = '';
-      exForm.classList.remove('has-text');
-    }
-    // words that found no chip to land in just fade
-    const stray = exFlights.get(site);
-    exFlights.delete(site);
-    if (stray) stray.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200, fill: 'forwards' }).finished.then(() => stray.remove(), () => stray.remove());
+    askExclude(site);
+  });
+  $('ex-cancel').addEventListener('click', () => cancelExclude(true));
+  $('ex-yes').addEventListener('click', () => {
+    if (pendingExclude == null) return;
+    if ($('ex-yes').dataset.armed !== '1') armExclude(true);
+    else commitExclude();
   });
   $('ex-list').addEventListener('click', async e => {
     const name = e.target.closest('.ex-name');
@@ -4695,7 +4764,7 @@ async function startTour({ prepared = false, handoff = null } = {}) {
       { text: 'Switch to <b>Week</b>, then back to <b>Day</b>', watch: onClick('#scope [data-scope="day"]', () => state.scope === 'day' && scopeTried) },
     ] },
     { title: 'Most used', text: 'Every site you visited is listed here, with page titles too if you turn them on later in Settings.', target: () => q('.sites-card'), before: noSettings, settle: 0, tasks: [
-      { text: 'Click a site’s category to move it (or never track it)', watch: onClick('.sites-card .cat-btn') },
+      { text: 'Click a site’s category to move it', watch: onClick('.sites-card .cat-btn') },
       { text: 'Click a site’s row to see each page’s time', watch: onClick('.sites-card .site.has-pages', () => pages.isOpen) },
     ] },
     { title: 'Settings', text: '', target: () => ($('settings').classList.contains('open') ? q('#settings-panel') : q('#settings-btn')), before: noSettings, settle: 0, radius: 22, pad: 6, tasks: [

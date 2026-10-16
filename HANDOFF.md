@@ -361,8 +361,16 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
   open layout with transitions off, `renderExcluded` holds the list's height, the chips' glide, the pop-in
   and the typed words' flight (`animateHeight` takes a `delay`). Shrinking, the page goes first and the
   light follows `after` ms later; the click-driven re-placing waits too (`holdUntil`), so the light never
-  shrinks halfway. Hands-on: "What gets tracked" (switch Tracking detail, add a site to Never track) and
+  shrinks halfway. It measures where the page is heading (`atEnds`: running size animations, such as a
+  reveal folding, are set to just short of their ends for the measurement, then put back). Hands-on: "What gets tracked" (switch Tracking detail, add a site to Never track) and
   "Weekly recap" (another day, another time; switching it on comes first if it was off).
+
+- Never track, only from Settings, two presses (5.1.5, recap.js `askExclude` / `armExclude` / `commitExclude`):
+  the category menu has no "Never track this site" any more (a right-click slip there made a site's past time
+  Private for good). Adding a site asks under the field ("Never track x? Its time still counts, but only as
+  Private.", Cancel / Never track); the first press arms it ("Sure? Its past time turns Private too, for good.",
+  "Yes, never track", glowing like Keep history's, 9 s to disarm); the second adds it (the typed words fly into
+  the chip then). Enter again only nods; editing the field, Cancel, Esc or closing Settings drops the question.
 
 - Never track, hidden (5.1.5): the sites under Never track are hidden under dust, a shimmer of fine
   specks over a soft haze, filling the whole pill, the × too (thinning towards its rounded edge).

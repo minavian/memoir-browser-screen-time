@@ -136,6 +136,13 @@
                       <input id="ex-input" type="text" placeholder="Add a site, like youtube.com" aria-label="Site to never track" spellcheck="false">
                       <button class="btn btn-primary btn-xs ex-add" id="ex-add" type="submit" aria-label="Add site"><svg><use href="#i-plus"/></svg><span>Add</span></button>
                     </form>
+                    <div class="reveal" id="ex-confirm" inert><div class="reveal-inner">
+                      <div class="inline-confirm">
+                        <span id="ex-msg"></span>
+                        <button class="btn btn-secondary btn-xs" id="ex-cancel" type="button">Cancel</button>
+                        <button class="btn btn-danger btn-xs" id="ex-yes" type="button">Never track</button>
+                      </div>
+                    </div></div>
                     <div class="ex-wrap" id="ex-wrap"><ul class="ex-list" id="ex-list"></ul></div>
                   </div>
                 </div>

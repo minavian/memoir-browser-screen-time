@@ -14,6 +14,18 @@ const wait = ms => new Promise(r => setTimeout(r, reducedMotion() ? 0 : ms));
 const HEAVY = 'cubic-bezier(0.16, 1, 0.3, 1)';
 const TICK = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.8 8.4 6.6 11.2 12.2 4.8" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
+// Runs fn with the page's running size animations (a reveal folding, a list rolling open)
+// set to just short of their ends, then puts them back: what fn measures is the layout the
+// page is heading to. Nothing is painted in between, so nothing on screen moves.
+const SIZED = ['height', 'width', 'gridTemplateRows', 'marginTop', 'marginBottom', 'maxHeight'];
+function atEnds(fn) {
+  const runs = document.getAnimations().filter(a => a.playState === 'running' && a.effect
+    && a.effect.getKeyframes().some(k => SIZED.some(p => p in k)));
+  const saved = runs.map(a => a.currentTime);
+  runs.forEach(a => { a.currentTime = Math.max(0, a.effect.getComputedTiming().endTime - 0.5); });
+  try { return fn(); } finally { runs.forEach((a, k) => { a.currentTime = saved[k]; }); }
+}
+
 function unionRect(els) {
   const rs = els.filter(Boolean).map(e => e.getBoundingClientRect()).filter(r => r.width || r.height);
   if (!rs.length) return null;
@@ -105,8 +117,7 @@ export function runTour(steps, { handoff = null, avoid = () => [] } = {}) {
     }
 
     // spot and card move together, straight away, on one heavy ease
-    function place(step, cardH = card.offsetHeight) {
-      const sp = lit(step);
+    function place(step, cardH = card.offsetHeight, sp = lit(step)) {
       // hands-on steps leave a hole in the blocker over the spotlight, so what's lit can be used
       const open = !shut && !!sp && !!((step.tasks && step.tasks.length) || step.interactive);
       if (open) {
@@ -274,13 +285,14 @@ export function runTour(steps, { handoff = null, avoid = () => [] } = {}) {
     const relightThis = after => {
       if (ended || index < 0 || shut) return 0;
       const step = steps[index];
-      const sp = lit(step);
+      // where the page is heading, not where its animations have got to
+      const sp = atEnds(() => lit(step));
       const was = lastSpot;
       const grows = !!sp && !!was && (sp.l < was.l - 0.5 || sp.t < was.t - 0.5 || sp.r > was.r + 0.5 || sp.b > was.b + 0.5);
       const lead = grows && !reducedMotion() ? RELIGHT_MS : 0;
       if (grows) {
         spotClock(RELIGHT_MS, HEAVY);
-        place(step);
+        place(step, card.offsetHeight, sp);
       }
       holdUntil = Math.max(holdUntil, performance.now() + lead + after);
       reflowTimers.push(setTimeout(settle, lead + after));
