@@ -4605,22 +4605,22 @@ async function startTour({ prepared = false, handoff = null } = {}) {
   const canTryLimit = !limitLocked(state.goalHistory, dayKey(new Date()));
 
   const steps = [
-    { title: 'Your weeks', text: 'Step back through past weeks with the arrows. The <b>←</b> and <b>→</b> keys work too. This is a <b>sample week</b>: nothing of yours is touched.', target: () => q('.week-nav'), before: toWeek, settle: 0, radius: 12,
+    { title: 'Your weeks', text: 'Click <b>‹</b> or <b>›</b> to step back through your weeks, or forward again once you’ve stepped back. The <b>←</b> and <b>→</b> keys work too. This is a <b>sample week</b>, so nothing is saved.', target: () => q('.week-nav'), before: toWeek, settle: 0, radius: 12,
       // here the arrow keys change the week, as they do on the page; from the next step on they're the tour's
       arrows: dir => { const b = q(dir < 0 ? '#prev-week' : '#next-week'); if (b && !b.disabled) b.click(); },
       tasks: [
       { text: 'Click <b>‹</b> to see the week before', watch: onClick('#prev-week') },
       { text: 'Then <b>›</b> to come back', watch: onClick('#next-week') },
     ] },
-    { title: 'Daily average', text: 'How long you browse on a typical day, and how it compares with last week.', target: () => [q('.summary .caption'), q('#stat-avg'), q('#trend-btn')], follow: () => (state.view.type === 'trend' ? chart() : null), before: thisWeek, radius: 14, below: true, tasks: [
+    { title: 'Daily average', text: 'Your average screen time, compared with last week’s.', target: () => [q('.summary .caption'), q('#stat-avg'), q('#trend-btn')], follow: () => (state.view.type === 'trend' ? chart() : null), before: thisWeek, radius: 14, below: true, tasks: [
       { text: 'Click <b>the change from last week</b> to open Trend over time', watch: onClick('#trend-btn', () => state.view.type === 'trend') },
     ] },
     { title: 'Highlights', text: 'What your week looked like, in words. <b>Bold words are buttons.</b>', target: () => q('#story'), follow: chartOpen, before: async () => { tidy(); await toWeek(); }, settle: 0, radius: 14, below: true, tasks: [
       { text: 'Try a bold <b>day</b> or <b>hour</b> to open it', watch: onClick('#story [data-act="day"], #story [data-act="hour"]') },
       { text: 'Try a bold <b>category</b> to see its sites', watch: onClick('#story [data-act="cat"]') },
     ] },
-    { title: 'Today’s limit', text: 'Set a daily limit and commit to it. It stays locked, day after day; only a long talk in Settings undoes it. The ring turns yellow, orange, then red, with a nudge at 95% and another if you go over.' + (canTryLimit ? ' Trying it now is safe: for a day, Settings can undo it in one click.' : ''), target: () => q('#goal-card'), before: tidy, settle: 0, tasks: canTryLimit ? [
-      { text: 'Tap <b>Set limit</b> to try it out', watch: onClick('#goal-card .gr-set') },
+    { title: 'Today’s limit', text: 'Set a limit and you’ll have to commit to it. You’ll get a notification before you hit it.', target: () => q('#goal-card'), before: tidy, settle: 0, tasks: canTryLimit ? [
+      { text: 'Tap <b>Set limit</b> to try it out (you don’t have to set one; just tap the button)', watch: onClick('#goal-card .gr-set') },
     ] : undefined },
     { title: 'Daily activity', text: 'Each day, stacked by category, with your average and limit lines.', target: chart, before: toWeek, tasks: [
       { text: 'Click a day to open it', watch: onClick('#chart-card', () => state.view.type === 'day'), advance: true },
@@ -4638,25 +4638,25 @@ async function startTour({ prepared = false, handoff = null } = {}) {
       { text: 'Click a day’s name for the whole day', watch: onClick('#heat-card .heat-day') },
     ] },
     { title: 'Categories', text: 'Where the time went, by kind of site. <b>Week</b> shows the whole week; <b>Day</b> shows one day: today, or the day you’ve opened in Daily activity.', target: () => q('.donut-card'), before: toWeek, settle: 500, tasks: [
-      { text: 'Point at a slice to light it up across the page', watch: onHover('.donut-card .donut-seg, .donut-card .cat-legend button') },
+      { text: 'Hover over a slice to light it up across the page', watch: onHover('.donut-card .donut-seg, .donut-card .cat-legend button') },
       { text: 'Click it to see its sites', watch: onClick('.donut-card .donut-seg, .donut-card .cat-legend button') },
       { text: 'Switch to <b>Week</b>, then back to <b>Day</b>', watch: onClick('#scope [data-scope="day"]', () => state.scope === 'day' && scopeTried) },
     ] },
-    { title: 'Most used', text: 'Every site, largest first, for the week or the day, following the switch on Categories. A site’s name opens it; the rest of its row shows the time on each of its pages.', target: () => q('.sites-card'), before: noSettings, settle: 0, tasks: [
+    { title: 'Most used', text: 'Every site you visited is listed here, with page titles too if you turn them on later in Settings.', target: () => q('.sites-card'), before: noSettings, settle: 0, tasks: [
       { text: 'Click a site’s category to move it (or never track it)', watch: onClick('.sites-card .cat-btn') },
       { text: 'Click a site’s row to see each page’s time', watch: onClick('.sites-card .site.has-pages', () => pages.isOpen) },
     ] },
-    { title: 'Settings', text: 'Themes, the cursor, reminders, privacy and your data all live behind the gear.', target: () => ($('settings').classList.contains('open') ? q('#settings-panel') : q('#settings-btn')), before: noSettings, settle: 0, radius: 22, pad: 6, tasks: [
+    { title: 'Settings', text: '', target: () => ($('settings').classList.contains('open') ? q('#settings-panel') : q('#settings-btn')), before: noSettings, settle: 0, radius: 22, pad: 6, tasks: [
       { text: 'Click the gear to open Settings', watch: onClick('#settings-btn', () => $('settings').classList.contains('open')) },
     ] },
     { title: 'Appearance', text: '<b>System</b> picks your theme automatically. Or pick Light, Dark, or <b>Pink</b>.', target: () => block('#appearance'), before: toSettings('#appearance'), settle: 350, radius: 14, tasks: [
       { text: 'Try another theme', watch: onClick('#appearance button') },
     ] },
-    { title: 'Cursor', text: '<span class="wordmark wm-in">Memoir</span>’s own animated cursor. Turning it off is highly recommended on low-end devices: everything stays the same, just lighter. <b>Smooth cursor</b> lets it glide after your mouse, a touch behind it; it needs the custom cursor on.', target: () => block('#set-cursor'), before: toSettings('#set-smooth'), settle: 350, radius: 14, tasks: [
+    { title: 'Cursor', text: 'Turning it on gives you <span class="wordmark wm-in">Memoir</span>’s custom, modern-looking cursor. <b>Smooth cursor</b> makes your cursor move smoothly.', target: () => block('#set-cursor'), before: toSettings('#set-smooth'), settle: 350, radius: 14, tasks: [
       { text: 'Switch <b>Custom cursor</b> off, then on again, to compare', watch: onChange('#set-cursor') },
       { text: 'Try <b>Smooth cursor</b>', watch: onChange('#set-smooth') },
     ] },
-    { title: 'What gets tracked', text: '<b>Tracking detail</b> can also keep page titles. <b>Track browsing</b> pauses and resumes (the popup has it too). Sites under <b>Never track</b> still count toward your totals, but only as Private, past time included.', target: () => [block('#detail'), block('#ex-form')], before: toSettings('#ex-form'), settle: 350, radius: 14, tasks: [
+    { title: 'What gets tracked', text: '<b>Page titles</b> lets you revisit a particular page you opened. Turning off <b>Track browsing</b> pauses tracking. Type a site into <b>Never track</b> and it will never be tracked, unless you remove it.', target: () => [block('#detail'), block('#ex-form')], before: toSettings('#ex-form'), settle: 350, radius: 14, tasks: [
       { text: 'Switch <b>Tracking detail</b>', watch: onClick('#detail button[aria-pressed="false"]') },
       { text: 'Add a site to <b>Never track</b>', watch: onNewSite },
     ] },
@@ -4665,8 +4665,8 @@ async function startTour({ prepared = false, handoff = null } = {}) {
       { text: 'Pick another day', watch: onClick('#rem-days .day-chip[aria-checked="false"]') },
       { text: 'Change the time', watch: either(onChange('#rem-h, #rem-m'), onClick('#rem-ampm'), listen('keydown', e => (e.key === 'ArrowUp' || e.key === 'ArrowDown') && !!e.target.closest('#rem-h, #rem-m'))) },
     ] },
-    { title: 'Your limit and history', text: 'A committed limit can only be undone here, after a long run of increasingly pointed questions. <b>Keep history</b> sets how long days are kept; a shorter option asks twice before removing anything.', target: () => [row('#limit-reset'), block('#retention')], before: toSettings('#retention'), settle: 350, radius: 14 },
-    { title: 'Sample week, tour and data', text: 'Look around with made-up data, replay this tour, and <b>Export</b> or <b>Import</b> your history. <b>Clear all</b> asks twice.', target: () => [block('#set-demo'), block('#data-row')], before: toSettings('#data-row'), settle: 350, radius: 14 },
+    { title: 'Your limit and history', text: 'A committed limit can only be undone here. <b>Keep history</b> sets how long days are kept.', target: () => [row('#limit-reset'), block('#retention')], before: toSettings('#retention'), settle: 350, radius: 14 },
+    { title: 'Sample week, tour and data', text: 'Look around with made-up data, replay this tour, and <b>Export</b> or <b>Import</b> your history. The <b>Clear all</b> button asks twice before deleting your data.', target: () => [block('#set-demo'), block('#data-row')], before: toSettings('#data-row'), settle: 350, radius: 14 },
     { kicker: 'All set', title: 'That’s the tour', text: 'Your own week fills in as you browse. The clock in your toolbar shows today at a glance.', before: async () => { await noSettings(); await toWeek(); }, settle: 300 },
   ];
   await runTour(steps, {

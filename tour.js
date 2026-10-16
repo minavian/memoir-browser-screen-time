@@ -240,7 +240,7 @@ export function runTour(steps, { handoff = null, avoid = () => [] } = {}) {
       }
       const content = document.createElement('div');
       content.className = 'tour-content';
-      content.innerHTML = `${step.kicker ? `<p class="tour-kicker">${step.kicker}</p>` : ''}<h3 class="tour-title display">${step.title}</h3><p class="tour-text">${step.text}</p>${tasksHtml(step, i)}`;
+      content.innerHTML = `${step.kicker ? `<p class="tour-kicker">${step.kicker}</p>` : ''}<h3 class="tour-title display">${step.title}</h3>${step.text ? `<p class="tour-text">${step.text}</p>` : ''}${tasksHtml(step, i)}`;
       body.appendChild(content);
       const h1 = content.getBoundingClientRect().height;
       const finalH = card.offsetHeight - body.getBoundingClientRect().height + h1;

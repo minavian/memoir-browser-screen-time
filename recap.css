@@ -1626,7 +1626,7 @@ body { overflow: hidden; }
 .tour-body { position: relative; }
 .tour-kicker { margin: 0 0 3px; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--label-3); }
 .tour-title { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -0.02em; }
-.tour-text { margin: 6px 0 0; font-size: 13px; line-height: 1.5; color: var(--label-2); }
+.tour-text { margin: 6px 0 0; font-size: 13px; line-height: 1.5; color: var(--label-2); text-wrap: pretty; }
 .tour-text b { color: var(--label); font-weight: 650; }
 .tour-foot { position: relative; z-index: 1; display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 14px; }
 /* under the light: Back and Next at the top, nearest the pointer, the dots at the foot */
@@ -1699,7 +1699,7 @@ body { overflow: hidden; }
 
 /* "Try …" items: the dot turns green with a tick once it's done */
 .tour-tasks { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 7px; }
-.tour-tasks li { display: flex; align-items: flex-start; gap: 8px; font-size: 12.5px; line-height: 1.4; color: var(--label-2); }
+.tour-tasks li { display: flex; align-items: flex-start; gap: 8px; font-size: 12.5px; line-height: 1.4; color: var(--label-2); text-wrap: pretty; }
 .tour-tasks b { color: var(--label); font-weight: 650; }
 .tt-dot {
   flex: none;
