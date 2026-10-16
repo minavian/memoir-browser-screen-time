@@ -31,6 +31,17 @@ const overlap = (a, b) => Math.max(0, Math.min(a.r, b.r) - Math.max(a.l, b.l)) *
 const join = (a, b) => ({ l: Math.min(a.l, b.l), t: Math.min(a.t, b.t), r: Math.max(a.r, b.r), b: Math.max(a.b, b.b) });
 const apart = (a, b) => Math.hypot(Math.max(0, a.l - b.r, b.l - a.r), Math.max(0, a.t - b.b, b.t - a.b));
 
+// The tour that's running, if any: the page tells it when what's lit is about to change.
+let relightTour = null;
+
+// relight(after): the page has just put what's lit in its new layout, before its own
+// animation shows it. Growing, the light opens to the new size first and the page's
+// animation waits the returned lead (ms); shrinking (or no change), the page goes first
+// and the light follows once it's done, `after` ms from now. 0 with no tour running.
+export function relight(after = 450) {
+  return relightTour ? relightTour(after) : 0;
+}
+
 // handoff(card, { onMove, onLand }): called with the first card once it's placed, before
 // it's seen, so a welcome screen can turn into it (the tour's dim then appears at once, no
 // fade). It returns true if it does: the card then stays unseen and the light shut until
@@ -79,6 +90,9 @@ export function runTour(steps, { handoff = null, avoid = () => [] } = {}) {
     let watchers = [];
     let reflowTimers = [];
     let shut = false; // the light waits for the welcome's card to set off
+    let lastSpot = null; // where the light was last sent ({ l, t, r, b }), while it's open
+    let holdUntil = 0; // the page is still animating what's lit: the light waits till then
+    const RELIGHT_MS = 300;
 
     // what a step lights, padded: its target, and what its tries opened elsewhere
     function lit(step) {
@@ -110,12 +124,14 @@ export function runTour(steps, { handoff = null, avoid = () => [] } = {}) {
           left: `${sp.l}px`, top: `${sp.t}px`, width: `${sp.r - sp.l}px`, height: `${sp.b - sp.t}px`, borderRadius: `${radius}px`,
         });
         spot.classList.remove('none');
+        lastSpot = sp;
       } else {
         // no light (or not yet): shut, at the middle of what it lights, so it opens from there
         const cx = sp ? (sp.l + sp.r) / 2 : innerWidth / 2;
         const cy = sp ? (sp.t + sp.b) / 2 : innerHeight / 2;
         Object.assign(spot.style, { left: `${cx}px`, top: `${cy}px`, width: '0px', height: '0px', borderRadius: '50%' });
         spot.classList.add('none');
+        lastSpot = null;
       }
       const cw = card.offsetWidth;
       const ch = cardH;
@@ -159,6 +175,15 @@ export function runTour(steps, { handoff = null, avoid = () => [] } = {}) {
         p._flip = a;
         a.finished.then(() => { if (p._flip === a) p._flip = null; }, () => {});
       });
+    }
+
+    // one move of the light on another clock than its own (it goes back to its own after)
+    let spotClockT = 0;
+    function spotClock(duration, easing) {
+      if (reducedMotion()) return;
+      clearTimeout(spotClockT);
+      spot.style.transition = `${['left', 'top', 'width', 'height', 'border-radius'].map(p => `${p} ${duration}ms ${easing}`).join(', ')}, opacity 0.4s var(--ease), box-shadow 0.9s var(--ease)`;
+      spotClockT = setTimeout(() => { spot.style.transition = ''; }, duration + 50);
     }
 
     // Where the card goes: beside the light, never on it, and never on what's up on the
@@ -233,10 +258,35 @@ export function runTour(steps, { handoff = null, avoid = () => [] } = {}) {
     }
 
     // the view under the light may change after a click: let the spotlight follow
+    // (once the page has finished animating what's lit, if it said so with relight)
+    function settle() {
+      if (ended || index < 0) return;
+      const left = holdUntil - performance.now();
+      if (left > 1) { reflowTimers.push(setTimeout(settle, left)); return; }
+      place(steps[index]);
+    }
     function reflow() {
       reflowTimers.forEach(clearTimeout);
-      reflowTimers = [450, 950].map(ms => setTimeout(() => { if (!ended && index >= 0) place(steps[index]); }, ms));
+      reflowTimers = [450, 950].map(ms => setTimeout(settle, ms));
     }
+
+    // what's lit is about to change (see relight() above)
+    const relightThis = after => {
+      if (ended || index < 0 || shut) return 0;
+      const step = steps[index];
+      const sp = lit(step);
+      const was = lastSpot;
+      const grows = !!sp && !!was && (sp.l < was.l - 0.5 || sp.t < was.t - 0.5 || sp.r > was.r + 0.5 || sp.b > was.b + 0.5);
+      const lead = grows && !reducedMotion() ? RELIGHT_MS : 0;
+      if (grows) {
+        spotClock(RELIGHT_MS, HEAVY);
+        place(step);
+      }
+      holdUntil = Math.max(holdUntil, performance.now() + lead + after);
+      reflowTimers.push(setTimeout(settle, lead + after));
+      return lead;
+    };
+    relightTour = relightThis;
 
     function complete(i, k) {
       if (ended || doneBy[i].has(k)) return;
@@ -341,6 +391,7 @@ export function runTour(steps, { handoff = null, avoid = () => [] } = {}) {
       const live = () => !ended && token === mine;
       const step = steps[i];
       index = i;
+      holdUntil = 0;
       dots.forEach((d, k) => { d.classList.toggle('on', k === i); d.classList.toggle('past', k < i); });
       back.disabled = i === 0;
       back.classList.toggle('gone', i === 0);
@@ -379,10 +430,7 @@ export function runTour(steps, { handoff = null, avoid = () => [] } = {}) {
           const opens = ({ duration = 0, easing = HEAVY } = {}) => {
             shut = false;
             if (ended || index < 0) return;
-            if (duration && !reducedMotion()) {
-              spot.style.transition = `${['left', 'top', 'width', 'height', 'border-radius'].map(p => `${p} ${duration}ms ${easing}`).join(', ')}, opacity 0.4s var(--ease), box-shadow 0.9s var(--ease)`;
-              setTimeout(() => { spot.style.transition = ''; }, duration + 50);
-            }
+            if (duration) spotClock(duration, easing);
             place(steps[index]);
           };
           if (handoff(card, { onMove: opens, onLand: show }) !== true) { opens(); show(); }
@@ -406,6 +454,7 @@ export function runTour(steps, { handoff = null, avoid = () => [] } = {}) {
       ended = true;
       stopWatching();
       reflowTimers.forEach(clearTimeout);
+      if (relightTour === relightThis) relightTour = null;
       document.removeEventListener('click', onPageClick, true);
       removeEventListener('keydown', onArrow, true);
       removeEventListener('resize', onResize);

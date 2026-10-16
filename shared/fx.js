@@ -649,12 +649,14 @@ export function initPetals(count = 10, sizes = [9, 16]) {
 // ---------- smooth height changes ----------
 
 // Runs `mutate`, then animates the element from its old height to its new one.
-export function animateHeight(el, mutate, { duration = 380, easing = EASE_OUT } = {}) {
+// delay: ms (or a function giving them once mutate has run) to hold the old height first.
+export function animateHeight(el, mutate, { duration = 380, easing = EASE_OUT, delay = 0 } = {}) {
   if (!el) { mutate(); return Promise.resolve(); }
   const from = el.getBoundingClientRect().height;
   if (el._hAnim) { el._hAnim.cancel(); el._hAnim = null; }
   mutate();
   const to = el.getBoundingClientRect().height;
+  const wait = typeof delay === 'function' ? delay() : delay;
   if (reducedMotion() || Math.abs(to - from) < 0.5) {
     if (el._hOverflow != null) { el.style.overflow = el._hOverflow; el._hOverflow = null; }
     return Promise.resolve();
@@ -662,7 +664,7 @@ export function animateHeight(el, mutate, { duration = 380, easing = EASE_OUT } 
   // remember the element's own overflow once, so back-to-back runs can't leave it clipped
   if (el._hOverflow == null) el._hOverflow = el.style.overflow;
   el.style.overflow = 'clip';
-  const a = el.animate([{ height: `${from}px` }, { height: `${to}px` }], { duration, easing });
+  const a = el.animate([{ height: `${from}px` }, { height: `${to}px` }], { duration, easing, delay: wait, fill: 'backwards' });
   el._hAnim = a;
   const done = () => {
     if (el._hAnim !== a) return;

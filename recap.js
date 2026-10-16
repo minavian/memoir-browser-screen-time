@@ -16,7 +16,7 @@ import { getThemePref, setThemePref, watchTheme, THEME_SWITCH_MS } from './share
 import { createGoalRing, openPicker } from './shared/goal.js';
 import { TrendChart } from './trend.js';
 import { runGauntlet } from './gauntlet.js';
-import { runTour } from './tour.js';
+import { runTour, relight } from './tour.js';
 import { createWelcome } from './welcome.js';
 import { playLogo } from './shared/logo.js';
 import { initCursor, setCursorPref, cursorEnabled, cursorSmooth, setCursorSmooth } from './shared/cursor.js';
@@ -3130,8 +3130,32 @@ function closeSettings(focusTrigger = false) {
 
 function setReveal(id, open) {
   const el = $(id);
-  el.classList.toggle('open', open);
   el.inert = !open;
+  if (el._revealT) {
+    if (el._revealWant === open) return; // already waiting for the light to make room
+    clearTimeout(el._revealT);
+    el._revealT = 0;
+  }
+  if (el.classList.contains('open') === open) return;
+  // In the tour, what's lit grows only once the light has made room for it: the open
+  // layout is measured first (with no transition), then it opens from where it was.
+  if (open && touring && !reducedMotion()) {
+    el.style.transition = 'none';
+    el.classList.add('open');
+    void el.offsetHeight;
+    const lead = relight(450);
+    el.classList.remove('open');
+    void el.offsetHeight;
+    el.style.transition = '';
+    if (lead) {
+      el._revealWant = open;
+      el._revealT = setTimeout(() => { el._revealT = 0; el.classList.add('open'); }, lead);
+      return;
+    }
+  }
+  el.classList.toggle('open', open);
+  // closing, it goes first and the light follows
+  if (!open && touring) relight(450);
 }
 
 function setPressed(groupId, match) {
@@ -3211,21 +3235,23 @@ function renderExcluded(added = null) {
   const made = [];
   const stay = [...existing.values()].filter(li => list.includes(li.dataset.site));
   const first = animate ? new Map(stay.map(li => [li, li.getBoundingClientRect()])) : null;
+  // in the tour the light makes room first, and all of this waits for it
+  let lead = 0;
   // the list (and everything under it) rolls open instead of jumping
   const build = () => {
     for (const [, li] of stale) { dropChip(li); li.remove(); }
     for (const li of stay) if (li._flip) { li._flip.cancel(); li._flip = null; }
     for (const site of fresh) {
-      const flown = animate && exFlights.has(site);
       const li = document.createElement('li');
-      li.className = `ex-chip${animate && !flown ? ' adding' : ''}`;
+      li.className = 'ex-chip';
       li.dataset.site = site;
       li.innerHTML = `<canvas class="ex-dust" aria-hidden="true"></canvas><button class="ex-name" type="button" aria-label="${HIDDEN_SITE}"><span class="ex-text">${escapeHtml(site)}</span></button><button class="x" type="button" aria-label="Track this site again"><svg><use href="#i-x"/></svg></button>`;
       ul.prepend(li);
       made.push(li);
     }
+    if (animate) lead = relight(450);
   };
-  if (animate) animateHeight($('ex-wrap'), build, { duration: 420 });
+  if (animate) animateHeight($('ex-wrap'), build, { duration: 420, delay: () => lead });
   else build();
   exPrimed = true;
   // the others glide to their new places (even across rows)
@@ -3236,10 +3262,16 @@ function renderExcluded(added = null) {
       const dx = a.left - b.left;
       const dy = a.top - b.top;
       if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) continue;
-      const anim = li.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }], { duration: 420, easing: EASE_OUT });
+      const anim = li.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }], { duration: 420, delay: lead, easing: EASE_OUT, fill: 'backwards' });
       li._flip = anim;
       anim.finished.then(() => { if (li._flip === anim) li._flip = null; }, () => {});
     }
+  }
+  // the new ones pop in (one you typed is flown into instead)
+  for (const li of made) {
+    if (!animate || exFlights.has(li.dataset.site)) continue;
+    if (lead) li.style.animationDelay = `${lead}ms`;
+    li.classList.add('adding');
   }
   for (const li of made) {
     // a site you just typed: its words fly from the field into the new chip, still
@@ -3249,7 +3281,7 @@ function renderExcluded(added = null) {
     dust.attach(chipDust(li), { shown: !!bird });
     if (!bird) continue;
     exFlights.delete(li.dataset.site);
-    flyIntoChip(bird, li);
+    flyIntoChip(bird, li, lead);
   }
   void added;
 }
@@ -3368,7 +3400,7 @@ function liftTyped(site) {
 // The words glide down into the new chip (right under the field) and settle exactly on
 // its name, easing to its size on the way, while the pill grows in under them. Then a
 // beat to read it, and it turns to dust like the others.
-function flyIntoChip(bird, li) {
+function flyIntoChip(bird, li, delay = 0) {
   const text = li.querySelector('.ex-text');
   const to = text.getBoundingClientRect();
   const b = bird.getBoundingClientRect();
@@ -3377,11 +3409,11 @@ function flyIntoChip(bird, li) {
   const dx = to.left - b.left;
   const dy = to.top + to.height / 2 - (b.top + b.height / 2);
   li.classList.add('awaiting');
-  li.animate([{ opacity: 0, transform: 'scale(0.86)' }, { opacity: 1, transform: 'none' }], { duration: 380, delay: 90, easing: EASE_OUT, fill: 'backwards' });
+  li.animate([{ opacity: 0, transform: 'scale(0.86)' }, { opacity: 1, transform: 'none' }], { duration: 380, delay: delay + 90, easing: EASE_OUT, fill: 'backwards' });
   const a = bird.animate([
     { transform: 'none' },
     { transform: `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px) scale(${k.toFixed(4)})` },
-  ], { duration: 460, easing: 'cubic-bezier(0.3, 0.7, 0.2, 1)', fill: 'forwards' });
+  ], { duration: 460, delay, easing: 'cubic-bezier(0.3, 0.7, 0.2, 1)', fill: 'forwards' });
   const land = () => {
     bird.remove();
     li.classList.remove('awaiting');
@@ -4514,6 +4546,13 @@ async function startTour({ prepared = false, handoff = null } = {}) {
   const onHover = sel => listen('pointerover', e => !!e.target.closest(sel));
   const onScroll = sel => listen('scroll', e => !!e.target.closest(sel));
   const onChange = sel => listen('change', e => !!e.target.closest(sel));
+  // a site added to Never track (one that wasn't there when the step began)
+  const onNewSite = done => {
+    const had = new Set(state.settings.excluded);
+    const mo = new MutationObserver(() => { if (state.settings.excluded.some(s => !had.has(s))) done(); });
+    mo.observe($('ex-list'), { childList: true });
+    return () => mo.disconnect();
+  };
 
   const toWeek = async () => { if (state.view.type !== 'week') goHome(); };
   const thisWeek = async () => {
@@ -4612,7 +4651,10 @@ async function startTour({ prepared = false, handoff = null } = {}) {
       { text: 'Switch <b>Custom cursor</b> off, then on again, to compare', watch: onChange('#set-cursor') },
       { text: 'Try <b>Smooth cursor</b>', watch: onChange('#set-smooth') },
     ] },
-    { title: 'What gets tracked', text: '<b>Tracking detail</b> can also keep page titles. <b>Track browsing</b> pauses and resumes (the popup has it too). Sites under <b>Never track</b> still count toward your totals, but only as Private.', target: () => [block('#detail'), block('#ex-form')], before: toSettings('#ex-form'), settle: 350, radius: 14 },
+    { title: 'What gets tracked', text: '<b>Tracking detail</b> can also keep page titles. <b>Track browsing</b> pauses and resumes (the popup has it too). Sites under <b>Never track</b> still count toward your totals, but only as Private, past time included.', target: () => [block('#detail'), block('#ex-form')], before: toSettings('#ex-form'), settle: 350, radius: 14, tasks: [
+      { text: 'Switch <b>Tracking detail</b>', watch: onClick('#detail button[aria-pressed="false"]') },
+      { text: 'Add a site to <b>Never track</b>', watch: onNewSite },
+    ] },
     { title: 'Weekly recap', text: 'A reminder on the day and at the time you choose, with your week ready to look at.', target: () => block('#set-reminder'), before: toSettings('#set-reminder'), settle: 350, radius: 14 },
     { title: 'Your limit and history', text: 'A committed limit can only be undone here, after a long run of increasingly pointed questions. <b>Keep history</b> sets how long days are kept; a shorter option asks twice before removing anything.', target: () => [row('#limit-reset'), block('#retention')], before: toSettings('#retention'), settle: 350, radius: 14 },
     { title: 'Sample week, tour and data', text: 'Look around with made-up data, replay this tour, and <b>Export</b> or <b>Import</b> your history. <b>Clear all</b> asks twice.', target: () => [block('#set-demo'), block('#data-row')], before: toSettings('#data-row'), settle: 350, radius: 14 },

@@ -143,7 +143,7 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
 - Tour (4.3.0) is hands-on: steps with `tasks` (or `interactive`) cut a hole in `.tour-block` over the light
   (clip-path evenodd), so what's lit is clickable; each task `{ text, watch(done) => cleanup }` turns its dot
   green when done (onClick/onHover/onScroll/onChange helpers in startTour). Next always works. Steps that could
-  change real data (limit, tracking, history, Clear all) stay closed. While `body.touring`, .pop/.menu/.tip sit
+  erase data (history, Clear all) stay closed. While `body.touring`, .pop/.menu/.tip sit
   above the tour. It ends with a walk through Settings (opened and scrolled by each step's `before`).
   From the welcome, choosing the tour makes the sample week the first render (`useTourWeek`) and the tour
   starts with `{ prepared: true }` once the board has filled in.
@@ -347,6 +347,14 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
   0.7 s, the card's heavy ease) and the dots fade across instead of passing over the words. Sparks read
   Next's place every frame, so they land on it mid-glide. Daily average's try is a click on the change
   from last week (it opens Trend over time), no longer a hover.
+
+- The light makes room first (5.1.5, tour.js `relight`): when the page changes what's lit, it calls
+  `relight(after)` with the new layout in place but before its animation shows it. Growing, the light
+  opens to the new size (300 ms, heavy) and the page's animation waits that long: `setReveal` measures the
+  open layout with transitions off, `renderExcluded` holds the list's height, the chips' glide, the pop-in
+  and the typed words' flight (`animateHeight` takes a `delay`). Shrinking, the page goes first and the
+  light follows `after` ms later; the click-driven re-placing waits too (`holdUntil`), so the light never
+  shrinks halfway. "What gets tracked" is hands-on: switch Tracking detail, add a site to Never track.
 
 - Never track, hidden (5.1.5): the sites under Never track are hidden under dust, a shimmer of fine
   specks over a soft haze, filling the whole pill, the × too (thinning towards its rounded edge).
