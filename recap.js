@@ -4546,6 +4546,11 @@ async function startTour({ prepared = false, handoff = null } = {}) {
   const onHover = sel => listen('pointerover', e => !!e.target.closest(sel));
   const onScroll = sel => listen('scroll', e => !!e.target.closest(sel));
   const onChange = sel => listen('change', e => !!e.target.closest(sel));
+  // any of several
+  const either = (...watches) => done => {
+    const offs = watches.map(w => w(done));
+    return () => offs.forEach(off => off());
+  };
   // a site added to Never track (one that wasn't there when the step began)
   const onNewSite = done => {
     const had = new Set(state.settings.excluded);
@@ -4655,7 +4660,11 @@ async function startTour({ prepared = false, handoff = null } = {}) {
       { text: 'Switch <b>Tracking detail</b>', watch: onClick('#detail button[aria-pressed="false"]') },
       { text: 'Add a site to <b>Never track</b>', watch: onNewSite },
     ] },
-    { title: 'Weekly recap', text: 'A reminder on the day and at the time you choose, with your week ready to look at.', target: () => block('#set-reminder'), before: toSettings('#set-reminder'), settle: 350, radius: 14 },
+    { title: 'Weekly recap', text: 'A reminder on the day and at the time you choose, with your week ready to look at.', target: () => block('#set-reminder'), before: toSettings('#set-reminder'), settle: 350, radius: 14, tasks: [
+      ...(state.settings.weeklyReminder ? [] : [{ text: 'Switch the reminder on', watch: onChange('#set-reminder') }]),
+      { text: 'Pick another day', watch: onClick('#rem-days .day-chip[aria-checked="false"]') },
+      { text: 'Change the time', watch: either(onChange('#rem-h, #rem-m'), onClick('#rem-ampm'), listen('keydown', e => (e.key === 'ArrowUp' || e.key === 'ArrowDown') && !!e.target.closest('#rem-h, #rem-m'))) },
+    ] },
     { title: 'Your limit and history', text: 'A committed limit can only be undone here, after a long run of increasingly pointed questions. <b>Keep history</b> sets how long days are kept; a shorter option asks twice before removing anything.', target: () => [row('#limit-reset'), block('#retention')], before: toSettings('#retention'), settle: 350, radius: 14 },
     { title: 'Sample week, tour and data', text: 'Look around with made-up data, replay this tour, and <b>Export</b> or <b>Import</b> your history. <b>Clear all</b> asks twice.', target: () => [block('#set-demo'), block('#data-row')], before: toSettings('#data-row'), settle: 350, radius: 14 },
     { kicker: 'All set', title: 'That’s the tour', text: 'Your own week fills in as you browse. The clock in your toolbar shows today at a glance.', before: async () => { await noSettings(); await toWeek(); }, settle: 300 },

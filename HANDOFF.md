@@ -354,7 +354,8 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
   open layout with transitions off, `renderExcluded` holds the list's height, the chips' glide, the pop-in
   and the typed words' flight (`animateHeight` takes a `delay`). Shrinking, the page goes first and the
   light follows `after` ms later; the click-driven re-placing waits too (`holdUntil`), so the light never
-  shrinks halfway. "What gets tracked" is hands-on: switch Tracking detail, add a site to Never track.
+  shrinks halfway. Hands-on: "What gets tracked" (switch Tracking detail, add a site to Never track) and
+  "Weekly recap" (another day, another time; switching it on comes first if it was off).
 
 - Never track, hidden (5.1.5): the sites under Never track are hidden under dust, a shimmer of fine
   specks over a soft haze, filling the whole pill, the × too (thinning towards its rounded edge).
