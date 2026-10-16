@@ -341,6 +341,13 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
   ‹ / ›), so there they change the week and tick its tries. Text fields, the limit picker, its questions
   and menus keep their arrows.
 
+- Card under the light (5.1.5, tour.js `setFlip`): a step with `below` ranks the place under its light first
+  (Daily average). Whenever the card sits under its light, `.flip` puts Back and Next at the card's top,
+  nearest the pointer (it's in the light), and the dots and Skip at its foot; each part glides there (FLIP,
+  0.7 s, the card's heavy ease) and the dots fade across instead of passing over the words. Sparks read
+  Next's place every frame, so they land on it mid-glide. Daily average's try is a click on the change
+  from last week (it opens Trend over time), no longer a hover.
+
 - Never track, hidden (5.1.5): the sites under Never track are hidden under dust, a shimmer of fine
   specks over a soft haze, filling the whole pill, the × too (thinning towards its rounded edge).
   One click stirs it and asks "Click again to show it" (2.6 s); the second blows the dust away from where it

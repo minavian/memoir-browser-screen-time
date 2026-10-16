@@ -39,7 +39,7 @@ const apart = (a, b) => Math.hypot(Math.max(0, a.l - b.r, b.l - a.r), Math.max(0
 // avoid(): what's up on the page right now that the card must leave visible (popovers,
 // menus a try opened). A step's follow() lists what its tries opened elsewhere (the
 // trend graph, a day the highlights opened): it joins the light, so you see it, and the
-// card moves off it.
+// card moves off it. A step with `below` has its card under the light when it fits.
 export function runTour(steps, { handoff = null, avoid = () => [] } = {}) {
   return new Promise(resolve => {
     const root = document.createElement('div');
@@ -65,7 +65,9 @@ export function runTour(steps, { handoff = null, avoid = () => [] } = {}) {
     const spot = root.querySelector('.tour-spot');
     const blocker = root.querySelector('.tour-block');
     const card = root.querySelector('.tour-card');
+    const head = root.querySelector('.tour-head');
     const body = root.querySelector('.tour-body');
+    const foot = root.querySelector('.tour-foot');
     const dots = [...root.querySelectorAll('.tour-dots i')];
     const back = root.querySelector('.tour-back');
     const next = root.querySelector('.tour-next');
@@ -78,35 +80,40 @@ export function runTour(steps, { handoff = null, avoid = () => [] } = {}) {
     let reflowTimers = [];
     let shut = false; // the light waits for the welcome's card to set off
 
+    // what a step lights, padded: its target, and what its tries opened elsewhere
+    function lit(step) {
+      const els = step.target ? [].concat(step.target()).filter(Boolean) : [];
+      if (els.length && step.follow) els.push(...[].concat(step.follow()).filter(Boolean));
+      const r = els.length ? unionRect(els) : null;
+      if (!r) return null;
+      const pad = step.pad != null ? step.pad : 8;
+      return { l: r.left - pad, t: r.top - pad, r: r.left + r.width + pad, b: r.top + r.height + pad };
+    }
 
     // spot and card move together, straight away, on one heavy ease
     function place(step, cardH = card.offsetHeight) {
-      const els = step.target ? [].concat(step.target()).filter(Boolean) : [];
-      // what the step's tries opened elsewhere joins the light
-      if (els.length && step.follow) els.push(...[].concat(step.follow()).filter(Boolean));
-      const r = els.length ? unionRect(els) : null;
-      const pad = step.pad != null ? step.pad : 8;
+      const sp = lit(step);
       // hands-on steps leave a hole in the blocker over the spotlight, so what's lit can be used
-      const open = !shut && !!r && !!((step.tasks && step.tasks.length) || step.interactive);
+      const open = !shut && !!sp && !!((step.tasks && step.tasks.length) || step.interactive);
       if (open) {
-        const x0 = Math.max(0, r.left - pad);
-        const y0 = Math.max(0, r.top - pad);
-        const x1 = Math.min(innerWidth, r.left + r.width + pad);
-        const y1 = Math.min(innerHeight, r.top + r.height + pad);
+        const x0 = Math.max(0, sp.l);
+        const y0 = Math.max(0, sp.t);
+        const x1 = Math.min(innerWidth, sp.r);
+        const y1 = Math.min(innerHeight, sp.b);
         blocker.style.clipPath = `path(evenodd, "M0 0H${innerWidth}V${innerHeight}H0Z M${x0} ${y0}H${x1}V${y1}H${x0}Z")`;
       } else {
         blocker.style.clipPath = '';
       }
-      if (r && !shut) {
+      if (sp && !shut) {
         const radius = step.radius != null ? step.radius : 18;
         Object.assign(spot.style, {
-          left: `${r.left - pad}px`, top: `${r.top - pad}px`, width: `${r.width + pad * 2}px`, height: `${r.height + pad * 2}px`, borderRadius: `${radius}px`,
+          left: `${sp.l}px`, top: `${sp.t}px`, width: `${sp.r - sp.l}px`, height: `${sp.b - sp.t}px`, borderRadius: `${radius}px`,
         });
         spot.classList.remove('none');
       } else {
         // no light (or not yet): shut, at the middle of what it lights, so it opens from there
-        const cx = r ? r.left + r.width / 2 : innerWidth / 2;
-        const cy = r ? r.top + r.height / 2 : innerHeight / 2;
+        const cx = sp ? (sp.l + sp.r) / 2 : innerWidth / 2;
+        const cy = sp ? (sp.t + sp.b) / 2 : innerHeight / 2;
         Object.assign(spot.style, { left: `${cx}px`, top: `${cy}px`, width: '0px', height: '0px', borderRadius: '50%' });
         spot.classList.add('none');
       }
@@ -115,36 +122,66 @@ export function runTour(steps, { handoff = null, avoid = () => [] } = {}) {
       const M = 14;
       let x;
       let y;
-      if (!r) {
+      if (!sp) {
         x = (innerWidth - cw) / 2;
         y = (innerHeight - ch) / 2;
       } else {
-        ({ x, y } = cardSpot({ l: r.left - pad, t: r.top - pad, r: r.left + r.width + pad, b: r.top + r.height + pad }, cw, ch));
+        ({ x, y } = cardSpot(sp, cw, ch, !!step.below));
       }
       x = Math.max(M, Math.min(x, innerWidth - cw - M));
       y = Math.max(M, Math.min(y, innerHeight - ch - M));
       card.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`;
+      // under the light, the buttons go to the card's top: nearest the pointer
+      setFlip(!!sp && y >= sp.b - 1);
+    }
+
+    // Under the light, Back and Next ride at the top of the card and the dots at its
+    // foot. Each part glides to its new place on the card's own ease; the dots fade
+    // across rather than pass over the words. Transform and opacity only.
+    let flipped = false;
+    function setFlip(on) {
+      if (on === flipped) return;
+      flipped = on;
+      const parts = [head, body, foot];
+      const seen = root.classList.contains('on') && !root.classList.contains('arriving') && !reducedMotion();
+      const top = el => el.getBoundingClientRect().top - card.getBoundingClientRect().top;
+      const before = seen ? parts.map(top) : null;
+      parts.forEach(p => { if (p._flip) { p._flip.cancel(); p._flip = null; } });
+      card.classList.toggle('flip', on);
+      if (!seen) return;
+      parts.forEach((p, i) => {
+        const dy = before[i] - top(p);
+        if (Math.abs(dy) < 0.5) return;
+        const kf = p === head
+          ? [{ transform: `translateY(${dy}px)`, opacity: 1 }, { opacity: 0, offset: 0.2 }, { opacity: 0, offset: 0.55 }, { transform: 'none', opacity: 1 }]
+          : [{ transform: `translateY(${dy}px)` }, { transform: 'none' }];
+        const a = p.animate(kf, { duration: 700, easing: HEAVY });
+        p._flip = a;
+        a.finished.then(() => { if (p._flip === a) p._flip = null; }, () => {});
+      });
     }
 
     // Where the card goes: beside the light, never on it, and never on what's up on the
     // page (a popover, a menu). Each place beside the light (and beside the light with
     // those things) is scored: covering the light costs most, then covering what's up,
-    // then being far away. Right, left, below, above, in that order, break ties.
-    function cardSpot(sp, cw, ch) {
+    // then being far away. Right, left, below, above, in that order, break ties (below
+    // first, for a step that asks for it).
+    function cardSpot(sp, cw, ch, below = false) {
       const gap = 16;
       const M = 14;
       const ups = [].concat(avoid()).filter(el => el && el.isConnected).map(box).filter(a => area(a) > 0 && overlap(a, sp) < area(a) * 0.9);
       const cands = [];
+      const side = below ? { right: 1, left: 2, below: 0, above: 3 } : { right: 0, left: 1, below: 2, above: 3 };
       const around = (R, rank0) => {
         const midY = sp.t + (sp.b - sp.t - ch) / 2;
         const midX = sp.l + (sp.r - sp.l - cw) / 2;
         [sp.t, midY, sp.b - ch].forEach((y, k) => {
-          cands.push({ x: R.r + gap, y, rank: rank0 + k * 0.1 });
-          cands.push({ x: R.l - gap - cw, y, rank: rank0 + 1 + k * 0.1 });
+          cands.push({ x: R.r + gap, y, rank: rank0 + side.right + k * 0.1 });
+          cands.push({ x: R.l - gap - cw, y, rank: rank0 + side.left + k * 0.1 });
         });
         [midX, sp.l, sp.r - cw].forEach((x, k) => {
-          cands.push({ x, y: R.b + gap, rank: rank0 + 2 + k * 0.1 });
-          cands.push({ x, y: R.t - gap - ch, rank: rank0 + 3 + k * 0.1 });
+          cands.push({ x, y: R.b + gap, rank: rank0 + side.below + k * 0.1 });
+          cands.push({ x, y: R.t - gap - ch, rank: rank0 + side.above + k * 0.1 });
         });
       };
       around(sp, 0);
@@ -256,32 +293,37 @@ export function runTour(steps, { handoff = null, avoid = () => [] } = {}) {
       };
       if (reducedMotion() || !dot) { land(); return; }
       // from the tick, along an arc above both, to where the fill is about to reach. It
-      // flies inside the card (card-relative), so it still lands on Next if the card moves.
-      const c = card.getBoundingClientRect();
-      const a = dot.getBoundingClientRect();
-      const b = next.getBoundingClientRect();
-      const x0 = a.left + a.width / 2 - c.left;
-      const y0 = a.top + a.height / 2 - c.top;
-      const x1 = b.left + Math.max(14, Math.min(b.width - 14, b.width * progressOf(i))) - c.left;
-      const y1 = b.top + b.height / 2 - c.top;
-      const cx = (x0 + x1) / 2;
-      const cy = Math.min(y0, y1) - 44;
+      // flies inside the card (card-relative), so it still lands on Next if the card moves;
+      // both ends are read every frame, so it lands on Next even while Next is on its way
+      // to the card's other end.
       const spark = document.createElement('span');
       spark.className = 'tour-spark';
+      spark.style.opacity = '0';
       card.appendChild(spark);
-      const frames = [];
-      const N = 30;
-      for (let n = 0; n <= N; n++) {
-        const t = n / N;
+      const t0 = performance.now() + SPARK_DELAY;
+      const fly = now => {
+        if (!spark.isConnected) return;
+        const t = Math.min(1, Math.max(0, (now - t0) / SPARK_MS));
+        const c = card.getBoundingClientRect();
+        const a = dot.getBoundingClientRect();
+        const b = next.getBoundingClientRect();
+        const x0 = a.left + a.width / 2 - c.left;
+        const y0 = a.top + a.height / 2 - c.top;
+        const x1 = b.left + Math.max(14, Math.min(b.width - 14, b.width * progressOf(i))) - c.left;
+        const y1 = b.top + b.height / 2 - c.top;
+        const cx = (x0 + x1) / 2;
+        const cy = Math.min(y0, y1) - 44;
         const u = easeInOut(t);
         const x = (1 - u) * (1 - u) * x0 + 2 * (1 - u) * u * cx + u * u * x1;
         const y = (1 - u) * (1 - u) * y0 + 2 * (1 - u) * u * cy + u * u * y1;
         const sc = t < 0.3 ? 0.45 + (t / 0.3) * 0.8 : 1.25 - ((t - 0.3) / 0.7) * 0.6;
         const op = t < 0.12 ? t / 0.12 : t > 0.86 ? (1 - t) / 0.14 : 1;
-        frames.push({ transform: `translate(${x.toFixed(2)}px, ${y.toFixed(2)}px) scale(${sc.toFixed(3)})`, opacity: +op.toFixed(3), offset: t });
-      }
-      const anim = spark.animate(frames, { duration: SPARK_MS, delay: SPARK_DELAY, easing: 'linear', fill: 'backwards' });
-      anim.finished.then(() => spark.remove(), () => spark.remove());
+        spark.style.transform = `translate(${x.toFixed(2)}px, ${y.toFixed(2)}px) scale(${sc.toFixed(3)})`;
+        spark.style.opacity = op.toFixed(3);
+        if (t < 1) requestAnimationFrame(fly);
+        else spark.remove();
+      };
+      requestAnimationFrame(fly);
       // the fill starts just before the spark lands, so the two meet
       setTimeout(land, SPARK_DELAY + SPARK_MS * 0.8);
     }

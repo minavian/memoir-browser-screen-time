@@ -1604,6 +1604,8 @@ body { overflow: hidden; }
   position: fixed;
   left: 0;
   top: 0;
+  display: flex;
+  flex-direction: column;
   width: min(310px, calc(100vw - 28px));
   padding: 16px 16px 12px;
   border-radius: 18px;
@@ -1626,7 +1628,10 @@ body { overflow: hidden; }
 .tour-title { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -0.02em; }
 .tour-text { margin: 6px 0 0; font-size: 13px; line-height: 1.5; color: var(--label-2); }
 .tour-text b { color: var(--label); font-weight: 650; }
-.tour-foot { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+.tour-foot { position: relative; z-index: 1; display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+/* under the light: Back and Next at the top, nearest the pointer, the dots at the foot */
+.tour-card.flip .tour-foot { order: -1; margin: -4px 0 12px; }
+.tour-card.flip .tour-head { order: 1; margin: 10px -6px -4px 0; }
 .tour-foot .btn { min-width: 76px; }
 /* the tour moves focus to Next itself; no focus ring on its buttons */
 .tour-card .btn:focus-visible { box-shadow: none; }
