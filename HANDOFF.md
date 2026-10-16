@@ -342,7 +342,7 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
   and menus keep their arrows.
 
 - Card under the light (5.1.5, tour.js `setFlip`): a step with `below` ranks the place under its light first
-  (Daily average). Whenever the card sits under its light, `.flip` puts Back and Next at the card's top,
+  (Daily average, Highlights). Whenever the card sits under its light, `.flip` puts Back and Next at the card's top,
   nearest the pointer (it's in the light), and the dots and Skip at its foot; each part glides there (FLIP,
   0.7 s, the card's heavy ease) and the dots fade across instead of passing over the words. Sparks read
   Next's place every frame, so they land on it mid-glide. Daily average's try is a click on the change

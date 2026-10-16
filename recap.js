@@ -4571,7 +4571,7 @@ async function startTour({ prepared = false, handoff = null } = {}) {
     { title: 'Daily average', text: 'How long you browse on a typical day, and how it compares with last week.', target: () => [q('.summary .caption'), q('#stat-avg'), q('#trend-btn')], follow: () => (state.view.type === 'trend' ? chart() : null), before: thisWeek, radius: 14, below: true, tasks: [
       { text: 'Click <b>the change from last week</b> to open Trend over time', watch: onClick('#trend-btn', () => state.view.type === 'trend') },
     ] },
-    { title: 'Highlights', text: 'What your week looked like, in words. <b>Bold words are buttons.</b>', target: () => q('#story'), follow: chartOpen, before: async () => { tidy(); await toWeek(); }, settle: 0, radius: 14, tasks: [
+    { title: 'Highlights', text: 'What your week looked like, in words. <b>Bold words are buttons.</b>', target: () => q('#story'), follow: chartOpen, before: async () => { tidy(); await toWeek(); }, settle: 0, radius: 14, below: true, tasks: [
       { text: 'Try a bold <b>day</b> or <b>hour</b> to open it', watch: onClick('#story [data-act="day"], #story [data-act="hour"]') },
       { text: 'Try a bold <b>category</b> to see its sites', watch: onClick('#story [data-act="cat"]') },
     ] },
