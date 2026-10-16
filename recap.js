@@ -3729,7 +3729,8 @@ function wire() {
       return [
         ...(category ? [{ label: 'Change category', icon: 'category', action: () => openCatMenu(category) }, { separator: true }] : []),
         { label: $('settings').classList.contains('open') ? 'Close settings' : 'Settings', icon: 'settings', action: () => $('settings-btn').click() },
-        { label: state.settings.paused ? 'Resume tracking' : 'Pause tracking', icon: state.settings.paused ? 'play' : 'pause', action: () => { $('set-tracking').checked = !state.settings.paused; $('set-tracking').click(); } },
+        // tracking can be paused only from Settings; this menu can only resume it
+        ...(state.settings.paused ? [{ label: 'Resume tracking', icon: 'play', action: () => { $('set-tracking').checked = false; $('set-tracking').click(); } }] : []),
       ];
     },
   });
