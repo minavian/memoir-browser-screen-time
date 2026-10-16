@@ -3115,7 +3115,7 @@ function closeSettings(focusTrigger = false) {
   setReveal('detail-confirm', false);
   setReveal('ret-confirm', false);
   pendingRetention = null;
-  cancelPause();
+  askPause(false);
   $('ex-form').classList.remove('invalid');
   tip.hide();
   // the sites under Never track hide again as you leave; the dust rests once the panel is shut
@@ -3640,61 +3640,17 @@ async function chooseRetention(days) {
   await applyRetention(days);
 }
 
-// ----- Pausing tracking: only here, and two presses, like Keep history (time browsed while
-// paused is never recorded). Turning it back on is one click, here or in the menus. -----
+// ----- Pausing tracking: only from the switch in Settings, and only on a second press: the
+// switch turns into a "Sure?" button (recap.css .pause-switch). Left alone for a few seconds
+// (or Esc, a press elsewhere, Settings closing), it turns back into the switch, still on. -----
 
-let pausePending = false;
-let pauseTimer = 0;
-function armPause(on) {
-  const btn = $('pause-yes');
-  const msg = $('pause-msg');
-  clearTimeout(pauseTimer);
-  const was = btn.dataset.armed === '1';
-  btn.dataset.armed = on ? '1' : '0';
-  const text = on ? 'Yes, pause' : 'Pause';
-  const note = on
-    ? 'Sure? Time you browse while it’s paused can’t be added back later. Press again to pause.'
-    : 'Pause tracking? Nothing you browse is recorded until you turn it back on.';
-  if (btn.textContent !== text || msg.textContent !== note) {
-    let lead = 0;
-    animateHeight($('pause-confirm').querySelector('.reveal-inner'), () => {
-      btn.textContent = text;
-      msg.textContent = note;
-      if ($('pause-confirm').classList.contains('open')) lead = relight(330);
-    }, { duration: 300, delay: () => lead });
-  }
-  btn.setAttribute('aria-label', on ? 'Press again to pause tracking' : 'Pause tracking');
-  if (on) {
-    pauseTimer = setTimeout(() => armPause(false), 9000);
-    if (!was && !reducedMotion()) btn.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.06)' }, { transform: 'scale(1)' }], { duration: 420, easing: EASE_OUT });
-  }
-}
-function askPause() {
-  // pressed again while it's asking: the question just nods
-  if (pausePending) {
-    if (!reducedMotion()) $('pause-confirm').querySelector('.inline-confirm').animate([{ transform: 'scale(1)' }, { transform: 'scale(1.025)' }, { transform: 'scale(1)' }], { duration: 360, easing: EASE_OUT });
-    return;
-  }
-  pausePending = true;
-  armPause(false);
-  setReveal('pause-confirm', true);
-}
-function cancelPause(focus = false) {
-  if (!pausePending) return;
-  pausePending = false;
-  clearTimeout(pauseTimer);
-  $('pause-yes').dataset.armed = '0';
-  setReveal('pause-confirm', false);
-  if (focus) $('set-tracking').focus({ preventScroll: true });
-}
-async function commitPause() {
-  pausePending = false;
-  clearTimeout(pauseTimer);
-  $('pause-yes').dataset.armed = '0';
-  setReveal('pause-confirm', false);
-  $('set-tracking').checked = false;
-  state.settings = await updateSettings({ paused: true });
-  toast('Tracking paused');
+let pauseAsk = 0;
+const pauseAsking = () => $('set-tracking').closest('.switch').classList.contains('sure');
+function askPause(on) {
+  clearTimeout(pauseAsk);
+  $('set-tracking').closest('.switch').classList.toggle('sure', on);
+  $('set-tracking').setAttribute('aria-label', on ? 'Sure? Press again to pause tracking' : 'Track browsing');
+  if (on) pauseAsk = setTimeout(() => askPause(false), 4000);
 }
 
 async function applyRetention(days) {
@@ -3838,7 +3794,7 @@ function wire() {
       else if (authorPop.isOpen) { closeAuthor(); focusAuthor(); }
       else if ($('settings').classList.contains('open')) {
         if ($('data-row').dataset.step !== '0') setNukeStep(0);
-        else if (pausePending) cancelPause(true);
+        else if (pauseAsking()) askPause(false);
         else closeSettings(true);
       } else if (state.view.type !== 'week') goBack();
       return;
@@ -4026,22 +3982,27 @@ function wire() {
   window.addEventListener('resize', () => { closeCatMenu(true); closeCatPop(true); closePagePop(true); tip.hide(); });
 
   // tracking
+  // turning it on is one click; turning it off, the first press turns it into "Sure?" and
+  // the press on that pauses
   $('set-tracking').addEventListener('click', e => {
-    if (e.target.checked) return;
-    e.preventDefault(); // it stays on until the second press says otherwise
-    askPause();
+    if (e.target.checked || pauseAsking()) return;
+    e.preventDefault();
+    askPause(true);
   });
   $('set-tracking').addEventListener('change', async e => {
-    cancelPause();
+    const fromSure = pauseAsking();
+    askPause(false);
     state.settings = await updateSettings({ paused: !e.target.checked });
-    toast(e.target.checked ? 'Tracking resumed' : 'Tracking paused');
+    // paused from "Sure?": the toast waits until it has turned back into the switch, so the
+    // two don't share frames (and says nothing if tracking was turned back on meanwhile)
+    if (fromSure && !reducedMotion()) setTimeout(() => { if (!$('set-tracking').checked) toast('Tracking paused'); }, 380);
+    else toast(e.target.checked ? 'Tracking resumed' : 'Tracking paused');
   });
-  $('pause-keep').addEventListener('click', () => cancelPause(true));
-  $('pause-yes').addEventListener('click', () => {
-    if (!pausePending) return;
-    if ($('pause-yes').dataset.armed !== '1') armPause(true);
-    else commitPause();
-  });
+  $('set-tracking').addEventListener('blur', () => askPause(false));
+  // a press anywhere else takes the question back
+  document.addEventListener('pointerdown', e => {
+    if (pauseAsking() && !e.target.closest('.pause-switch')) askPause(false);
+  }, true);
 
   // tracking detail
   $('detail').addEventListener('click', async e => {

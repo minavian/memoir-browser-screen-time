@@ -1756,11 +1756,22 @@ body { overflow: hidden; }
 .head.dimmed .head-left, .head.dimmed .demo-pill { transition-duration: 0.62s; }
 .head.dimmed .head-left, .head.dimmed .demo-pill { filter: blur(2px) saturate(0.92) brightness(var(--scrim-bright)); pointer-events: none; }
 .ex-form.has-text { background: var(--fill-2); }
+
+/* Track browsing: turning it off, the switch itself becomes a "Sure?" button: it widens, goes
+   red and its knob gives way to the word. Pressed, it pauses and shrinks back into the switch,
+   off (the knob slides in from where it was); left alone, it shrinks back still on. */
+.pause-switch { transition: width 0.36s var(--ease-out); }
+.pause-switch .knob { transition: transform 0.4s var(--pop), width 0.22s var(--ease), left 0.22s var(--ease), background-color 0.3s var(--ease), opacity 0.18s var(--ease), scale 0.26s var(--ease-out); }
+.pause-switch .sure-word { position: absolute; inset: 0; z-index: 1; display: grid; place-items: center; font-size: 12px; font-weight: 650; color: var(--on-danger); white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 0.16s var(--ease); }
+.switch.pause-switch.sure { width: 62px; }
+.switch.pause-switch.sure input + .track { background: var(--danger); }
+.switch.pause-switch.sure .knob { opacity: 0; scale: 0.4; }
+.switch.pause-switch.sure .sure-word { opacity: 1; transition-delay: 0.1s; }
 .ex-bird { position: fixed; z-index: 3000; display: flex; align-items: center; font-size: 12.5px; font-weight: 500; color: var(--label); white-space: nowrap; pointer-events: none; will-change: transform; transform-origin: 0 50%; }
 
 /* history removal, second press armed */
-#ret-remove, #pause-yes { transition: box-shadow 0.3s var(--ease), background-color 0.2s var(--ease), transform 0.2s var(--ease-out); }
-#ret-remove[data-armed="1"], #pause-yes[data-armed="1"] { box-shadow: 0 0 0 3px color-mix(in srgb, var(--danger) 28%, transparent), 0 0 18px color-mix(in srgb, var(--danger) 45%, transparent); }
+#ret-remove { transition: box-shadow 0.3s var(--ease), background-color 0.2s var(--ease), transform 0.2s var(--ease-out); }
+#ret-remove[data-armed="1"] { box-shadow: 0 0 0 3px color-mix(in srgb, var(--danger) 28%, transparent), 0 0 18px color-mix(in srgb, var(--danger) 45%, transparent); }
 
 /* ---------- first-run welcome ---------- */
 
