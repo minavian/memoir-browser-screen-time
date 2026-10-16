@@ -5,7 +5,7 @@ import {
   getGoalHistory, limitOn, limitLocked, commitLimit, removeLimit,
 } from './shared/core.js';
 import {
-  animateNumber, reveal, faviconTile, tween, slicePath, initPetals, setOrigins, siteLinkHtml, replay, reducedMotion, POP, makeScroller, initSmoothScrolling, disableTitleTooltips, MorphPopover,
+  animateNumber, reveal, faviconTile, tween, slicePath, initPetals, setOrigins, siteLinkHtml, replay, reducedMotion, POP, EASE_OUT, makeScroller, initSmoothScrolling, disableTitleTooltips, MorphPopover,
 } from './shared/fx.js';
 import { watchTheme } from './shared/theme.js';
 import { createGoalRing, openPicker } from './shared/goal.js';
@@ -402,8 +402,7 @@ function onStorage(changes, area) {
     const paused = !!(changes.settings.newValue && changes.settings.newValue.paused);
     if (paused !== state.paused) {
       state.paused = paused;
-      $('track-toggle').checked = !paused;
-      $('switch-wrap').title = paused ? 'Tracking is paused' : 'Tracking is on';
+      showResume(paused);
     }
   }
 }
@@ -504,21 +503,43 @@ function showCat() {
   else setCenter(formatDuration(sumValues(visible)), 'today');
 }
 
+// Tracking can be paused only from Settings in the report. While it is, the header holds a
+// Resume button (it pops in, and fades away once tracking is back on).
+function showResume(on, instant = false) {
+  const b = $('resume');
+  if (on === (!b.hidden && !b._leaving)) return;
+  b.getAnimations().forEach(a => a.cancel());
+  b._leaving = false;
+  if (on) {
+    b.hidden = false;
+    if (!instant && !reducedMotion()) b.animate([{ opacity: 0, scale: '0.85' }, { opacity: 1, scale: '1' }], { duration: 320, easing: POP });
+    return;
+  }
+  if (instant || reducedMotion()) { b.hidden = true; return; }
+  b._leaving = true;
+  b.animate([{ opacity: 1, scale: '1' }, { opacity: 0, scale: '0.85' }], { duration: 200, easing: EASE_OUT, fill: 'forwards' }).finished.then(() => {
+    if (!b._leaving) return;
+    b._leaving = false;
+    b.hidden = true;
+    b.getAnimations().forEach(a => a.cancel());
+  }, () => {});
+}
+
 function wire() {
-  const toggle = $('track-toggle');
+  const resume = $('resume');
   initContextMenu({
     getItems: ({ target }) => target.closest('.pk-layer') ? [] : [
       { label: 'Weekly report', icon: 'report', action: () => $('open-week').click() },
-      { label: state.paused ? 'Resume tracking' : 'Pause tracking', icon: state.paused ? 'play' : 'pause', action: () => toggle.click() },
+      // no pausing here (only Settings in the report pauses); resuming is fine
+      ...(state.paused ? [{ label: 'Resume tracking', icon: 'play', action: () => resume.click() }] : []),
     ],
   });
-  toggle.checked = !state.paused;
-  $('switch-wrap').title = state.paused ? 'Tracking is paused' : 'Tracking is on';
-  toggle.addEventListener('change', async () => {
-    const on = toggle.checked;
-    state.paused = !on;
-    $('switch-wrap').title = on ? 'Tracking is on' : 'Tracking is paused';
-    await updateSettings({ paused: !on });
+  showResume(state.paused, true);
+  resume.addEventListener('click', async () => {
+    if (!state.paused) return;
+    state.paused = false;
+    showResume(false);
+    await updateSettings({ paused: false });
     try { await chrome.runtime.sendMessage({ type: 'sync' }); } catch { /* ignore */ }
     const [session, days] = await Promise.all([getSession(), getDays([state.todayKey])]);
     state.session = session;

@@ -21,11 +21,9 @@
           <p class="caption" id="today-label"></p>
         </div>
       </div>
-      <label class="switch" id="switch-wrap" title="Tracking is on">
-        <input type="checkbox" id="track-toggle" checked aria-label="Track my browsing time">
-        <span class="track"></span>
-        <span class="knob"></span>
-      </label>
+      <button class="btn btn-primary btn-xs resume" id="resume" type="button" hidden title="Tracking is paused" aria-label="Tracking is paused. Resume tracking">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 3.6v8.8l6.6-4.4z" fill="currentColor"/></svg><span>Resume</span>
+      </button>
     </header>
 
     <section class="card hero" data-anim style="--i:1">

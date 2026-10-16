@@ -33,7 +33,7 @@ It is never sold or shared. It is never used for advertising, and never used to 
 
 ## Your choices
 
-- **Pause tracking** at any time, with the switch in the popup or in Settings.
+- **Pause tracking** at any time, with the Track browsing switch in Settings.
 - **Never track** particular sites.
 - **Choose how long to keep history**: forever, 1 year, 6 months or 3 months. Older days are deleted automatically.
 - **Export** everything as a file, or **import** a file you exported earlier. The file goes wherever you save it; Memoir doesn't upload it.

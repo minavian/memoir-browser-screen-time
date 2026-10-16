@@ -104,7 +104,8 @@ Open the gear in the top-right corner of the report.
   a site in Most used, or in a day or an hour) and open them again.
 - **Keep page titles and links:** 4 (default), 8, 12 or 16 weeks. Older days keep
   their time; only their page titles and links go. Hover an option for an estimate.
-- **Track browsing:** pause and resume. Also in the popup.
+- **Track browsing:** pause and resume. Only here: the popup and the right-click
+  menus can resume tracking but never pause it.
 - **Never track:** sites you add are still timed and still count toward your
   totals and limit, but only as *Private*. Their names are never saved or shown,
   and their past time is made Private too. In Settings each one stays hidden under

@@ -17,6 +17,9 @@ h1 { margin: 0; font-size: 20px; font-weight: 700; line-height: 1.2; }
 /* the clock beside the name: live, like the report's (shared/logo.js) */
 .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .top-mark { width: 40px; height: 40px; flex: none; }
+/* tracking can be paused only in the report's Settings; while it is, this brings it back */
+.resume { align-self: center; gap: 5px; padding: 0 11px 0 9px; }
+.resume svg { width: 10px; height: 10px; }
 
 /* today: the ring from the pink design */
 .hero { margin-top: 14px; flex: none; height: 126px; display: flex; align-items: center; gap: 16px; padding: 10px 16px 10px 10px; border-radius: 18px; }
