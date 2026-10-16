@@ -3115,6 +3115,7 @@ function closeSettings(focusTrigger = false) {
   setReveal('detail-confirm', false);
   setReveal('ret-confirm', false);
   pendingRetention = null;
+  cancelPause();
   $('ex-form').classList.remove('invalid');
   tip.hide();
   // the sites under Never track hide again as you leave; the dust rests once the panel is shut
@@ -3639,6 +3640,63 @@ async function chooseRetention(days) {
   await applyRetention(days);
 }
 
+// ----- Pausing tracking: only here, and two presses, like Keep history (time browsed while
+// paused is never recorded). Turning it back on is one click, here or in the menus. -----
+
+let pausePending = false;
+let pauseTimer = 0;
+function armPause(on) {
+  const btn = $('pause-yes');
+  const msg = $('pause-msg');
+  clearTimeout(pauseTimer);
+  const was = btn.dataset.armed === '1';
+  btn.dataset.armed = on ? '1' : '0';
+  const text = on ? 'Yes, pause' : 'Pause';
+  const note = on
+    ? 'Sure? Time you browse while it’s paused can’t be added back later. Press again to pause.'
+    : 'Pause tracking? Nothing you browse is recorded until you turn it back on.';
+  if (btn.textContent !== text || msg.textContent !== note) {
+    let lead = 0;
+    animateHeight($('pause-confirm').querySelector('.reveal-inner'), () => {
+      btn.textContent = text;
+      msg.textContent = note;
+      if ($('pause-confirm').classList.contains('open')) lead = relight(330);
+    }, { duration: 300, delay: () => lead });
+  }
+  btn.setAttribute('aria-label', on ? 'Press again to pause tracking' : 'Pause tracking');
+  if (on) {
+    pauseTimer = setTimeout(() => armPause(false), 9000);
+    if (!was && !reducedMotion()) btn.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.06)' }, { transform: 'scale(1)' }], { duration: 420, easing: EASE_OUT });
+  }
+}
+function askPause() {
+  // pressed again while it's asking: the question just nods
+  if (pausePending) {
+    if (!reducedMotion()) $('pause-confirm').querySelector('.inline-confirm').animate([{ transform: 'scale(1)' }, { transform: 'scale(1.025)' }, { transform: 'scale(1)' }], { duration: 360, easing: EASE_OUT });
+    return;
+  }
+  pausePending = true;
+  armPause(false);
+  setReveal('pause-confirm', true);
+}
+function cancelPause(focus = false) {
+  if (!pausePending) return;
+  pausePending = false;
+  clearTimeout(pauseTimer);
+  $('pause-yes').dataset.armed = '0';
+  setReveal('pause-confirm', false);
+  if (focus) $('set-tracking').focus({ preventScroll: true });
+}
+async function commitPause() {
+  pausePending = false;
+  clearTimeout(pauseTimer);
+  $('pause-yes').dataset.armed = '0';
+  setReveal('pause-confirm', false);
+  $('set-tracking').checked = false;
+  state.settings = await updateSettings({ paused: true });
+  toast('Tracking paused');
+}
+
 async function applyRetention(days) {
   pendingRetention = null;
   clearTimeout(retTimer);
@@ -3780,6 +3838,7 @@ function wire() {
       else if (authorPop.isOpen) { closeAuthor(); focusAuthor(); }
       else if ($('settings').classList.contains('open')) {
         if ($('data-row').dataset.step !== '0') setNukeStep(0);
+        else if (pausePending) cancelPause(true);
         else closeSettings(true);
       } else if (state.view.type !== 'week') goBack();
       return;
@@ -3967,9 +4026,21 @@ function wire() {
   window.addEventListener('resize', () => { closeCatMenu(true); closeCatPop(true); closePagePop(true); tip.hide(); });
 
   // tracking
+  $('set-tracking').addEventListener('click', e => {
+    if (e.target.checked) return;
+    e.preventDefault(); // it stays on until the second press says otherwise
+    askPause();
+  });
   $('set-tracking').addEventListener('change', async e => {
+    cancelPause();
     state.settings = await updateSettings({ paused: !e.target.checked });
     toast(e.target.checked ? 'Tracking resumed' : 'Tracking paused');
+  });
+  $('pause-keep').addEventListener('click', () => cancelPause(true));
+  $('pause-yes').addEventListener('click', () => {
+    if (!pausePending) return;
+    if ($('pause-yes').dataset.armed !== '1') armPause(true);
+    else commitPause();
   });
 
   // tracking detail

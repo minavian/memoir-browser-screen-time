@@ -204,6 +204,11 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
   rest of that gesture, the next one carries on to the page.
 - Right-click menu (5.1.2): right-clicking while it's open glides it (translate + height, WAAPI) to the new spot;
   the old rows ride along in `.context-ghost` and fade while the new ones enter.
+- Pausing tracking (5.1.5, recap.js `askPause` / `armPause` / `commitPause`): only the Track browsing switch in
+  Settings can pause, and it asks twice like Keep history: a press leaves it on and asks under the row, the first
+  press of Pause arms it ("Yes, pause", glowing, 9 s to disarm), the second pauses. Turning it on is one click.
+  The report's and the popup's right-click menus, and the popup's Resume button, can only resume (shown only
+  while paused). Keep, Esc or closing Settings drops the question.
 - Bug reports (5.1.2): hovering/focusing "Mina Vian" in the Settings footer morphs `#author-pop` out of it
   (120 ms hover intent, 220 ms grace to cross into it; Tab steps in, Escape returns to the name).
 - MorphPopover is fully interruptible (5.1.2, all popovers): open/close take over the shell still in flight
