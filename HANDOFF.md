@@ -254,7 +254,14 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
   Live refreshes (`refreshSoon`) now wait while a menu or popover is shown or still animating (they used to be
   dropped while one was open, leaving stale numbers until the next save).
   Export carries `format: 2`; files without it are announced as older, brought up to date (titles past the
-  setting dropped) and imported. Toasts that change while showing cross-fade and ease to the new width.
+  setting dropped) and imported.
+
+- Toast (5.1.5, recap.js `toast` / `hideToast`): rises in (pop), sinks away after its hold. A new one while
+  it's up or sinking morphs the pill (width and height) to the new words while the old words fade up and
+  away and the new ones fade in. Every move starts from the running animations' current values, so it's
+  interruptible at any speed (two leaving word layers at most). The pill is `width: max-content` between
+  left/right 0 (no `left: 50%`, which halved the room and wrapped long messages); the words are `flex: none`
+  with the finished pill's max width, so they wrap only where it would, never while it's still growing.
 
 - Tour (5.1.2): steps marked `autoNext` ("An hour up close") move on the moment Next has filled, without
   the full-arrow pause. The Cursor step covers Custom and Smooth cursor (a task each; a press on the locked

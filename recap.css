@@ -1385,9 +1385,17 @@ body { overflow: hidden; }
 
 .toast {
   position: fixed;
-  left: 50%;
+  left: 0;
+  right: 0;
   bottom: 22px;
   z-index: 3500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: max-content;
+  max-width: min(560px, calc(100vw - 32px));
+  margin: 0 auto;
+  overflow: hidden;
   padding: 10px 18px;
   border-radius: 999px;
   background: var(--glass);
@@ -1398,10 +1406,12 @@ body { overflow: hidden; }
   font-weight: 500;
   pointer-events: none;
   opacity: 0;
-  transform: translate(-50%, 14px) scale(0.96);
-  transition: transform 0.4s var(--ease-out), opacity 0.22s var(--ease);
+  transform: translateY(14px) scale(0.96);
 }
-.toast.on { opacity: 1; transform: translate(-50%, 0) scale(1); transition: transform 0.45s var(--pop), opacity 0.22s var(--ease); }
+/* the words wrap only where the finished pill would; while it's still growing they
+   overflow both sides evenly (centred) instead of wrapping */
+.toast-words { flex: none; max-width: calc(min(560px, 100vw - 32px) - 36px); text-align: center; }
+.toast-words.out { position: absolute; left: 50%; top: 50%; translate: -50% -50%; }
 
 /* short windows: the facts repeat what the highlights say, so the highlights keep the room */
 @media (min-width: 1100px) and (max-height: 840px) {

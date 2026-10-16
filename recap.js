@@ -4293,9 +4293,6 @@ async function addExcluded(site) {
   return true;
 }
 
-let toastTimer = 0;
-// A message at the bottom. One already showing doesn't blink: its words cross-fade
-// and the pill eases to its new width.
 // Toast text, with the name set in its face (as everywhere in Settings, where toasts come from).
 function brand(el, text) {
   el.replaceChildren(...text.split(/(Memoir)/).map(part => {
@@ -4307,27 +4304,82 @@ function brand(el, text) {
   }));
 }
 
+// A message at the bottom. It rises in, and sinks away after a while. A new one while it's
+// up (or on its way out) doesn't blink: the pill morphs to the new words' size while the
+// old words fade up and away and the new ones fade in. Every move starts from wherever the
+// last one had got to (read off the running animations), so clicks as fast as you like
+// never make it jump. The words only wrap where the finished pill would (CSS), never
+// because the pill is still growing.
+let toastTimer = 0;
+const TOAST_UP = { opacity: 1, transform: 'translateY(0px) scale(1)' };
+const TOAST_DOWN = { opacity: 0, transform: 'translateY(14px) scale(0.96)' };
+const TOAST_POP = 'cubic-bezier(0.32, 1.24, 0.5, 1)'; // --pop
+
 function toast(text, hold = 2600) {
   const t = $('toast');
-  const showing = t.classList.contains('on') && t.textContent && !reducedMotion();
-  if (showing && t.textContent !== text) {
-    const w0 = t.getBoundingClientRect().width;
-    t._resize?.cancel();
-    t.innerHTML = '';
-    const words = document.createElement('span');
-    brand(words, text);
-    t.appendChild(words);
-    const w1 = t.getBoundingClientRect().width;
-    t.style.overflow = 'hidden';
-    t._resize = t.animate([{ width: `${w0}px` }, { width: `${w1}px` }], { duration: 380, easing: EASE_OUT });
-    t._resize.finished.then(() => { t.style.overflow = ''; }, () => {});
-    words.animate([{ opacity: 0, transform: 'translateY(5px)' }, { opacity: 1, transform: 'none' }], { duration: 300, delay: 60, easing: EASE_OUT, fill: 'backwards' });
-  } else {
-    brand(t, text);
-  }
-  t.classList.add('on');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('on'), hold);
+  toastTimer = setTimeout(hideToast, hold);
+  const words = document.createElement('span');
+  words.className = 'toast-words';
+  brand(words, text);
+  if (reducedMotion()) {
+    t.getAnimations({ subtree: true }).forEach(a => a.cancel());
+    t.replaceChildren(words);
+    Object.assign(t.style, TOAST_UP);
+    t._up = true;
+    return;
+  }
+  const cs = getComputedStyle(t);
+  const now = { opacity: cs.opacity, transform: cs.transform === 'none' ? 'translateY(0px) scale(1)' : cs.transform };
+  const from = { width: cs.width, height: cs.height };
+  const old = t.querySelector('.toast-words:not(.out)');
+  t._size?.cancel();
+  t._size = null;
+  if (old && +now.opacity > 0.02) {
+    // the old words stay where they are, as they wrap now, and fade up and away
+    const ws = getComputedStyle(old);
+    old.style.width = ws.width; // exactly, not rounded: a hair narrower and its last word would wrap
+    old.classList.add('out');
+    old.setAttribute('aria-hidden', 'true');
+    old.getAnimations().forEach(a => a.cancel());
+    old.animate([{ opacity: ws.opacity, transform: ws.transform === 'none' ? 'translateY(0px)' : ws.transform }, { opacity: 0, transform: 'translateY(-6px)' }],
+      { duration: 180, easing: EASE_OUT, fill: 'forwards' }).finished.then(() => old.remove(), () => {});
+    // at high speed, only the newest of the leaving words are kept
+    const gone = [...t.querySelectorAll('.toast-words.out')];
+    gone.slice(0, -2).forEach(el => el.remove());
+    t.appendChild(words);
+    const to = { width: cs.width, height: cs.height };
+    if (from.width !== to.width || from.height !== to.height) {
+      t._size = t.animate([from, to], { duration: 380, easing: EASE_OUT });
+    }
+    words.animate([{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'translateY(0px)' }], { duration: 300, delay: 60, easing: EASE_OUT, fill: 'backwards' });
+  } else {
+    // nothing showing (or all but gone): just the new words, at their own size
+    t.replaceChildren(words);
+  }
+  if (!t._up || +now.opacity < 1) {
+    t._move?.cancel();
+    t._move = t.animate([now, TOAST_UP], { duration: 420, easing: TOAST_POP, fill: 'forwards' });
+  }
+  t._up = true;
+}
+
+function hideToast() {
+  const t = $('toast');
+  if (!t._up) return;
+  t._up = false;
+  if (reducedMotion()) {
+    t.replaceChildren();
+    Object.assign(t.style, TOAST_DOWN);
+    return;
+  }
+  const cs = getComputedStyle(t);
+  const now = { opacity: cs.opacity, transform: cs.transform === 'none' ? 'translateY(0px) scale(1)' : cs.transform };
+  t._move?.cancel();
+  const a = t.animate([now, TOAST_DOWN], { duration: 300, easing: EASE_OUT, fill: 'forwards' });
+  t._move = a;
+  // once it's gone, so is what it said (a new one then starts afresh)
+  a.finished.then(() => { if (t._move === a) t.replaceChildren(); }, () => {});
 }
 
 // Accepts an export from any version of Browser Screen Time or Memoir.
