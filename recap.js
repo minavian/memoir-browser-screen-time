@@ -4561,7 +4561,10 @@ async function startTour({ prepared = false, handoff = null } = {}) {
   const canTryLimit = !limitLocked(state.goalHistory, dayKey(new Date()));
 
   const steps = [
-    { title: 'Your weeks', text: 'Step back through past weeks with the arrows. The <b>←</b> and <b>→</b> keys work too. This is a <b>sample week</b>: nothing of yours is touched.', target: () => q('.week-nav'), before: toWeek, settle: 0, radius: 12, tasks: [
+    { title: 'Your weeks', text: 'Step back through past weeks with the arrows. The <b>←</b> and <b>→</b> keys work too. This is a <b>sample week</b>: nothing of yours is touched.', target: () => q('.week-nav'), before: toWeek, settle: 0, radius: 12,
+      // here the arrow keys change the week, as they do on the page; from the next step on they're the tour's
+      arrows: dir => { const b = q(dir < 0 ? '#prev-week' : '#next-week'); if (b && !b.disabled) b.click(); },
+      tasks: [
       { text: 'Click <b>‹</b> to see the week before', watch: onClick('#prev-week') },
       { text: 'Then <b>›</b> to come back', watch: onClick('#next-week') },
     ] },

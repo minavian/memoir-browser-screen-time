@@ -263,7 +263,7 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
 - Limit clock inside the tour (5.1.2, recap.js `openGoalPicker`, goal.js `onClosing` / `focusBack`): while the clock
   is up the tour's dim and card are hidden (`picking`). Coming back, in turn: the dim crossfades in under the clock's
   scrim as it closes (`tour-return`), the card pops in (`scale`) once the clock has landed, then the outline
-  (`tour-return-ring`). Focus goes back to the tour's Next, not the page: from the page, ← → change the week.
+  (`tour-return-ring`). Focus goes back to the tour's Next.
 
 - Categories legend (5.1.2, recap.js `renderDonut`): on short windows the legend sets the card's height, so a
   Week/Day switch (or a week with more categories) changes it. The rebuild runs inside `animateHeight`: the card
@@ -335,6 +335,11 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
   up, then distance; right, left, below, above break ties), which gives the old placement when nothing is
   open. Settings steps keep their old placement: the owner tried the card beside the Settings panel and
   disliked it (it sat far from the light); keep the card next to the light. Highlights starts on the week.
+
+- Tour arrows (5.1.5, tour.js `onArrow`): ← → are the tour's (Next, Back) wherever the focus is, caught at
+  window/capture before the page's own handlers. "Your weeks" lends them to the page (`arrows(dir)` clicks
+  ‹ / ›), so there they change the week and tick its tries. Text fields, the limit picker, its questions
+  and menus keep their arrows.
 
 - Never track, hidden (5.1.5): the sites under Never track are hidden under dust, a shimmer of fine
   specks over a soft haze, filling the whole pill, the × too (thinning towards its rounded edge).

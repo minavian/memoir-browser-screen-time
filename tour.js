@@ -1,5 +1,7 @@
 // A guided tour: the page dims, a spotlight glides from one feature to the next
-// and a small card explains it. Keys: → / Enter next, ← back, Esc to leave.
+// and a small card explains it. Keys: → / Enter next, ← back, Esc to leave. The
+// arrows are the tour's wherever the focus is (a step can lend them to the page with
+// `arrows(dir)`); only fields that type keep theirs.
 //
 // Steps can be hands-on: what's in the light stays clickable (only for steps with
 // `tasks` or `interactive`), and each task ("Try …") watches for the thing it asks
@@ -363,6 +365,7 @@ export function runTour(steps, { handoff = null, avoid = () => [] } = {}) {
       stopWatching();
       reflowTimers.forEach(clearTimeout);
       document.removeEventListener('click', onPageClick, true);
+      removeEventListener('keydown', onArrow, true);
       removeEventListener('resize', onResize);
       root.classList.remove('on');
       root.classList.add('leaving');
@@ -371,6 +374,24 @@ export function runTour(steps, { handoff = null, avoid = () => [] } = {}) {
 
     const onResize = () => { if (index >= 0) place(steps[index]); };
     addEventListener('resize', onResize);
+    // The arrows are the tour's, wherever the focus is: Next and Back (a step may lend
+    // them to the page instead, with arrows(dir)). Only fields that type, and the
+    // layers a try opens above the tour (the limit picker, its questions, menus), keep
+    // theirs. Caught before anything on the page sees them.
+    const onArrow = e => {
+      if ((e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+      const t = e.target;
+      if (t instanceof Element && t.closest('input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]), textarea, select, [contenteditable]:not([contenteditable="false"]), .menu, .pk-layer, .gx-layer')) return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      if (ended || index < 0) return;
+      const dir = e.key === 'ArrowLeft' ? -1 : 1;
+      const step = steps[index];
+      if (step.arrows) step.arrows(dir);
+      else if (dir > 0) next.click();
+      else if (!back.disabled) back.click();
+    };
+    addEventListener('keydown', onArrow, true);
     // a click on the page itself (through the hole) may open or close something
     const onPageClick = e => { if (!root.contains(e.target)) reflow(); };
     document.addEventListener('click', onPageClick, true);
@@ -383,8 +404,6 @@ export function runTour(steps, { handoff = null, avoid = () => [] } = {}) {
     root.addEventListener('keydown', e => {
       e.stopPropagation();
       if (e.key === 'Escape') { e.preventDefault(); end('skipped'); }
-      else if (e.key === 'ArrowRight') { e.preventDefault(); next.click(); }
-      else if (e.key === 'ArrowLeft') { e.preventDefault(); if (!back.disabled) back.click(); }
       else if (e.key === 'Tab') {
         const list = [...card.querySelectorAll('button')].filter(b => !b.disabled && !b.classList.contains('gone'));
         const k = list.indexOf(document.activeElement);
