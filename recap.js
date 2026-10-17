@@ -3499,15 +3499,37 @@ async function saveReminder(patch, note = true) {
 
 // ----- storage estimates for "Keep history" -----
 
+let statsRun = 0;
 async function refreshStats() {
+  const run = ++statsRun;
   const keys = await listDayKeys();
   const dayBytes = keys.length ? await chrome.storage.local.getBytesInUse(keys.map(storageKeyForDay)) : 0;
   const all = await chrome.storage.local.getBytesInUse(null);
   state.stats = { keys, days: keys.length, dayBytes, all };
   state.earliestKey = keys[0] || null;
+  if (!keys.length) { showUsed('Nothing saved yet.'); return; }
+  // how much of it is page titles and their links (they're saved inside each day); the
+  // line waits for that, and nothing else does
+  titleBytesIn(keys).then(titles => {
+    if (run !== statsRun) return; // a newer count is on its way
+    showUsed(titles ? `Used ${formatBytes(all)} so far, ${formatBytes(titles)} of it page titles.` : `Used ${formatBytes(all)} so far.`);
+  });
+}
+function showUsed(text) {
   const d = $('ret-desc');
-  const text = keys.length ? `Used ${formatBytes(all)} so far.` : 'Nothing saved yet.';
   if (d.textContent !== text) swapText(d, text);
+}
+// read a month of days at a time, so a long history never holds up Settings
+const utf8 = new TextEncoder();
+async function titleBytesIn(keys) {
+  let bytes = 0;
+  for (let i = 0; i < keys.length; i += 31) {
+    const raw = await chrome.storage.local.get(keys.slice(i, i + 31).map(storageKeyForDay));
+    for (const r of Object.values(raw)) {
+      for (const f of ['ti', 'th', 'tu']) if (r && r[f] && Object.keys(r[f]).length) bytes += utf8.encode(JSON.stringify(r[f])).length;
+    }
+  }
+  return bytes;
 }
 
 function estimateFor(days) {
@@ -3945,6 +3967,7 @@ function wire() {
     const n = await withData(eraseTitles);
     toast(n ? 'Saved page titles erased' : 'No page titles to erase');
     render({ soft: true });
+    refreshStats();
   });
 
   // never track

@@ -118,7 +118,8 @@ Open the gear in the top-right corner of the report.
   long run of increasingly pointed questions. They never come in the same order
   twice. Days before keep the limit they had.
 - **Keep history:** Forever (default), 1 year, 6 months or 3 months. Hover an
-  option to see about how much space it uses. If a shorter option would delete
+  option to see about how much space it uses. Under it: how much Memoir uses so
+  far, and how much of that is page titles. If a shorter option would delete
   older days, it asks twice before anything is removed.
 - **Sample week** and **Tutorial:** look around with made-up data, or replay
   the tour.
