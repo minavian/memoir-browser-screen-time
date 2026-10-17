@@ -527,7 +527,8 @@ day by day, is one click away.") and a soft ring going out from the button three
 `Windows Memoir/Memoir.exe` is the portable x64 Windows app (5.0.2), with its own native foreground tracker and the same web UI. See its README and VALIDATION for build/setup, test results, and optional exact browser connector setup. Minimizing disposes WebView2. The themed tray popup runs in a temporary WPF process that exits after dismissal, so its graphics heap is released. Both mouse buttons open it; double-click restores the app. All data remains local; preserve `Windows Memoir/Data` and exclude data/test profiles from distributed copies.
 
 ## How Memoir works (`how-it-works.html`)
-Opened from Settings (How Memoir works → Open, a new tab, under Tutorial). Plain text in one column like the
+Opened from Settings (How Memoir works → Open, a new tab, under Tutorial; pointed at, Open grows to show the
+site links' ↗, which comes in the same way: `.open-btn .ext`). Plain text in one column like the
 privacy page: same stylesheet (`privacy.css`) and script (`privacy.js`, whose email popover only runs where the
 page has one). It states the tracking rules in plain words: what counts (the tab in front, every kind of tab),
 when the clock stops (another app, minimised, 60 s idle unless sound plays, locked or asleep, paused), Private
