@@ -275,8 +275,18 @@ async function dailyHousekeeping() {
   await pruneOldDays();
 }
 
+// Rainbow clock (Settings > Appearance): the toolbar icon's ring in rainbow colours
+async function applyIcon() {
+  const { rainbow } = await getSettings();
+  const n = rainbow ? 'rainbow' : 'icon';
+  try {
+    await chrome.action.setIcon({ path: { 16: `icons/${n}16.png`, 32: `icons/${n}32.png`, 48: `icons/${n}48.png`, 128: `icons/${n}128.png` } });
+  } catch { /* the icon stays as it was */ }
+}
+
 async function boot() {
   await ensureAlarms();
+  applyIcon();
   await enqueue(pruneOldDays);
   sync();
 }
@@ -309,6 +319,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
     titlesOn = !!n.titles;
     if (o.reminderDay !== n.reminderDay || o.reminderMinutes !== n.reminderMinutes) enqueue(() => scheduleWeekly(true));
     if (o.retention !== n.retention) enqueue(pruneOldDays);
+    if (!!o.rainbow !== !!n.rainbow) applyIcon();
   }
   if (changes.goal) enqueue(() => checkGoal(Date.now()));
 });

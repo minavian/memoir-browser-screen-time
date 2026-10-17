@@ -37,6 +37,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
   titles: false,             // false = domains only
   excluded: [],
   retention: 0,              // days; 0 = forever (nothing is deleted unless you choose); page titles go with their day
+  rainbow: false,            // Rainbow clock (Appearance): the toolbar icon in rainbow colours
 });
 
 // Category colours are a colour-blind-checked set with light and dark steps

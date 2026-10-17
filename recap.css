@@ -522,8 +522,6 @@ body { overflow: hidden; }
 
 .summary .caption { margin: 0; font-size: 12.5px; }
 .hero-num { margin: 2px 0 0; font-size: 44px; font-weight: 700; line-height: 1.02; letter-spacing: -0.045em; }
-/* the big numbers take the theme's ink fill where it has one (Pride's gradient) */
-.hero-num, .dv-total, .donut-total { background-image: var(--ink-fill, none); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: var(--ink-text, currentColor); }
 .trend { margin: 0; display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; font-weight: 500; color: var(--label-2); min-height: 18px; white-space: nowrap; }
 .trend svg { width: 13px; height: 13px; }
 /* the change from last week quietly becomes a button on hover: it opens Trend over time */
@@ -1482,10 +1480,9 @@ body { overflow: hidden; }
 .tr-note { position: absolute; inset: 0; margin: 0; display: grid; place-items: center; padding: 0 20px; text-align: center; font-size: 13px; color: var(--label-2); pointer-events: none; animation: fade-in 0.4s var(--ease) backwards; }
 
 /* ---------- settings sits on its own layer: a calm scrim behind, a lifted surface in front ---------- */
-:root, [data-wave="light"], [data-wave="pride"] { --panel: #ffffff; --scrim: rgba(24, 24, 32, 0.22); }
+:root, [data-wave="light"] { --panel: #ffffff; --scrim: rgba(24, 24, 32, 0.22); }
 @media (prefers-color-scheme: dark) { :root:not([data-theme]) { --panel: #2c2c2e; --scrim: rgba(0, 0, 0, 0.55); } }
 :root[data-theme="dark"], [data-wave="dark"] { --panel: #2c2c2e; --scrim: rgba(0, 0, 0, 0.55); }
-:root[data-theme="pride"], [data-wave="pride"] { --panel: #fffafd; --scrim: rgba(60, 30, 80, 0.2); }
 .morph-panel { background: var(--surface); }
 .morph.open .morph-panel { background: var(--panel); }
 .settings-scrim {
@@ -1579,7 +1576,7 @@ body { overflow: hidden; }
 }
 
 /* ---------- tour ---------- */
-:root, [data-wave="light"], [data-wave="pride"] { --tour-dim: rgba(12, 12, 18, 0.55); --heavy: cubic-bezier(0.16, 1, 0.3, 1); --dust-ink: brightness(0.12) opacity(0.82); }
+:root, [data-wave="light"] { --tour-dim: rgba(12, 12, 18, 0.55); --heavy: cubic-bezier(0.16, 1, 0.3, 1); --dust-ink: brightness(0.12) opacity(0.82); }
 @media (prefers-color-scheme: dark) { :root:not([data-theme]) { --tour-dim: rgba(0, 0, 0, 0.68); --dust-ink: none; } }
 :root[data-theme="dark"], [data-wave="dark"] { --tour-dim: rgba(0, 0, 0, 0.68); --dust-ink: none; }
 /* the tour layer itself lets clicks through; the blocker (with a hole over the
@@ -1749,7 +1746,7 @@ body { overflow: hidden; }
 .ghost { position: fixed; z-index: 900; pointer-events: none; transform-origin: 0 0; will-change: transform, opacity; }
 
 /* the header's own words sit above the scrim, so they soften the same way */
-:root, [data-wave="light"], [data-wave="pride"] { --scrim-bright: 0.8; }
+:root, [data-wave="light"] { --scrim-bright: 0.8; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme]) { --scrim-bright: 0.45; } }
 :root[data-theme="dark"], [data-wave="dark"] { --scrim-bright: 0.45; }
 .head-left, .demo-pill { transition: filter 0.5s var(--sheet); }
@@ -1881,7 +1878,7 @@ body { overflow: hidden; }
 /* It follows the theme: on Dark black with a soft light behind the word, the words in
    platinum; on Light a soft white, a brighter spot drifting in behind the word, the words
    in the wordmark's graphite (welcome-intro.js picks the word's and the clock's colours). */
-:root, [data-wave="light"], [data-wave="pride"] {
+:root, [data-wave="light"] {
   --wi-bg: radial-gradient(130% 100% at 50% 46%, #f7f7f9, #eeeef1 62%, #e3e3e7);
   --wi-light: radial-gradient(closest-side, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.45) 45%, transparent);
   --wi-kick: rgba(60, 60, 67, 0.72);

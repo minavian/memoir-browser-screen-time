@@ -1,6 +1,4 @@
-// Appearance: System (default — follows light/dark), Light, Dark or Pride.
-// Pride is never chosen automatically; it only applies when picked. It took the place of
-// Pink, so a saved Pink is read as Pride.
+// Appearance: System (default — follows light/dark), Light or Dark.
 // Stored in localStorage so the popup and the report share it instantly and it
 // can be applied before first paint (see theme-boot.js).
 
@@ -9,9 +7,8 @@ const darkQuery = matchMedia('(prefers-color-scheme: dark)');
 
 export function getThemePref() {
   try {
-    const saved = localStorage.getItem(THEME_KEY);
-    const p = saved === 'pink' ? 'pride' : saved;
-    return p === 'light' || p === 'dark' || p === 'pride' ? p : 'auto';
+    const p = localStorage.getItem(THEME_KEY);
+    return p === 'light' || p === 'dark' ? p : 'auto';
   } catch {
     return 'auto';
   }
@@ -20,6 +17,28 @@ export function getThemePref() {
 export function resolvedTheme(pref = getThemePref()) {
   if (pref === 'auto') return darkQuery.matches ? 'dark' : 'light';
   return pref;
+}
+
+// Rainbow clock (Appearance), in support of the LGBTQ+ community: the clock's ring in the
+// rainbow's colours, in either theme, on the page and the toolbar icon. Kept like the theme,
+// so it's there before first paint (theme-boot.js); the tracker reads settings.rainbow for
+// the icon.
+export const RAINBOW_KEY = 'bst-rainbow';
+export function rainbowOn() {
+  try { return localStorage.getItem(RAINBOW_KEY) === 'on'; } catch { return false; }
+}
+function showRainbow(on) {
+  if (on) document.documentElement.dataset.rainbow = 'on';
+  else delete document.documentElement.dataset.rainbow;
+  const icon = document.querySelector('link[rel="icon"]');
+  if (icon) icon.href = on ? 'icons/rainbow32.png' : 'icons/icon32.png';
+}
+export function setRainbow(on) {
+  try {
+    if (on) localStorage.setItem(RAINBOW_KEY, 'on');
+    else localStorage.removeItem(RAINBOW_KEY);
+  } catch { /* ignore */ }
+  showRainbow(on);
 }
 
 function apply(pref) {
@@ -288,6 +307,7 @@ export function setThemePref(pref, origin, { panels = [], parts = [], fades = []
 // Keeps every open page in step when the choice or the system theme changes.
 export function watchTheme(onChange) {
   addEventListener('storage', e => {
+    if (e.key === RAINBOW_KEY) { showRainbow(rainbowOn()); return; }
     if (e.key !== THEME_KEY) return;
     apply(getThemePref());
     if (onChange) onChange();

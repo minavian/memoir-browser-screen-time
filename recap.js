@@ -11,7 +11,7 @@ import {
   setOrigins, siteLinkHtml, morph, MorphPopover, replay, EASE_OUT, animateHeight, makeScroller, initSmoothScrolling, disableTitleTooltips,
   ARROW_SVG, POP,
 } from './shared/fx.js';
-import { getThemePref, setThemePref, watchTheme, THEME_SWITCH_MS } from './shared/theme.js';
+import { getThemePref, setThemePref, watchTheme, THEME_SWITCH_MS, rainbowOn, setRainbow } from './shared/theme.js';
 import { createGoalRing, openPicker } from './shared/goal.js';
 import { TrendChart } from './trend.js';
 import { runGauntlet } from './gauntlet.js';
@@ -125,6 +125,9 @@ async function init() {
   // first visit: the welcome covers the page while it gets ready
   const welcome = onboarded ? null : createWelcome();
   state.settings = settings;
+  // the Rainbow clock lives in this browser's storage (first paint); the tracker's copy (the
+  // toolbar icon) catches up if it was turned on before the setting existed
+  if (!!settings.rainbow !== rainbowOn()) updateSettings({ rainbow: rainbowOn() }).then(s => { state.settings = s; });
   state.overrides = overrides;
   state.goalHistory = history;
   state.goalTrial = goalTrial || null;
@@ -3224,6 +3227,7 @@ function renderSettings() {
   const dd = $('detail-desc');
   if (dd.textContent !== desc) animateHeight(dd, () => swapText(dd, desc));
   $('set-cursor').checked = cursorEnabled();
+  $('set-rainbow').checked = rainbowOn();
   $('set-smooth').checked = cursorSmooth();
   lockSmooth();
   $('set-demo').checked = state.demo;
@@ -4233,6 +4237,12 @@ function wire() {
   $('exit-demo').addEventListener('click', () => exitDemo(true));
 
   // settings: cursor, sample week, tutorial, and the way out of a locked limit
+  $('set-rainbow').addEventListener('change', async e => {
+    const on = e.target.checked;
+    setRainbow(on);
+    toast(on ? 'Rainbow clock on' : 'Rainbow clock off');
+    state.settings = await updateSettings({ rainbow: on }); // the toolbar icon follows
+  });
   $('set-cursor').addEventListener('change', e => {
     setCursorPref(e.target.checked);
     lockSmooth();
@@ -4685,7 +4695,7 @@ async function startTour({ prepared = false, handoff = null } = {}) {
     { title: 'Settings', text: '', target: () => ($('settings').classList.contains('open') ? q('#settings-panel') : q('#settings-btn')), before: noSettings, settle: 0, radius: 22, pad: 6, tasks: [
       { text: 'Click the gear to open Settings', watch: onClick('#settings-btn', () => $('settings').classList.contains('open')) },
     ] },
-    { title: 'Appearance', text: '<b>System</b> picks your theme automatically. Or pick Light, Dark, or <b>Pride</b>: soft trans-flag colours with a touch of rainbow, for the LGBTQ+ community.', target: () => block('#appearance'), before: toSettings('#appearance'), settle: 350, radius: 14, tasks: [
+    { title: 'Appearance', text: '<b>System</b> picks your theme automatically, or pick Light or Dark. <b>Rainbow clock</b> puts the clock in rainbow colours, in support of the LGBTQ+ community.', target: () => block('#appearance'), before: toSettings('#appearance'), settle: 350, radius: 14, tasks: [
       { text: 'Try another theme', watch: onClick('#appearance button') },
     ] },
     { title: 'Cursor', text: 'Turning it on gives you <span class="wordmark wm-in">Memoir</span>’s custom, modern-looking cursor. <b>Smooth cursor</b> makes your cursor move smoothly.', target: () => block('#set-cursor'), before: toSettings('#set-smooth'), settle: 350, radius: 14, tasks: [

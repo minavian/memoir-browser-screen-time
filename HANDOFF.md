@@ -6,21 +6,15 @@ Current version: **5.1.5** (`manifest.json`). Load unpacked from this folder; af
 press reload on the extension in `chrome://extensions` and refresh the report tab.
 
 ## What the owner cares about (apply to every change)
-- **Themes:** Light / Dark / Pride. Default follows the system and is never Pride. **Pride** (2026-10-17)
-  replaced Pink: in support of the LGBTQ+ community, pastel, the trans flag's light blue, pink and white,
-  with a soft rainbow on the header clock's ring (logo.css). It is Light underneath: every Light rule
-  also covers `[data-wave="pride"]`, and one block in theme.css (`:root[data-theme="pride"]`) holds only
-  what it changes (surfaces, ink, the pink accent, the blue→lavender→pink hour grid, the limit clock).
-  Categories and the daily limit go pastel too (the owner asked), in their usual colour families; the
-  category set was checked for colour-blind eyes (min ΔE: normal 29, deuteranopia 14, protanopia 18; Light's:
-  22, 13, 20). Letter tiles get dark letters (`--tile-ink`), which read on pastels. A saved `pink` is read as `pride`
-  (theme-boot.js, theme.js). Pink's falling petals went with it. Test and tune all three themes.
-  Its own character (the owner asked for "more expressive", not Light recoloured), but flat surfaces: the page a
-  soft lavender-pink and the cards near-white (an aurora page, cards tinted blue→pink and a gradient card edge were
-  each tried and turned down as looking bad / machine-made); gradient primary buttons and switches; the big numbers (`.hero-num`, `.dv-total`, `.donut-total`) and the
-  wordmark in blue→lavender→pink. All through tokens Light and Dark don't set (`--accent-fill(-hover)`,
-  `--ink-fill`/`--ink-text`, `--wm-fill`), read by `.btn-primary`, checked switches and the big numbers, so the
-  theme switch paints the same thing and Light and Dark are untouched.
+- **Themes:** Light / Dark; the default follows the system. Pink was dropped (2026-10-17), and so was the
+  full Pride palette that briefly replaced it (pastel trans-flag colours: every version looked off to the owner,
+  as it went against "colour is reserved for data"). What stayed is **Rainbow clock** (Appearance), in support
+  of the LGBTQ+ community: the clock's ring in the rainbow's colours with its usual clockwise fade, in either
+  theme (logo.css, `:root[data-rainbow="on"]`), on the toolbar icon (`icons/rainbowN.png`, made from
+  `iconN.png` by recolouring only the ring's pixels by angle, keeping their brightness; background.js
+  `applyIcon` on start and when `settings.rainbow` changes) and on the report's tab icon. It's kept in
+  localStorage (`bst-rainbow`, applied before first paint by theme-boot.js) and mirrored to
+  `settings.rainbow` for the tracker. A saved `pink` or `pride` theme becomes System with Rainbow clock on.
 - **One screen, no scrolling** on large windows (cards stack and the page scrolls only under ~1100 px wide).
 - Minimal, clean, borderless look; **everything interactive is animated**; morph animations wherever possible.
 - Hovers use `--ease-out` and must **never shake or overshoot**. `--pop` only for deliberate pops.
@@ -167,7 +161,7 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
   ring around 20 and 40 minutes, where the knob couldn't be grabbed. Tick dots sit on the track, numbers outside,
   Cancel in the centre column. The ✓ centres with `translate`, hovers with `scale`, and pops via WAAPI `transform`,
   so its animations never restart or fight each other.
-- Picker look (4.3.0): colours follow the theme (light picker on Light, dark on Dark, pastel with a pink knob on Pride;
+- Picker look (4.3.0): colours follow the theme (light picker on Light, dark on Dark;
   `--pk-*` tokens incl. `--pk-shadow`, `--pk-scrim`). The page behind blurs like Settings (2px backdrop blur).
   Opening is choreographed in goal.js (`buildParts` / `playIn`): the track draws itself round (dashoffset,
   pathLength 1), dots pop as the sweep passes, numbers drift out after them, knob/✓/digits/underline/hint/Cancel
@@ -359,7 +353,7 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
     The first wave also lays a `base` layer of the old theme. While `:root.waving`, the board's cards are
     transparent so the layers show through. With Settings open, `.wave-panel` (inside the panel, z-index -1) fills
     in a soft circle from the clicked button (`--wave-r`, 840 ms).
-  - Content: theme tokens are scoped to `[data-wave="light|dark|pride"]` as well as `:root` (theme.css, recap.css),
+  - Content: theme tokens are scoped to `[data-wave="light|dark"]` as well as `:root` (theme.css, recap.css),
     so a single element can carry a theme. `blocksIn` splits the parts into small blocks (≤ 40 000 px², or leaves;
     a small part such as the gear button switches whole). One rAF loop flips each block's `data-wave` when the middle
     of a wave's soft edge reaches its centre (the times come from the easing curve inverted in JS). A block takes
