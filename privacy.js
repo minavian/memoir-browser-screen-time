@@ -10,6 +10,19 @@ import { mailPop } from './shared/mail-pop.js';
 initSmoothScrolling();
 initCursor();
 playLogo(document.querySelector('.brand .logo'), { delay: 160, live: true });
+// How Memoir works: the big clock under "The clock is real" sweeps in to the time once it's seen
+const big = document.querySelector('.hw-clock .logo');
+if (big) {
+  if (!('IntersectionObserver' in window)) playLogo(big, { live: true });
+  else {
+    const io = new IntersectionObserver(([e]) => {
+      if (!e.isIntersecting) return;
+      io.disconnect();
+      playLogo(big, { delay: 120, live: true });
+    }, { threshold: 0.4 });
+    io.observe(big);
+  }
+}
 const mail = document.getElementById('mail');
 if (mail) mailPop(mail, document.getElementById('mail-pop'), { address: 'iamminavian@gmail.com', dismiss: true });
 

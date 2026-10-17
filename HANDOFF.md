@@ -533,7 +533,8 @@ privacy page: same stylesheet (`privacy.css`) and script (`privacy.js`, whose em
 page has one). It states the tracking rules in plain words: what counts (the tab in front, every kind of tab),
 when the clock stops (another app, minimised, 60 s idle unless sound plays, locked or asleep, paused), Private
 time, what's kept (titles up to 30 a site a day), the daily limit's colours and lock, why other screen-time
-tools differ, and that the clock is real (dot = seconds, long hand = minutes, short = hours, local time). **Keep it true:** when a rule in background.js / core.js changes, change this page too. The row
+tools differ, and that the clock is real (dot = seconds, long hand = minutes, short = hours, local time), with
+a big live clock under that section (`.hw-clock`, 170–340 px; privacy.js plays it in once it's in view). **Keep it true:** when a rule in background.js / core.js changes, change this page too. The row
 also balances Settings' columns (measured 542 / 533 px).
 
 ## Known notes

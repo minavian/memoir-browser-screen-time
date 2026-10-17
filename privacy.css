@@ -38,6 +38,10 @@ b { color: var(--label); font-weight: 600; }
 code { font: 0.87em ui-monospace, Consolas, monospace; }
 a { color: inherit; }
 
+/* How Memoir works: the clock, big, under its section (live: privacy.js plays it in view) */
+.hw-clock { width: clamp(170px, 24vw, 340px); margin: clamp(28px, 4vw, 56px) auto 0; }
+.hw-clock .logo { width: 100%; }
+
 /* the text pops on (privacy.js): the headline word by word, then each heading, paragraph
    and point as it comes into view, a beat after the one before. Hidden from the start
    (<html class="pv-pop">), so nothing shows first and then vanishes, and each stays hidden
