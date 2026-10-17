@@ -2,6 +2,7 @@
 // Hover motion never overshoots; bounce is saved for things that pop open.
 
 import { smoothScrollTo, stopSmoothScroll } from './scroll.js';
+import { isPage, siteName } from './core.js';
 export { initSmoothScrolling } from './scroll.js';
 
 export const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -363,6 +364,14 @@ function whenSeen(el, fn) {
   seenIO.observe(el);
 }
 
+// rounded, like the rest: a new tab's plus, a browser window, a puzzle piece, a page
+const glyph = d => `<svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+const PAGE_GLYPHS = {
+  '~newtab': glyph('<rect x="2.5" y="2.5" width="11" height="11" rx="3"/><path d="M8 5.5v5M5.5 8h5"/>'),
+  '~browser': glyph('<rect x="2" y="3" width="12" height="10" rx="2.5"/><path d="M2 6.5h12"/><circle cx="4.6" cy="4.75" r=".35" fill="currentColor"/><circle cx="6.2" cy="4.75" r=".35" fill="currentColor"/>'),
+  '~extensions': glyph('<path d="M6.5 3.2a1.5 1.5 0 0 1 3 0V4h2.2A1.3 1.3 0 0 1 13 5.3v2.2h-.8a1.5 1.5 0 0 0 0 3h.8v2.2a1.3 1.3 0 0 1-1.3 1.3H9.5v-.8a1.5 1.5 0 0 0-3 0v.8H4.3A1.3 1.3 0 0 1 3 12.7v-2.2h.8a1.5 1.5 0 0 0 0-3H3V5.3A1.3 1.3 0 0 1 4.3 4h2.2Z"/>'),
+  '~files': glyph('<path d="M9 2H5.5A1.5 1.5 0 0 0 4 3.5v9A1.5 1.5 0 0 0 5.5 14h5a1.5 1.5 0 0 0 1.5-1.5V5Z"/><path d="M9 2v2.5A.5.5 0 0 0 9.5 5H12M6.5 8.5h3M6.5 11h3"/>'),
+};
 const LOCK_GLYPH = '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3.5" y="7" width="9" height="6.5" rx="1.8" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M5.5 7V5.4a2.5 2.5 0 0 1 5 0V7" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>';
 
 export function faviconTile(domain, color) {
@@ -371,6 +380,19 @@ export function faviconTile(domain, color) {
   if (domain === '~private') {
     tile.classList.add('is-private');
     tile.innerHTML = LOCK_GLYPH;
+    return tile;
+  }
+  // Memoir shows its own icon; the browser's pages, extensions and files a glyph of their own
+  if (domain === '~memoir') {
+    const img = document.createElement('img');
+    img.alt = '';
+    img.src = chrome.runtime.getURL('icons/icon32.png');
+    tile.appendChild(img);
+    return tile;
+  }
+  if (isPage(domain)) {
+    tile.classList.add('is-private');
+    tile.innerHTML = PAGE_GLYPHS[domain];
     return tile;
   }
   const fill = (src, animate) => {
@@ -402,6 +424,8 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;'
 // shows a small ↗ on hover.
 export function siteLinkHtml(domain, extra = '') {
   if (domain === '~private') return `<span class="private-name ${extra}">Private</span>`;
+  // not a website, so nothing to open: just its name
+  if (isPage(domain)) return `<span class="page-name ${extra}">${esc(siteName(domain))}</span>`;
   return `<a class="site-link ${extra}" href="${esc(siteHref(domain))}" target="_blank" rel="noopener noreferrer" data-domain="${esc(domain)}" title="Open ${esc(domain)}"><span class="sl-text">${esc(domain)}</span>${ARROW_SVG}</a>`;
 }
 

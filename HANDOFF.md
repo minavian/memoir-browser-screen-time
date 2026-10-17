@@ -44,6 +44,13 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
   (MorphPopover, `shared/pop.css`, now shared by both pages), growing out of what was clicked; again, or a click
   elsewhere, closes it. Hover previews in the ring's middle.
 - `recap.html/css/js` — the weekly report (main orchestrator, ~3000 lines).
+- Every tab counts (core.js `siteFromUrl`, used by the tracker): a website by its domain; anything else under a
+  key no website can have (`PAGE_NAMES`, like `~private`): `~memoir` (Memoir's own pages), `~newtab` (chrome://
+  newtab, edge://newtab, chrome-search://, and the web-served ntp.msn.com / google.com/_/chrome/newtab),
+  `~browser` (other chrome:// edge:// about: data: view-source: pages), `~extensions` (other extensions),
+  `~files` (file://); a blob: file counts for the site that made it. They have no origin or link, a name
+  (`siteName`) and a glyph (fx.js `PAGE_GLYPHS`; Memoir its own icon), category Other by default, no "Never track"
+  in their category menu, and survive Export/Import (`siteKey`). Before, only http(s) tabs counted.
 - `trend.js` — Trend over time line chart. `tour.js` — guided tutorial. `gauntlet.js` — "reset the limit" questions.
   Trend's range switch (4/12/24 weeks, a year) is one camera (`cam`: weeks u0…u1, values 0…top) moving over the
   same weeks: the curve is worked out on weeks and values (`withTangents`, monotone) and drawn through the camera

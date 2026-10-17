@@ -1,5 +1,5 @@
 import {
-  CATEGORIES, CATEGORY_BY_ID, PRIVATE_KEY, isPrivate, categorize, dayKey, dateFromKey, addDays, startOfWeek,
+  CATEGORIES, CATEGORY_BY_ID, PRIVATE_KEY, isPrivate, isPage, siteName, categorize, dayKey, dateFromKey, addDays, startOfWeek,
   weekDayKeys, getDays, getSession, unsavedMs, getSettings, updateSettings, getCategoryOverrides,
   setCategoryOverride, getOrigins, formatDuration, formatBytes, formatTimeOfDay, hourLabel, hourRange, escapeHtml,
   storageKeyForDay, normalizeDay, cloneDay, dayTotal, listDayKeys, normalizeSite, isExcluded, uses24h,
@@ -1732,7 +1732,7 @@ function siteRows(entries, soft, dayIdxs, pages = null) {
       const time = li.querySelector('.row-time');
       time.tabIndex = 0;
       time.setAttribute('role', 'button');
-      time.setAttribute('aria-label', `${time.textContent}. See each page’s time on ${domain}`);
+      time.setAttribute('aria-label', `${time.textContent}. See each page’s time on ${siteName(domain)}`);
     }
     ol.appendChild(li);
   });
@@ -1776,7 +1776,7 @@ function titlesTip(domain, dayIdxs) {
   const other = list.find(([t]) => !t);
   const rows = named.slice(0, 3).map(([t, ms]) => `<div class="tip-page"><span>${escapeHtml(t)}</span><b>${fmt(ms)}</b></div>`).join('');
   const more = named.length > 3 || other ? `<div class="tip-note">+ ${named.length > 3 ? `${named.length - 3} more page${named.length - 3 === 1 ? '' : 's'}` : 'other pages'}</div>` : '';
-  return `<div class="tip-title">Top pages · ${escapeHtml(domain)}</div>${rows}${more}`;
+  return `<div class="tip-title">Top pages · ${escapeHtml(siteName(domain))}</div>${rows}${more}`;
 }
 
 // ----- category donut -----
@@ -2288,7 +2288,7 @@ function buildPages(domain, days, hour) {
   const total = timeIn(domain, days, hour);
   const body = document.createElement('div');
   body.className = 'sp-body';
-  body.innerHTML = `<header class="panel-head sp-head"><h2 class="section-title sp-title"><button class="pp-back" type="button" aria-label="Back to Most used"><svg><use href="#i-chev-l"/></svg></button><span class="dot" style="--c:${cat.color}"></span><span class="sp-name">${escapeHtml(domain)}</span></h2><span class="caption sp-meta num">${fmt(total, { seconds: hour != null })} · ${pagesWhen(days, hour)}</span></header>`;
+  body.innerHTML = `<header class="panel-head sp-head"><h2 class="section-title sp-title"><button class="pp-back" type="button" aria-label="Back to Most used"><svg><use href="#i-chev-l"/></svg></button><span class="dot" style="--c:${cat.color}"></span><span class="sp-name">${escapeHtml(siteName(domain))}</span></h2><span class="caption sp-meta num">${fmt(total, { seconds: hour != null })} · ${pagesWhen(days, hour)}</span></header>`;
   if (list.length) {
     const ol = document.createElement('ol');
     ol.className = 'rows page-rows';
@@ -2501,7 +2501,7 @@ function renderSites(s, soft) {
       li.classList.add('has-pages');
       time.tabIndex = 0;
       time.setAttribute('role', 'button');
-      time.setAttribute('aria-label', `${fmt(ms)}. See each page’s time on ${domain}`);
+      time.setAttribute('aria-label', `${fmt(ms)}. See each page’s time on ${siteName(domain)}`);
     }
     const bar = document.createElement('div');
     bar.className = 'site-bar';
@@ -2526,7 +2526,7 @@ function renderSites(s, soft) {
 
 function setCatBtn(btn, cat, domain) {
   btn.innerHTML = `<span class="dot" style="--c:${cat.color}"></span>${cat.label}<svg><use href="#i-chev-d"/></svg>`;
-  btn.setAttribute('aria-label', `Category: ${cat.label}. Change category for ${domain}`);
+  btn.setAttribute('aria-label', `Category: ${cat.label}. Change category for ${siteName(domain)}`);
 }
 
 // ----- hour grid -----
@@ -2587,7 +2587,7 @@ function buildHeat() {
     const slot = Object.entries(d.hs[c] || {}).filter(([dom]) => !isPrivate(dom)).sort((a, b) => b[1] - a[1]).slice(0, 3);
     const sites = slot.map(([dom, v]) => {
       const cat = CATEGORY_BY_ID[categorize(dom, activeOverrides())];
-      return `<div class="tip-row"><span><span class="dot" style="--c:${cat.color}"></span>${escapeHtml(dom)}</span><b>${fmt(v, { seconds: true })}</b></div>`;
+      return `<div class="tip-row"><span><span class="dot" style="--c:${cat.color}"></span>${escapeHtml(siteName(dom))}</span><b>${fmt(v, { seconds: true })}</b></div>`;
     }).join('');
     const hint = !future && ms > 0 ? '<div class="tip-note">Click to see this hour</div>' : '';
     tip.show(`<div class="tip-title">${longDay.format(dateFromKey(s.keys[r]))}, ${hourRange(c)}</div><div class="tip-row"><span>Browsing</span><b>${value}</b></div>${sites}${hint}`, x, y);
@@ -2937,10 +2937,10 @@ function openCatMenu(btn) {
   menuFor = btn;
   const domain = btn.dataset.domain;
   const current = categorize(domain, activeOverrides());
-  menu.innerHTML = `<p class="menu-title">${escapeHtml(domain)}</p>` + CATEGORIES.map(c => `
+  menu.innerHTML = `<p class="menu-title">${escapeHtml(siteName(domain))}</p>` + CATEGORIES.map(c => `
     <button class="menu-item" role="menuitemradio" aria-checked="${c.id === current}" data-cat="${c.id}">
       <span class="dot" style="--c:${c.color}"></span>${c.label}${c.id === current ? '<svg><use href="#i-check"/></svg>' : ''}
-    </button>`).join('') + (state.demo ? '' : `<div class="menu-sep"></div>
+    </button>`).join('') + (state.demo || isPage(domain) ? '' : `<div class="menu-sep"></div>
     <button class="menu-item danger" role="menuitem" data-exclude="1"><svg><use href="#i-private"/></svg>Never track this site</button>`);
   menu.hidden = false;
   menu.classList.remove('closing');
@@ -2997,7 +2997,7 @@ async function applyCategory(domain, catId) {
     replay(btn, 'changed');
     btn.closest('.site').querySelector('.site-bar i').style.setProperty('--c', cat.color);
   }
-  toast(`${domain} moved to ${cat.label}`);
+  toast(`${siteName(domain)} moved to ${cat.label}`);
 }
 
 // ---------- privacy helpers ----------
@@ -3792,7 +3792,7 @@ function wire() {
       const d = state.summary.days[state.view.day];
       const h = +hcol.dataset.h;
       const slot = Object.entries(d.hs[h] || {}).filter(([dom]) => !isPrivate(dom)).sort((a, b) => b[1] - a[1]).slice(0, 3);
-      const rows = slot.map(([dom, v]) => `<div class="tip-row"><span>${escapeHtml(dom)}</span><b>${fmt(v, { seconds: true })}</b></div>`).join('');
+      const rows = slot.map(([dom, v]) => `<div class="tip-row"><span>${escapeHtml(siteName(dom))}</span><b>${fmt(v, { seconds: true })}</b></div>`).join('');
       tip.show(`<div class="tip-title">${hourRange(h)}</div><div class="tip-row"><span>Browsing</span><b>${d.h[h] > 0 ? fmt(d.h[h], { seconds: true }) : 'No activity'}</b></div>${rows}`, e.clientX, e.clientY);
       return;
     }
@@ -4331,7 +4331,7 @@ function hideToast() {
 // Accepts an export from any version of Browser Screen Time or Memoir.
 // Names from a file must look exactly like the ones the tracker writes: no
 // built-in object names, no markup, nothing a page address couldn't produce.
-const siteKey = d => (d === PRIVATE_KEY || domainFromUrl(`http://${d}`) === d ? d : null);
+const siteKey = d => (d === PRIVATE_KEY || isPage(d) || domainFromUrl(`http://${d}`) === d ? d : null);
 const titleKey = t => (t.length <= 256 && safeKey(t) !== null ? t : null);
 
 // Reads an export into clean records, or null when the file isn't one.

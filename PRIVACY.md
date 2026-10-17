@@ -8,7 +8,7 @@
 
 To show where your browsing time goes, Memoir keeps these in your browser:
 
-- **Which website you're on, and for how long.** It keeps the site's name (for example `youtube.com`), the time you spent there and the hours of the day it was in. It does not keep the addresses of the pages you visit, unless you turn on Page titles.
+- **Which website you're on, and for how long.** It keeps the site's name (for example `youtube.com`), the time you spent there and the hours of the day it was in. It does not keep the addresses of the pages you visit, unless you turn on Page titles. Tabs that aren't websites are counted under a general name only: Memoir, New Tab, Browser pages, Extensions or Files.
 - **Page titles and their addresses, only if you turn on "Page titles"** in Settings (it's off unless you turn it on). They are kept as long as the rest of your history, and deleted with it.
 - **Each site's home address** (for example `https://www.youtube.com`), so its icon and link work.
 - **Your settings**: your daily limit and when it changed, your reminder day and time, categories you changed, sites you never track, and your theme and cursor choices.

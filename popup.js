@@ -1,5 +1,5 @@
 import {
-  CATEGORIES, CATEGORY_BY_ID, isPrivate, categorize, dayKey, addDays, getDays, normalizeDay,
+  CATEGORIES, CATEGORY_BY_ID, isPrivate, siteName, categorize, dayKey, addDays, getDays, normalizeDay,
   getSettings, updateSettings, getCategoryOverrides, getSession, unsavedMs, getOrigins,
   formatDuration, storageKeyForDay, dayTotal,
   getGoalHistory, limitOn, limitLocked, commitLimit, removeLimit,
@@ -254,7 +254,7 @@ function renderSites(visible) {
     li.className = 'site-row';
     li.style.setProperty('--i', Math.min(i, 8));
     li.dataset.domain = domain;
-    li.title = `${domain} · ${cat.label}`;
+    li.title = `${siteName(domain)} · ${cat.label}`;
 
     const main = document.createElement('div');
     main.className = 'site-main';

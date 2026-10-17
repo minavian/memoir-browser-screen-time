@@ -1,4 +1,5 @@
 import { reducedMotion, EASE_OUT } from './fx.js';
+import { siteName } from './core.js';
 
 const ICONS = {
   open: '<path d="M7 3H5.5A2.5 2.5 0 0 0 3 5.5v5A2.5 2.5 0 0 0 5.5 13h5a2.5 2.5 0 0 0 2.5-2.5V9M9.5 2.5h4v4M13.5 2.5 8 8"/>',
@@ -180,7 +181,7 @@ export function initContextMenu({ getItems = () => [], beforeOpen = () => {}, on
     menu.replaceChildren();
     const title = document.createElement('p');
     title.className = 'context-title';
-    title.textContent = context.editable ? 'Edit text' : context.domain && context.domain !== '~private' ? context.domain : context.text.trim() ? 'Selected text' : '';
+    title.textContent = context.editable ? 'Edit text' : context.domain && context.domain !== '~private' ? siteName(context.domain) : context.text.trim() ? 'Selected text' : '';
     if (!title.textContent) title.innerHTML = '<span class="wordmark">Memoir</span>';
     menu.appendChild(title);
     items.forEach((item, index) => {

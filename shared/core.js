@@ -12,6 +12,16 @@ export const SLEEP_CREDIT_MS = 60_000;   // time credited before an unexplained 
 export const PRIVATE_KEY = '~private';
 export const isPrivate = d => d === PRIVATE_KEY;
 
+// Tabs that aren't websites count too, each kind under one name, kept (like Private) under
+// a key no website can have: Memoir itself, the New Tab page, the browser's own pages
+// (settings, history, downloads…), other extensions' pages, and files on the computer.
+export const PAGE_NAMES = Object.freeze({
+  '~memoir': 'Memoir', '~newtab': 'New Tab', '~browser': 'Browser pages', '~extensions': 'Extensions', '~files': 'Files',
+});
+export const isPage = d => Object.hasOwn(PAGE_NAMES, d);
+// what a site is called on screen
+export const siteName = d => PAGE_NAMES[d] || d;
+
 export const RETENTION_OPTIONS = [0, 365, 182, 91]; // 0 = forever
 export const GOAL_MIN_MS = 60_000;
 export const GOAL_MAX_MS = (23 * 60 + 59) * 60_000;
@@ -165,6 +175,24 @@ export function domainFromUrl(url) {
   if (!host) return null;
   if (host.startsWith('www.')) host = host.slice(4);
   return safeKey(host);
+}
+
+// What a tab counts as: a website's domain, or one of the pages above. ownId is Memoir's
+// own extension id. Null only for an address that can't be read.
+export function siteFromUrl(url, ownId = null) {
+  let u;
+  try { u = new URL(url); } catch { return null; }
+  const domain = domainFromUrl(url);
+  // the New Tab page some browsers load from the web (Edge's from MSN, Chrome's from Google)
+  if (domain === 'ntp.msn.com' || (domain === 'google.com' && u.pathname.startsWith('/_/chrome/newtab'))) return '~newtab';
+  if (domain) return domain;
+  const scheme = u.protocol.slice(0, -1);
+  // a file a website made (a PDF, a picture) belongs to that website
+  if (scheme === 'blob') return domainFromUrl(u.pathname) || '~browser';
+  if (/^(chrome-)?extension$|^moz-extension$/.test(scheme)) return u.host === ownId ? '~memoir' : '~extensions';
+  if (scheme === 'file') return '~files';
+  if (scheme === 'chrome-search' || /^(newtab|new-tab-page)$/.test(u.host) || (scheme === 'about' && u.pathname === 'newtab')) return '~newtab';
+  return '~browser';
 }
 
 // Turns anything the user types ("https://www.YouTube.com/watch?v=…") into a domain.

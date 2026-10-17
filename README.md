@@ -133,7 +133,11 @@ Open the gear in the top-right corner of the report.
 
 ## What counts as time
 
-Only the active tab of the focused Chrome window is timed. The clock pauses when:
+Only the active tab of the focused Chrome window is timed, whatever it shows. Tabs
+that aren't websites count too, each kind under one name: **Memoir** (this report),
+**New Tab**, **Browser pages** (Settings, History, Downloads and the like),
+**Extensions** (other extensions' pages) and **Files** (files opened from your
+computer). They have no link, and can't be added to Never track. The clock pauses when:
 
 - another app is in front, or Chrome is minimised
 - you've been idle for 60 seconds (unless video or music is playing)

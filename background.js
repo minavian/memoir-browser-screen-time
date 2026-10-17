@@ -13,7 +13,7 @@
 
 import {
   APP_NAME, IDLE_SECONDS, HEARTBEAT_MINUTES, MAX_GAP_MS, SLEEP_CREDIT_MS, PRIVATE_KEY, MAX_TITLES_PER_SITE,
-  domainFromUrl, isExcluded, isPrivate, cleanTitle, cleanUrl, dayKey, storageKeyForDay, normalizeDay, dayTotal,
+  siteFromUrl, isExcluded, isPrivate, isPage, cleanTitle, cleanUrl, dayKey, storageKeyForDay, normalizeDay, dayTotal,
   getSettings, getSession, getDays, startOfWeek, weekDayKeys, addDays, formatDuration,
   getGoalHistory, limitOn, retentionCutoffKey, listDayKeys, withData,
 } from './shared/core.js';
@@ -55,14 +55,16 @@ async function currentTarget(settings) {
   const [tab] = await chrome.tabs.query({ active: true, windowId: win.id });
   if (!tab) return null;
   const url = tab.url || tab.pendingUrl;
-  const domain = domainFromUrl(url);
+  // every tab counts: a website by its domain, anything else (Memoir, New Tab, the
+  // browser's own pages, other extensions, files) under its own name
+  const domain = siteFromUrl(url, chrome.runtime.id);
   if (!domain) return null;
   if (idle === 'idle' && !tab.audible) return null;
 
   // Private windows (when Memoir is allowed in them) count, but only as Private time.
   if (tab.incognito || isExcluded(domain, settings.excluded)) return { domain: PRIVATE_KEY, origin: null, title: null, url: null };
   let origin = null;
-  try { origin = new URL(url).origin; } catch { /* ignore */ }
+  if (!isPage(domain)) try { origin = new URL(url).origin; } catch { /* ignore */ }
   const title = settings.titles ? cleanTitle(tab.title, domain) : null;
   // the page's address goes with its title (never on its own)
   const link = title ? cleanUrl(url, domain) : null;
