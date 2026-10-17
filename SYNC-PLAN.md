@@ -43,9 +43,38 @@ already does native messaging: Chrome starts `Memoir.exe chrome-extension://…`
 6. **Size:** Chrome accepts at most 1 MB per message from the host, so history goes over one day per
    message.
 
-**Risk:** if the Windows app ships as MSIX through the Microsoft Store, its HKCU registry writes are
-virtualized and Chrome won't find the host. A portable download, or a Store listing that uses an EXE/MSI
-installer, avoids this (question 1).
+## Shipping the Windows app: one installer for both channels
+
+Decided 2026-10-17: Memoir for Windows ships both as a download from the website and in the Microsoft Store.
+
+**Recommended: one signed per-user installer (EXE), used by both.** The Microsoft Store has accepted
+plain EXE/MSI installers since 2021. The listing points at the installer on our own HTTPS address and the
+Store runs it, so the Store copy and the website copy are the same file. They install the same way and
+register with Chrome the same way (HKCU, as above, exactly like the portable build today). That gives one
+build to test.
+
+- **Per-user, no admin:** installs to `%LOCALAPPDATA%\Programs\Memoir` and keeps data in
+  `%LOCALAPPDATA%\Memoir`, so updating or uninstalling never touches history. The host and the app must
+  work out the same data folder, because the pipe's name is derived from it (`BrowserLink.Name`).
+- **Store rules for installers:** offline (nothing downloaded during setup), a silent-install switch, an
+  address that never changes for a given version, nothing else bundled, and **signed with a certificate
+  from a CA in Microsoft's Trusted Root Program** (the Store doesn't sign EXE/MSI for you; self-signed is
+  refused). Signing also removes SmartScreen's "unknown publisher" warning on the website download.
+- **Signing options:** Azure Artifact Signing (formerly Trusted Signing), about $9.99 a month, open to
+  individuals in the USA and Canada only; otherwise an OV code-signing certificate from a CA, usually a
+  few hundred dollars a year on a hardware token. Identity checks take days, so start this week.
+- **Updates are the app's job** (the Store doesn't update EXE apps). There's no update check, to keep the
+  "nothing is sent" promise. Instead, the extension, which Chrome keeps up to date, knows the latest
+  Windows version. When the app says hello with an older one, both show "A new Memoir for Windows is out"
+  with the website link. Because of this, the extension must keep speaking older protocol versions for a
+  while.
+- **The website must be live first:** the Store submission needs the installer's permanent address.
+
+**Not recommended for launch: MSIX in the Store.** MSIX gets free signing and Store updates, but an MSIX
+app's HKCU registry writes are virtualized, so Chrome can't find the native host. Bitwarden's Store build
+has no browser integration for this kind of reason. A possible fix is the `unvirtualizedResources`
+restricted capability (which the Store must approve) plus an App Execution Alias for the host's path. It's
+untested, and it would mean a second build. Revisit after launch.
 
 ## What syncs, and how it merges
 
@@ -102,7 +131,8 @@ app for 2 minutes. The OR-merged flags stop repeats. The popup's flame moment wo
 ## The exchange
 
 - **On connect:** `hello` both ways (protocol version, device id, kind, a name like "Chrome · Profile 1",
-  app version). If the protocol versions differ, nothing syncs and Settings says which one to update.
+  app version). The extension also speaks older protocol versions, because the app is updated by hand.
+  If it can't speak the app's version, nothing syncs and Settings says which one to update.
 - Next comes the `sync` record (settings, markers, Never track, limit, categories), then every key
   changed since the other side last acknowledged. Each side keeps a change counter; a first link sends
   everything, one day per message, newest first so this week shows up first. The receiver merges each
@@ -126,6 +156,8 @@ app for 2 minutes. The OR-merged flags stop repeats. The popup's flame moment wo
 - Tracker: while the linked extension reports for a browser, don't record that browser's fallback key
   (`app:chrome.exe`), or the same minutes would count twice under two names.
 - Settings: a "Chrome extension" row (linked profiles, last sync).
+- The signed per-user installer, with a silent switch for the Store; data moves to `%LOCALAPPDATA%\Memoir`
+  (the portable build's `Data` folder is imported on first run).
 
 ### Extension
 - `mergeDay`, the cleaning in `readImport` and `anonymizeSites` move from `recap.js` into shared code, so
@@ -164,25 +196,28 @@ app for 2 minutes. The OR-merged flags stop repeats. The popup's flame moment wo
 ## Order and dates (33 days to 19 November)
 
 1. **Oct 18–20, spike:** check that `nativeMessaging` granted at runtime works and that `connectNative`
-   keeps the worker alive in current Chrome. Create the Web Store draft to get the ID. Settle question 1.
+   keeps the worker alive in current Chrome. Create the Web Store draft to get the ID. **Start the
+   code-signing identity check and open a Microsoft Partner Center account** (both can take days).
 2. **Oct 20–26:** Windows data parity (`Normalize`, `th/tu/tp`, `Redact`, `titleWeeks`). The shared merge
    cases, running on both sides.
 3. **Oct 27–Nov 2:** transport (two-way host, registration, the extension's link and connector role), the
-   exchange, live sync.
+   exchange, live sync. The per-user installer, with data moved out of the program folder.
 4. **Nov 3–7:** deletions; settings, limit and Never track; notifications; app keys and wording in the
-   extension; Settings on both sides; privacy texts.
-5. **Nov 8–10:** end-to-end tests. Submit the extension for review with publishing deferred (reviews of
-   items with `nativeMessaging` can take longer).
-6. **Nov 10–19:** buffer and Windows packaging; publish both on the 19th.
+   extension; Settings on both sides; privacy texts. Put the website live with the installer's permanent
+   address.
+5. **Nov 8–10:** end-to-end tests, run on the *signed installer* build. Submit the extension for review with
+   publishing deferred (reviews of items with `nativeMessaging` can take longer). Submit the Store listing
+   with a release date of the 19th (Store certification also takes days).
+6. **Nov 10–19:** buffer; publish both on the 19th.
 
 This pulls Windows work forward. "Finish the extension, then re-port" can't hold if sync has to work at
 launch: the Windows data model must match the extension's before the two can share it.
 
 ## Open questions
 
-1. **How does the Windows app ship on the 19th?** A portable download from the website (as now), a
-   Microsoft Store listing with an EXE/MSI installer, or MSIX? MSIX needs extra work for Chrome to find
-   the app.
+1. ~~How does the Windows app ship?~~ Settled 2026-10-17: both on the website and in the Microsoft Store,
+   with one signed installer (see "Shipping the Windows app"). Still open: which signing option (it
+   depends on the country and the cost).
 2. **When linked, does Chrome show Windows apps too?** Recommended: yes, one total and one limit. With
    websites only, the same limit would read differently in each place.
 3. **Pausing, Clear all, Never track and the limit shared by both?** Recommended: yes. The alternative is
