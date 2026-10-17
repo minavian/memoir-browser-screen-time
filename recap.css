@@ -522,6 +522,8 @@ body { overflow: hidden; }
 
 .summary .caption { margin: 0; font-size: 12.5px; }
 .hero-num { margin: 2px 0 0; font-size: 44px; font-weight: 700; line-height: 1.02; letter-spacing: -0.045em; }
+/* the big numbers take the theme's ink fill where it has one (Pride's gradient) */
+.hero-num, .dv-total, .donut-total { background-image: var(--ink-fill, none); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: var(--ink-text, currentColor); }
 .trend { margin: 0; display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; font-weight: 500; color: var(--label-2); min-height: 18px; white-space: nowrap; }
 .trend svg { width: 13px; height: 13px; }
 /* the change from last week quietly becomes a button on hover: it opens Trend over time */
@@ -1246,8 +1248,9 @@ body { overflow: hidden; }
   z-index: 3;
   display: grid;
   padding: 18px 20px 12px;
-  border-radius: inherit;
-  background: var(--surface);
+  /* inside the card's edge (Pride's gradient border), in the card's own colours */
+  border-radius: calc(var(--r-card) - var(--card-border, 0px));
+  background: var(--card-bg, var(--surface));
   opacity: 0;
   visibility: hidden;
   transform: scale(0.985) translateY(6px);
@@ -1483,6 +1486,7 @@ body { overflow: hidden; }
 :root, [data-wave="light"], [data-wave="pride"] { --panel: #ffffff; --scrim: rgba(24, 24, 32, 0.22); }
 @media (prefers-color-scheme: dark) { :root:not([data-theme]) { --panel: #2c2c2e; --scrim: rgba(0, 0, 0, 0.55); } }
 :root[data-theme="dark"], [data-wave="dark"] { --panel: #2c2c2e; --scrim: rgba(0, 0, 0, 0.55); }
+:root[data-theme="pride"], [data-wave="pride"] { --panel: #fffafd; --scrim: rgba(60, 30, 80, 0.2); }
 .morph-panel { background: var(--surface); }
 .morph.open .morph-panel { background: var(--panel); }
 .settings-scrim {

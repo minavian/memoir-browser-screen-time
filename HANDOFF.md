@@ -13,6 +13,13 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
   what it changes (surfaces, ink, the pink accent, the blue→lavender→pink hour grid, the limit clock).
   Category and limit colours stay as on Light (they carry meaning). A saved `pink` is read as `pride`
   (theme-boot.js, theme.js). Pink's falling petals went with it. Test and tune all three themes.
+  Its own character (the owner asked for "more expressive", not Light recoloured): an aurora page (blue top
+  left, pink bottom right, lavender between); cards tinted blue→pink with a 1 px edge in the flag's colours;
+  gradient primary buttons and switches; the big numbers (`.hero-num`, `.dv-total`, `.donut-total`) and the
+  wordmark in blue→lavender→pink. All through tokens Light and Dark don't set (`--card-bg`, `--card-border`,
+  `--accent-fill(-hover)`, `--ink-fill`/`--ink-text`, `--wm-fill`), read by `.card`, the theme wave's card
+  shapes, `.btn-primary`, checked switches and `.sites-page`, so the theme switch paints the same thing and
+  Light and Dark are untouched (checked: no border, same solid surfaces).
 - **One screen, no scrolling** on large windows (cards stack and the page scrolls only under ~1100 px wide).
 - Minimal, clean, borderless look; **everything interactive is animated**; morph animations wherever possible.
 - Hovers use `--ease-out` and must **never shake or overshoot**. `--pop` only for deliberate pops.

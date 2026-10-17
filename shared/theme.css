@@ -217,13 +217,27 @@
 :root[data-theme="pride"],
 [data-wave="pride"] {
   color-scheme: light;
-  --bg: #f8f6fb;
+  /* the page: an aurora of the flag's blue and pink, with lavender where they meet */
+  --bg: #fbf2f7;
   --bg-art:
-    radial-gradient(900px 620px at 100% 0%, rgba(116, 196, 240, 0.2), transparent 70%),
-    radial-gradient(820px 580px at 0% 100%, rgba(245, 169, 184, 0.22), transparent 70%);
-  --surface: #ffffff;
-  --surface-2: #f6f3fa;
-  --raised: #ffffff;
+    radial-gradient(1200px 780px at 0% 0%, rgba(126, 200, 245, 0.55), transparent 62%),
+    radial-gradient(1050px 740px at 100% 100%, rgba(246, 160, 194, 0.55), transparent 62%),
+    radial-gradient(820px 580px at 100% 0%, rgba(196, 172, 240, 0.42), transparent 60%),
+    radial-gradient(760px 540px at 0% 100%, rgba(255, 255, 255, 0.75), transparent 65%);
+  --surface: #fffafd;
+  --surface-2: #f8f0f7;
+  --raised: #fffafd;
+  /* cards: a soft pink-and-blue sheen, edged in the flag's colours */
+  --card-bg:
+    linear-gradient(160deg, #f1f8ff, #fff8fc 48%, #fdebf4) padding-box,
+    linear-gradient(135deg, rgba(126, 200, 245, 0.75), rgba(255, 255, 255, 0.5) 50%, rgba(246, 160, 194, 0.75)) border-box;
+  --card-border: 1px;
+  /* primary buttons and switches that are on: pink into blue */
+  --accent-fill: linear-gradient(120deg, #f7a3c4, #a8d5f6);
+  --accent-fill-hover: linear-gradient(120deg, #f493ba, #95ccf3);
+  /* the big numbers: blue through lavender to pink */
+  --ink-fill: linear-gradient(100deg, #3f95d6, #9a7fe0 50%, #df5f98);
+  --ink-text: transparent;
   --fill-1: rgba(128, 104, 160, 0.08);
   --fill-2: rgba(128, 104, 160, 0.14);
   --fill-3: rgba(128, 104, 160, 0.22);
@@ -235,8 +249,8 @@
   --on-accent: #3a1f30;
   --track: #ebe6f1;
   --glass: rgba(255, 255, 255, 0.82);
-  --shadow: 0 1px 2px rgba(60, 30, 90, 0.04), 0 6px 22px rgba(60, 30, 90, 0.06);
-  --shadow-hover: 0 1px 2px rgba(60, 30, 90, 0.05), 0 10px 30px rgba(60, 30, 90, 0.09);
+  --shadow: 0 1px 2px rgba(120, 50, 110, 0.05), 0 8px 26px rgba(120, 60, 140, 0.1);
+  --shadow-hover: 0 1px 2px rgba(120, 50, 110, 0.06), 0 12px 34px rgba(120, 60, 140, 0.15);
   --shadow-pop: 0 14px 44px rgba(60, 30, 90, 0.16), 0 2px 8px rgba(60, 30, 90, 0.06);
   --drop: drop-shadow(0 14px 30px rgba(60, 30, 90, 0.14)) drop-shadow(0 2px 6px rgba(60, 30, 90, 0.06));
   --ring: 0 0 0 3px rgba(240, 143, 179, 0.4);
@@ -313,6 +327,11 @@ button, input { font: inherit; color: inherit; letter-spacing: inherit; }
   --wm-fill: linear-gradient(76deg, #a4a4ac, #dedee3 30%, #fff 55%, #e9e9ee 78%, #fff);
   --wm-glow: 0 0 0.045em rgba(255, 255, 255, 0.32), 0 0 0.16em rgba(255, 255, 255, 0.12);
 }
+/* Pride: the wordmark in the flag's blue and pink, lavender between */
+:root[data-theme="pride"], [data-wave="pride"] {
+  --wm-fill: linear-gradient(76deg, #4f9fdb, #9a8de2 30%, #e877aa 55%, #9a8de2 78%, #4f9fdb);
+  --wm-glow: 0 0.02em 0.07em rgba(140, 70, 140, 0.2);
+}
 .wordmark {
   position: relative;
   display: inline-block;
@@ -365,7 +384,7 @@ button, input { font: inherit; color: inherit; letter-spacing: inherit; }
   background: var(--bg-art), var(--bg);
   background-attachment: fixed;
 }
-.wave-shapes > i { position: absolute; border-radius: var(--r-card); background: var(--surface); box-shadow: var(--shadow); }
+.wave-shapes > i { position: absolute; border-radius: var(--r-card); background: var(--card-bg, var(--surface)); border: var(--card-border, 0px) solid transparent; box-shadow: var(--shadow); }
 /* a wave: a soft edge sweeping from the top-right corner */
 .wave-layer.sweeping {
   -webkit-mask-image: linear-gradient(to bottom left, #000 calc(var(--wave-p) - 30%), transparent var(--wave-p));
@@ -404,7 +423,8 @@ button, input { font: inherit; color: inherit; letter-spacing: inherit; }
 
 .card {
   position: relative;
-  background: var(--surface);
+  background: var(--card-bg, var(--surface));
+  border: var(--card-border, 0px) solid transparent;
   border-radius: var(--r-card);
   box-shadow: var(--shadow);
   transition: box-shadow 0.35s var(--ease);
@@ -459,8 +479,8 @@ button, input { font: inherit; color: inherit; letter-spacing: inherit; }
 .btn:active { --press: 0.96; transition-duration: 0.08s, 0.2s, 0.2s, 0.2s, 0.2s; }
 .btn:focus-visible { outline: none; box-shadow: var(--ring); }
 .btn[disabled] { opacity: 0.4; cursor: var(--cursor); --press: 1; }
-.btn-primary { background: var(--accent); color: var(--on-accent); }
-.btn-primary:hover { background: color-mix(in srgb, var(--accent) 86%, var(--bg)); }
+.btn-primary { background: var(--accent-fill, var(--accent)); color: var(--on-accent); }
+.btn-primary:hover { background: var(--accent-fill-hover, color-mix(in srgb, var(--accent) 86%, var(--bg))); }
 .btn-secondary { background: var(--fill-1); color: var(--label); }
 .btn-secondary:hover { background: var(--fill-2); }
 .btn-lg { height: 44px; padding: 0 22px; font-size: 15px; }
@@ -509,7 +529,7 @@ button, input { font: inherit; color: inherit; letter-spacing: inherit; }
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.18);
   transition: transform 0.4s var(--pop), width 0.22s var(--ease), left 0.22s var(--ease), background-color 0.3s var(--ease);
 }
-.switch input:checked + .track { background: var(--accent); }
+.switch input:checked + .track { background: var(--accent-fill, var(--accent)); }
 .switch input:checked + .track + .knob { transform: translateX(18px); background: var(--knob-on); }
 .switch input:active + .track + .knob { width: 27px; }
 .switch input:checked:active + .track + .knob { left: -3px; }
