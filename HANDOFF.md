@@ -428,8 +428,12 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
   open layout with transitions off, `renderExcluded` holds the list's height, the chips' glide, the pop-in
   and the typed words' flight (`animateHeight` takes a `delay`). Shrinking, the page goes first and the
   light follows `after` ms later; the click-driven re-placing waits too (`holdUntil`), so the light never
-  shrinks halfway. Hands-on: "What gets tracked" (switch Tracking detail, add a site to Never track) and
-  "Weekly recap" (another day, another time; switching it on comes first if it was off).
+  shrinks halfway. Hands-on: "What gets tracked" (switch Tracking detail), "Weekly recap" (another day, another
+  time; switching it on comes first if it was off) and "Never track" (add a site).
+  Settings' two columns are balanced by content (2026-10-17, measured ~511 / ~477 px of sections): left Appearance
+  (+ Rainbow clock), Cursor, Tracking detail, Sample week & Tutorial; right Weekly recap, Daily limit, Keep history,
+  Never track, Your data. Never track moved right (and got its own tour step, after "Your limit and history") so
+  the right column no longer ends ~110 px short; "Sample week, tour and data" lights the bottom row of both.
 
 - Never track, hidden (5.1.5): the sites under Never track are hidden under dust, a shimmer of fine
   specks over a soft haze, filling the whole pill, the × too (thinning towards its rounded edge).
