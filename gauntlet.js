@@ -4,7 +4,7 @@
 // middle eight come in a random order, the buttons swap sides, and the sums are
 // made up on the spot, so no two attempts read the same.
 
-import { morph, dropShell, reducedMotion, animateHeight, EASE_OUT, POP } from './shared/fx.js';
+import { morph, reducedMotion, animateHeight, EASE_OUT, POP, RESHAPE, RESHAPE_MS } from './shared/fx.js';
 
 const rand = n => Math.floor(Math.random() * n);
 const between = (lo, hi) => lo + rand(hi - lo + 1);
@@ -195,6 +195,8 @@ export function runGauntlet({ fromEl, onReset }) {
     let cleanup = null;
     let result = false;
     let retort = '';
+    let opening = null; // the surface still on its way out of the Reset button
+    let wordsIn = 0;
 
     function close(ok) {
       if (closing) return;
@@ -207,13 +209,24 @@ export function runGauntlet({ fromEl, onReset }) {
         if (fromEl && fromEl.isConnected && !fromEl.disabled) fromEl.focus({ preventScroll: true });
         resolve(result);
       };
+      // closed while still opening: it shrinks back from wherever the surface had got to
+      const flying = opening;
+      opening = null;
+      clearTimeout(wordsIn);
+      let from = card.getBoundingClientRect();
+      let fromRadius = 20;
+      if (flying) {
+        from = flying.shell.getBoundingClientRect();
+        fromRadius = parseFloat(getComputedStyle(flying.shell).borderTopLeftRadius) || 20;
+        flying.cancel();
+      }
       if (reducedMotion()) { done(); return; }
-      const from = card.getBoundingClientRect();
       const to = fromEl && fromEl.isConnected ? fromEl.getBoundingClientRect() : null;
+      card.style.background = '';
       const bg = getComputedStyle(card).backgroundColor;
       card.style.opacity = '0';
       if (to && to.width) {
-        morph({ from, to, fromRadius: 20, toRadius: 'pill', background: bg, fade: 'out', duration: 380, easing: EASE_OUT, z: 4300 })
+        morph({ from, to, fromRadius, toRadius: 'pill', background: bg, fade: 'out', duration: 380, easing: EASE_OUT, z: 4300 })
           .finished.then(shell => { shell.remove(); done(); });
       } else setTimeout(done, 200);
     }
@@ -254,6 +267,12 @@ export function runGauntlet({ fromEl, onReset }) {
           <div class="gx-actions"><button class="btn btn-primary btn-sm gx-close" type="button">Close</button></div>
         </div>`;
       const stepEl = next.firstElementChild;
+      // the first one is in from the start: the card opens around it
+      if (!old) {
+        body.appendChild(stepEl);
+        wireStep(stepEl, i);
+        return;
+      }
       animateHeight(body, () => {
         if (old) {
           old.classList.add('gx-leaving');
@@ -457,17 +476,34 @@ export function runGauntlet({ fromEl, onReset }) {
     });
     layer.querySelector('.gx-scrim').addEventListener('pointerdown', () => close(result));
 
-    // open: the Reset button grows into the card
+    // open: the Reset button reshapes into the card, the way the welcome card turns into
+    // the tour's (RESHAPE), measured with the first question already in it. Till it lands
+    // its shell is the surface (under the card, in the same layer); the words fade in once
+    // it's around them, and as it lands the card takes over in the same frame.
     show(0);
     requestAnimationFrame(() => layer.classList.add('open'));
     const src = fromEl && fromEl.isConnected ? fromEl.getBoundingClientRect() : null;
     if (src && src.width && !reducedMotion()) {
+      const look = getComputedStyle(card);
+      const m = morph({ from: src, to: card.getBoundingClientRect(), fromRadius: 'pill', toRadius: 20, background: look.backgroundColor, duration: RESHAPE_MS, easing: RESHAPE, z: 0, parent: layer });
+      m.shell.style.boxShadow = look.boxShadow;
+      m.shell.style.willChange = 'auto'; // drawn with the card, not on a layer of its own
+      opening = m;
       card.style.opacity = '0';
-      const m = morph({ from: src, to: card.getBoundingClientRect(), fromRadius: 'pill', toRadius: 20, background: getComputedStyle(card).backgroundColor, duration: 520, easing: POP, z: 4300 });
-      m.finished.then(() => {
+      wordsIn = setTimeout(() => {
+        card.style.background = 'transparent';
+        card.style.boxShadow = 'none';
         card.style.opacity = '';
-        card.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 140, easing: 'ease-out' });
-        dropShell(m.shell, 160);
+        body.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200, easing: 'ease-out' });
+      }, RESHAPE_MS * 0.8);
+      m.finished.then(shell => {
+        if (opening !== m) return; // closed on the way
+        opening = null;
+        clearTimeout(wordsIn);
+        card.style.opacity = '';
+        card.style.background = '';
+        card.style.boxShadow = '';
+        shell.remove(); // the same surface now: swapped at once (a fade would stack two shadows)
       });
     }
   });

@@ -8,6 +8,10 @@ export const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)'
 export const EASE_OUT = 'cubic-bezier(0.22, 1, 0.36, 1)';
 export const EASE_IN_OUT = 'cubic-bezier(0.65, 0, 0.35, 1)';
 export const POP = 'cubic-bezier(0.32, 1.24, 0.5, 1)';
+// one card turning into another (the welcome into the tour's first card, the Reset
+// button into its questions): it sets off from rest and settles softly
+export const RESHAPE = 'cubic-bezier(0.45, 0, 0.15, 1)';
+export const RESHAPE_MS = 560;
 
 const easeOutExpo = t => (t >= 1 ? 1 : 1 - Math.pow(2, -10 * t));
 
@@ -409,7 +413,8 @@ export function siteLink(domain, extra = '') {
 
 // ---------- morph: a surface that flies from one rect to another ----------
 
-const px = n => `${Math.round(n * 100) / 100}px`;
+// exact: layout works in 1/64 px, so a shell landing on a box is on it to the last fraction
+const px = n => `${n}px`;
 const radiusFor = (r, rect) => (r === 'pill' || r === 'circle' ? Math.min(rect.width, rect.height) / 2 : r);
 
 export function morph({
@@ -430,6 +435,10 @@ export function morph({
     frame(from, fromRadius, fromOpacity ?? (fade === 'in' ? 0 : 1)),
     frame(to, toRadius, fade === 'out' ? 0 : 1),
   ];
+  // an opacity that never changes stays out: animating it would put the shell on a layer
+  // of its own, drawn between device pixels on scaled screens (125%…), so it would land
+  // a soft edge away from the crisp box it turns into
+  if (kf[0].opacity === 1 && kf[1].opacity === 1) for (const k of kf) delete k.opacity;
   if (reducedMotion()) {
     Object.assign(shell.style, kf[1]);
     return { shell, finished: Promise.resolve(shell), cancel: () => shell.remove() };

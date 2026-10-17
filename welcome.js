@@ -6,7 +6,7 @@
 // tour, the card itself reshapes into the tour's first card and the two dims swap in
 // the same frame, so there's no seam.
 
-import { reducedMotion, morph, dropShell, EASE_OUT, EASE_IN_OUT } from './shared/fx.js';
+import { reducedMotion, morph, dropShell, EASE_OUT, EASE_IN_OUT, RESHAPE, RESHAPE_MS } from './shared/fx.js';
 import { LOGO, playLogo, goLive, settleLogo } from './shared/logo.js';
 import { createIntro } from './welcome-intro.js';
 
@@ -26,9 +26,6 @@ function underDim(logo) {
   return (k[0] + k[1] + k[2]) / 3;
 }
 
-// the card reshapes from rest and settles softly (it's still when the words have gone)
-const RESHAPE = 'cubic-bezier(0.45, 0, 0.15, 1)';
-const RESHAPE_MS = 560;
 
 const PUZZLE = '<svg class="wel-ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M6.2 2.5a1.6 1.6 0 0 1 3.2 0V4h2.4c.4 0 .7.3.7.7v2.4h-1.1a1.6 1.6 0 0 0 0 3.2h1.1v2.4c0 .4-.3.7-.7.7H9.4v-1.1a1.6 1.6 0 0 0-3.2 0v1.1H3.8c-.4 0-.7-.3-.7-.7v-2.4h1.1a1.6 1.6 0 0 0 0-3.2H3.1V4.7c0-.4.3-.7.7-.7h2.4V2.5Z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>';
 const PIN = '<svg class="wel-ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M9.8 2.2 13.8 6.2 12.4 6.6 10.3 8.7 10.6 11.6 9.6 12.6 7 10 3.6 13.4M6 9 3.4 6.4 4.4 5.4 7.3 5.7 9.4 3.6 9.8 2.2" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
