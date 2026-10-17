@@ -45,6 +45,17 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
   elsewhere, closes it. Hover previews in the ring's middle.
 - `recap.html/css/js` — the weekly report (main orchestrator, ~3000 lines).
 - `trend.js` — Trend over time line chart. `tour.js` — guided tutorial. `gauntlet.js` — "reset the limit" questions.
+  Trend's range switch (4/12/24 weeks, a year) is one camera (`cam`: weeks u0…u1, values 0…top) moving over the
+  same weeks: the curve is worked out on weeks and values (`withTangents`, monotone) and drawn through the camera
+  (`curvePath`), so it stays smooth while it zooms; a week only one range has keeps its value and slides out past
+  an edge or in from one (line and dots clipped to the plot while it moves). Grid lines, dates, the avg/limit lines
+  and dots are kept by key (`els`) and glide with the camera; leaving ones fade by 60%, arriving ones over the last
+  60%. The week you're viewing rides along. It starts from what's on screen (a switch mid-switch carries on from
+  that frame) and lands exactly on a fresh draw (checked: first frame within 5/255 of the chart before, last frame
+  identical). The chart measures its box's layout size (`offsetWidth/Height`, not getBoundingClientRect, which the
+  arriving view's scale shrank) and refits on resize (ResizeObserver), so it no longer draws too tall first and
+  snaps on the next redraw. It used to resample both lines by index and draw straight segments while moving, then
+  snap back to the smooth curve, with dots, labels and grid swapped out.
 - `welcome.js` — first-run welcome screen (styles at the end of `recap.css`). `welcome-intro.js` — its opening;
   `fonts/Unbounded-subset.woff2` — the trailer's face, MEMOIR/WELCOME TO only.
 - `fonts/` — Inter variable subset (OFL) used by the Clear-all label.
