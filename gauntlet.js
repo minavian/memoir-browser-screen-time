@@ -255,6 +255,18 @@ export function runGauntlet({ fromEl, onReset }) {
       </div>`;
     }
 
+    // A question's parts arrive one after another, like the limit clock's "Are you
+    // committed?" card: what it said back, the title, the words, what to pick or type, then
+    // each button. Opening, they rise into place; a new question slides in on its side.
+    function playParts(stepEl, { dx = 0, delay = 0 } = {}) {
+      if (reducedMotion()) return;
+      const parts = [...stepEl.children].flatMap(el => (el.matches('.gx-actions, .gx-options') ? [...el.children] : [el]));
+      const from = dx ? `translateX(${dx}px)` : 'translateY(10px) scale(0.97)';
+      parts.forEach((el, k) => {
+        el.animate([{ opacity: 0, transform: from }, { opacity: 1, transform: 'none' }], { duration: 480, delay: delay + k * 60, easing: EASE_OUT, fill: 'backwards' });
+      });
+    }
+
     function show(i, dir = 1) {
       if (cleanup) { cleanup(); cleanup = null; }
       index = i;
@@ -287,7 +299,7 @@ export function runGauntlet({ fromEl, onReset }) {
         body.appendChild(stepEl);
       }, { duration: 420 });
       if (!reducedMotion()) {
-        stepEl.animate([{ opacity: 0, transform: `translateX(${34 * dir}px)` }, { opacity: 1, transform: 'none' }], { duration: 460, delay: 60, easing: EASE_OUT, fill: 'backwards' });
+        playParts(stepEl, { dx: 30 * dir, delay: 60 });
       }
       wireStep(stepEl, i);
     }
@@ -478,8 +490,8 @@ export function runGauntlet({ fromEl, onReset }) {
 
     // open: the Reset button reshapes into the card, the way the welcome card turns into
     // the tour's (RESHAPE), measured with the first question already in it. Till it lands
-    // its shell is the surface (under the card, in the same layer); the words fade in once
-    // it's around them, and as it lands the card takes over in the same frame.
+    // its shell is the surface (under the card, in the same layer); once it's around them the
+    // question's parts arrive one by one, and as it lands the card takes over in the same frame.
     show(0);
     requestAnimationFrame(() => layer.classList.add('open'));
     const src = fromEl && fromEl.isConnected ? fromEl.getBoundingClientRect() : null;
@@ -494,7 +506,7 @@ export function runGauntlet({ fromEl, onReset }) {
         card.style.background = 'transparent';
         card.style.boxShadow = 'none';
         card.style.opacity = '';
-        body.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200, easing: 'ease-out' });
+        playParts(body.firstElementChild);
       }, RESHAPE_MS * 0.8);
       m.finished.then(shell => {
         if (opening !== m) return; // closed on the way

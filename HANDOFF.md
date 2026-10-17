@@ -76,8 +76,10 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
   (`RESHAPE`/`RESHAPE_MS` in fx.js, shared with the welcome's handoff to the tour). The first question goes in
   without the height animation, so the card is measured at its real size (it used to be measured with its body
   at 0 px: the shell flew to a 380×38 bar, sat empty, then the card faded in four times taller, which read as
-  loading). The shell is the surface (in the layer, under the card, with the card's shadow); the words fade in at
-  80% of the flight, once it's around them; on landing the card takes over in the same frame, byte-identical at
+  loading). The shell is the surface (in the layer, under the card, with the card's shadow); at 80% of the flight,
+  once it's around them, the question's parts arrive one by one (`playParts`: retort, title, words, options or
+  field, then each button, 60 ms apart, 480 ms each, rising into place; a new question's parts slide in from its
+  side the same way, like the limit clock's "Are you committed?" card); on landing the card takes over in the same frame, byte-identical at
   100/125/150% (checked by freezing the last frame and diffing). Esc or a click outside mid-open shrinks back from
   where the shell is.
 - `morph` (fx.js): coordinates are exact (no rounding to 0.01 px, which put a shell 1/64 px off its box), and an
