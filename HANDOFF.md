@@ -294,7 +294,11 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
 - Tour card placement (tour.js `place` / `cardSpot`): a step's `alignTo()` lines the card up (left edges) under what
   it names when it goes below the light, and `flip()` says whether its buttons go to the top there. Daily average:
   under the small light the buttons stay at the bottom; once Trend opens they go to the top and the card sits
-  under the trend chart's left edge.
+  under the trend chart's left edge. `below` may be a function: Highlights keeps its card beside the words (buttons
+  at the bottom), so a category's sites drop down clear of it, and goes under the light only once a bold day or
+  hour has opened in the chart. When a popover or menu covers the card's spot, the card slides along the same side
+  past it (spots around light + popovers rank 0.5, their distance counted from that union, floored at the gap)
+  instead of jumping to another side of the light.
 - Tour (5.1.2): steps marked `autoNext` ("An hour up close") move on the moment Next has filled, without
   the full-arrow pause. The Cursor step covers Custom and Smooth cursor (a task each; a press on the locked
   Smooth cursor doesn't count).

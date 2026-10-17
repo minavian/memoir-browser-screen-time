@@ -50,7 +50,8 @@ export function relight(after = 450) {
 // avoid(): what's up on the page right now that the card must leave visible (popovers,
 // menus a try opened). A step's follow() lists what its tries opened elsewhere (the
 // trend graph, a day the highlights opened): it joins the light, so you see it, and the
-// card moves off it. A step with `below` has its card under the light when it fits; its
+// card moves off it. A step with `below` (true, or a function asked each time) has its
+// card under the light when it fits; its
 // alignTo() names what the card then lines up under (left edges), and its flip() says
 // whether the buttons go to the card's top there (they do by default).
 export function runTour(steps, { handoff = null, avoid = () => [] } = {}) {
@@ -144,7 +145,8 @@ export function runTour(steps, { handoff = null, avoid = () => [] } = {}) {
         x = (innerWidth - cw) / 2;
         y = (innerHeight - ch) / 2;
       } else {
-        ({ x, y } = cardSpot(sp, cw, ch, !!step.below, step.alignTo ? step.alignTo() : null));
+        const below = typeof step.below === 'function' ? step.below() : !!step.below;
+        ({ x, y } = cardSpot(sp, cw, ch, below, step.alignTo ? step.alignTo() : null));
       }
       x = Math.max(M, Math.min(x, innerWidth - cw - M));
       y = Math.max(M, Math.min(y, innerHeight - ch - M));
@@ -203,24 +205,27 @@ export function runTour(steps, { handoff = null, avoid = () => [] } = {}) {
         const midY = sp.t + (sp.b - sp.t - ch) / 2;
         const midX = sp.l + (sp.r - sp.l - cw) / 2;
         [sp.t, midY, sp.b - ch].forEach((y, k) => {
-          cands.push({ x: R.r + gap, y, rank: rank0 + side.right + k * 0.1 });
-          cands.push({ x: R.l - gap - cw, y, rank: rank0 + side.left + k * 0.1 });
+          cands.push({ x: R.r + gap, y, rank: rank0 + side.right + k * 0.1, near: R });
+          cands.push({ x: R.l - gap - cw, y, rank: rank0 + side.left + k * 0.1, near: R });
         });
         [midX, sp.l, sp.r - cw].forEach((x, k) => {
-          cands.push({ x, y: R.b + gap, rank: rank0 + side.below + k * 0.1 });
-          cands.push({ x, y: R.t - gap - ch, rank: rank0 + side.above + k * 0.1 });
+          cands.push({ x, y: R.b + gap, rank: rank0 + side.below + k * 0.1, near: R });
+          cands.push({ x, y: R.t - gap - ch, rank: rank0 + side.above + k * 0.1, near: R });
         });
       };
       around(sp, 0);
       // lined up under what the step names, ahead of the other places below
       if (below && align && align.isConnected) cands.push({ x: box(align).l, y: sp.b + gap, rank: side.below - 0.05 });
-      if (ups.length) around(ups.reduce(join, sp), 4);
+      // past what's up, on the same side, comes next: a card clearing a popover slides along
+      // (its distance counted from the light and what's up together) rather than jumping
+      // to another side of the light
+      if (ups.length) around(ups.reduce(join, sp), 0.5);
       let best = null;
       for (const c of cands) {
         const x = Math.max(M, Math.min(c.x, innerWidth - cw - M));
         const y = Math.max(M, Math.min(c.y, innerHeight - ch - M));
         const k = { l: x, t: y, r: x + cw, b: y + ch };
-        let score = overlap(k, sp) * 60 + c.rank * 400 + apart(k, sp) * 40;
+        let score = overlap(k, sp) * 60 + c.rank * 400 + Math.max(gap, apart(k, c.near || sp)) * 40;
         for (const u of ups) score += overlap(k, u) * 30;
         if (!best || score < best.score) best = { x, y, score };
       }

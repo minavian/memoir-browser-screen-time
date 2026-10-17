@@ -4611,7 +4611,10 @@ async function startTour({ prepared = false, handoff = null } = {}) {
       flip: () => state.view.type === 'trend', alignTo: () => (state.view.type === 'trend' ? chart() : null), tasks: [
       { text: 'Click <b>the change from last week</b> to open Trend over time', watch: onClick('#trend-btn', () => state.view.type === 'trend') },
     ] },
-    { title: 'Highlights', text: 'What your week looked like, in words. <b>Bold words are buttons.</b>', target: () => q('#story'), follow: chartOpen, before: async () => { tidy(); await toWeek(); }, settle: 0, radius: 14, below: true, tasks: [
+    { title: 'Highlights', text: 'What your week looked like, in words. <b>Bold words are buttons.</b>', target: () => q('#story'), follow: chartOpen, before: async () => { tidy(); await toWeek(); }, settle: 0, radius: 14,
+      // beside the words, so a category's sites can drop down under them; under the light
+      // only once a bold day or hour has opened in the chart
+      below: () => state.view.type !== 'week', tasks: [
       { text: 'Try a bold <b>day</b> or <b>hour</b> to open it', watch: onClick('#story [data-act="day"], #story [data-act="hour"]') },
       { text: 'Try a bold <b>category</b> to see its sites', watch: onClick('#story [data-act="cat"]') },
     ] },
