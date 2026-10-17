@@ -4606,7 +4606,9 @@ async function startTour({ prepared = false, handoff = null } = {}) {
       { text: 'Click <b>‹</b> to see the week before', watch: onClick('#prev-week') },
       { text: 'Then <b>›</b> to come back', watch: onClick('#next-week') },
     ] },
-    { title: 'Daily average', text: 'Your average screen time, compared with last week’s.', target: () => [q('.summary .caption'), q('#stat-avg'), q('#trend-btn')], follow: () => (state.view.type === 'trend' ? chart() : null), before: thisWeek, radius: 14, below: true, tasks: [
+    { title: 'Daily average', text: 'Your average screen time, compared with last week’s.', target: () => [q('.summary .caption'), q('#stat-avg'), q('#trend-btn')], follow: () => (state.view.type === 'trend' ? chart() : null), before: thisWeek, radius: 14, below: true,
+      // the buttons go to the top, and the card under the trend's left edge, only once it's open
+      flip: () => state.view.type === 'trend', alignTo: () => (state.view.type === 'trend' ? chart() : null), tasks: [
       { text: 'Click <b>the change from last week</b> to open Trend over time', watch: onClick('#trend-btn', () => state.view.type === 'trend') },
     ] },
     { title: 'Highlights', text: 'What your week looked like, in words. <b>Bold words are buttons.</b>', target: () => q('#story'), follow: chartOpen, before: async () => { tidy(); await toWeek(); }, settle: 0, radius: 14, below: true, tasks: [

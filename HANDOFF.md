@@ -291,6 +291,10 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
   left/right 0 (no `left: 50%`, which halved the room and wrapped long messages); the words are `flex: none`
   with the finished pill's max width, so they wrap only where it would, never while it's still growing.
 
+- Tour card placement (tour.js `place` / `cardSpot`): a step's `alignTo()` lines the card up (left edges) under what
+  it names when it goes below the light, and `flip()` says whether its buttons go to the top there. Daily average:
+  under the small light the buttons stay at the bottom; once Trend opens they go to the top and the card sits
+  under the trend chart's left edge.
 - Tour (5.1.2): steps marked `autoNext` ("An hour up close") move on the moment Next has filled, without
   the full-arrow pause. The Cursor step covers Custom and Smooth cursor (a task each; a press on the locked
   Smooth cursor doesn't count).

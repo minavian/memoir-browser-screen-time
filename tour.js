@@ -50,7 +50,9 @@ export function relight(after = 450) {
 // avoid(): what's up on the page right now that the card must leave visible (popovers,
 // menus a try opened). A step's follow() lists what its tries opened elsewhere (the
 // trend graph, a day the highlights opened): it joins the light, so you see it, and the
-// card moves off it. A step with `below` has its card under the light when it fits.
+// card moves off it. A step with `below` has its card under the light when it fits; its
+// alignTo() names what the card then lines up under (left edges), and its flip() says
+// whether the buttons go to the card's top there (they do by default).
 export function runTour(steps, { handoff = null, avoid = () => [] } = {}) {
   return new Promise(resolve => {
     const root = document.createElement('div');
@@ -142,13 +144,13 @@ export function runTour(steps, { handoff = null, avoid = () => [] } = {}) {
         x = (innerWidth - cw) / 2;
         y = (innerHeight - ch) / 2;
       } else {
-        ({ x, y } = cardSpot(sp, cw, ch, !!step.below));
+        ({ x, y } = cardSpot(sp, cw, ch, !!step.below, step.alignTo ? step.alignTo() : null));
       }
       x = Math.max(M, Math.min(x, innerWidth - cw - M));
       y = Math.max(M, Math.min(y, innerHeight - ch - M));
       card.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`;
       // under the light, the buttons go to the card's top: nearest the pointer
-      setFlip(!!sp && y >= sp.b - 1);
+      setFlip(!!sp && y >= sp.b - 1 && (!step.flip || step.flip()));
     }
 
     // Under the light, Back and Next ride at the top of the card and the dots at its
@@ -191,7 +193,7 @@ export function runTour(steps, { handoff = null, avoid = () => [] } = {}) {
     // those things) is scored: covering the light costs most, then covering what's up,
     // then being far away. Right, left, below, above, in that order, break ties (below
     // first, for a step that asks for it).
-    function cardSpot(sp, cw, ch, below = false) {
+    function cardSpot(sp, cw, ch, below = false, align = null) {
       const gap = 16;
       const M = 14;
       const ups = [].concat(avoid()).filter(el => el && el.isConnected).map(box).filter(a => area(a) > 0 && overlap(a, sp) < area(a) * 0.9);
@@ -210,6 +212,8 @@ export function runTour(steps, { handoff = null, avoid = () => [] } = {}) {
         });
       };
       around(sp, 0);
+      // lined up under what the step names, ahead of the other places below
+      if (below && align && align.isConnected) cands.push({ x: box(align).l, y: sp.b + gap, rank: side.below - 0.05 });
       if (ups.length) around(ups.reduce(join, sp), 4);
       let best = null;
       for (const c of cands) {
