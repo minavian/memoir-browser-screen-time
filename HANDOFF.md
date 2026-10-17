@@ -14,7 +14,7 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
   `iconN.png` by recolouring only the ring's pixels by angle, keeping their brightness; background.js
   `applyIcon` on start and when `settings.rainbow` changes) and on the report's tab icon. It's kept in
   localStorage (`bst-rainbow`, applied before first paint by theme-boot.js) and mirrored to
-  `settings.rainbow` for the tracker. A saved `pink` or `pride` theme becomes System with Rainbow clock on.
+  `settings.rainbow` for the tracker. A saved `pink` or `pride` theme becomes System (Rainbow clock stays off unless chosen).
   The MEMOIR wordmark (`.wordmark`: popup, privacy page, menus, tour text) goes rainbow with it, a colour to
   each letter (`--wm-fill` under `[data-rainbow="on"]`; deeper on Light, brighter on Dark); `.wordmark-plain`
   (the Settings footer, toasts) stays plain.

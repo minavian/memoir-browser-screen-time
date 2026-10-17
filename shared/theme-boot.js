@@ -2,10 +2,9 @@
 (() => {
   try {
     let pref = localStorage.getItem('bst-theme');
-    // Pink, then Pride, were full themes once; the rainbow now lives on the clock (Rainbow clock)
+    // Pink, then Pride, were themes once: back to System (the Rainbow clock stays off unless chosen)
     if (pref === 'pink' || pref === 'pride') {
       localStorage.removeItem('bst-theme');
-      localStorage.setItem('bst-rainbow', 'on');
       pref = null;
     }
     if (pref === 'light' || pref === 'dark') document.documentElement.dataset.theme = pref;
