@@ -227,11 +227,8 @@
   --surface: #fffafd;
   --surface-2: #f8f0f7;
   --raised: #fffafd;
-  /* cards: a soft pink-and-blue sheen, edged in the flag's colours */
-  --card-bg:
-    linear-gradient(160deg, #f1f8ff, #fff8fc 48%, #fdebf4) padding-box,
-    linear-gradient(135deg, rgba(126, 200, 245, 0.75), rgba(255, 255, 255, 0.5) 50%, rgba(246, 160, 194, 0.75)) border-box;
-  --card-border: 1px;
+  /* cards: a soft sheen from the flag's blue to its pink, no edge */
+  --card-bg: linear-gradient(160deg, #f1f8ff, #fff8fc 48%, #fdebf4);
   /* primary buttons and switches that are on: pink into blue */
   --accent-fill: linear-gradient(120deg, #f7a3c4, #a8d5f6);
   --accent-fill-hover: linear-gradient(120deg, #f493ba, #95ccf3);
