@@ -216,18 +216,11 @@
 :root[data-theme="pride"],
 [data-wave="pride"] {
   color-scheme: light;
-  /* the page: an aurora of the flag's blue and pink, with lavender where they meet */
-  --bg: #fbf2f7;
-  --bg-art:
-    radial-gradient(1200px 780px at 0% 0%, rgba(126, 200, 245, 0.55), transparent 62%),
-    radial-gradient(1050px 740px at 100% 100%, rgba(246, 160, 194, 0.55), transparent 62%),
-    radial-gradient(820px 580px at 100% 0%, rgba(196, 172, 240, 0.42), transparent 60%),
-    radial-gradient(760px 540px at 0% 100%, rgba(255, 255, 255, 0.75), transparent 65%);
+  /* the page a flat soft lavender-pink, the cards a flat near-white on it: no gradients */
+  --bg: #f6eef6;
   --surface: #fffafd;
   --surface-2: #f8f0f7;
   --raised: #fffafd;
-  /* cards: a soft sheen from the flag's blue to its pink, no edge */
-  --card-bg: linear-gradient(160deg, #f1f8ff, #fff8fc 48%, #fdebf4);
   /* primary buttons and switches that are on: pink into blue */
   --accent-fill: linear-gradient(120deg, #f7a3c4, #a8d5f6);
   --accent-fill-hover: linear-gradient(120deg, #f493ba, #95ccf3);
@@ -401,7 +394,7 @@ button, input { font: inherit; color: inherit; letter-spacing: inherit; }
   background: var(--bg-art), var(--bg);
   background-attachment: fixed;
 }
-.wave-shapes > i { position: absolute; border-radius: var(--r-card); background: var(--card-bg, var(--surface)); border: var(--card-border, 0px) solid transparent; box-shadow: var(--shadow); }
+.wave-shapes > i { position: absolute; border-radius: var(--r-card); background: var(--surface); box-shadow: var(--shadow); }
 /* a wave: a soft edge sweeping from the top-right corner */
 .wave-layer.sweeping {
   -webkit-mask-image: linear-gradient(to bottom left, #000 calc(var(--wave-p) - 30%), transparent var(--wave-p));
@@ -440,8 +433,7 @@ button, input { font: inherit; color: inherit; letter-spacing: inherit; }
 
 .card {
   position: relative;
-  background: var(--card-bg, var(--surface));
-  border: var(--card-border, 0px) solid transparent;
+  background: var(--surface);
   border-radius: var(--r-card);
   box-shadow: var(--shadow);
   transition: box-shadow 0.35s var(--ease);

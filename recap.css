@@ -1248,9 +1248,8 @@ body { overflow: hidden; }
   z-index: 3;
   display: grid;
   padding: 18px 20px 12px;
-  /* inside the card's edge (Pride's gradient border), in the card's own colours */
-  border-radius: calc(var(--r-card) - var(--card-border, 0px));
-  background: var(--card-bg, var(--surface));
+  border-radius: inherit;
+  background: var(--surface);
   opacity: 0;
   visibility: hidden;
   transform: scale(0.985) translateY(6px);
