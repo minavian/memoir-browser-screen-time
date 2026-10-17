@@ -104,9 +104,16 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
   a frame or two on its very first run (GPU shader compilation, not page work).
 - Limit lock (4.3.0): a committed limit stays locked on later days too (`limitLocked` = any limit in effect).
   Only the Settings gauntlet unlocks it (`resetLimit` writes `{from: today, limit: null}`; past days keep theirs).
-- Limit picker (4.3.0): knob rides a critically damped spring (`FOLLOW`/`SETTLE`/`GLIDE` in goal.js), follows the
-  pointer continuously and settles onto the value on release; dragging past an end through the top gap pins it.
-  Minutes are 0–59 in 1-minute steps (`GOAL_MIN_MS` = 1 min). Tick dots sit on the track, numbers outside,
+- Limit picker (4.3.0): knob rides a critically damped spring (`FOLLOW`/`HOP`/`SETTLE`/`GLIDE` in goal.js) and
+  settles onto the value on release; dragging past an end through the top gap pins it.
+  Minutes are 0–59 in 1-minute steps (`GOAL_MIN_MS` = 1 min). Dragging snaps to the dots (`DOT`: every hour, every
+  5 minutes; past 55 it stays on 55). Creeping slowly in the minutes (`pace`: speed smoothed over ~0.12 s, between
+  `CREEP` 0.4 and 5 minutes a second for `CREEP_FOR` 0.35 s) turns on fine-tuning: the knob follows the pointer and
+  minutes go one at a time, until a sweep faster than `FAST` (18 a second). Grabbing a knob that's between dots
+  keeps fine-tuning. Held on a dot, the knob grows slowly (`.on-dot`, r 11→13 in 0.5 s, back in 0.7 s) and stays
+  grown until it leaves the dot or is let go; no taps. Measured in Edge: drags up to ~1.5 s land on a dot, a 2.5 s
+  crawl fine-tunes. `.pk-center` lets clicks through (only the fields and Cancel take them): its corners reach the
+  ring around 20 and 40 minutes, where the knob couldn't be grabbed. Tick dots sit on the track, numbers outside,
   Cancel in the centre column. The ✓ centres with `translate`, hovers with `scale`, and pops via WAAPI `transform`,
   so its animations never restart or fight each other.
 - Picker look (4.3.0): colours follow the theme (light picker on Light, dark on Dark, deep pink on Pink;

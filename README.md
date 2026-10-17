@@ -45,8 +45,10 @@ limit is left. Press **Set limit** and a circle opens:
 
 - Slide around the ring, or type. Hours come first; once you've picked them it
   moves to minutes by itself. Click the minutes to start there instead.
-- Minutes go one at a time (arrow keys too; hold Shift for five), so the
-  smallest limit is 1 minute.
+- Sliding snaps to the dots: every hour, and every 5 minutes. To fine-tune,
+  slow down: creep along the ring and the minutes go one at a time, until you
+  sweep quickly again. Arrow keys go a minute at a time too (hold Shift for
+  five), so the smallest limit is 1 minute.
 - Press **✓** at the top, then **Commit**. The limit is then locked, and it stays
   locked on the days after too: it doesn't open up again at midnight.
 - Trying it during the tour is safe: for 24 hours, Settings shows **Undo**, which
