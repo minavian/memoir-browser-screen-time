@@ -1925,7 +1925,7 @@ function renderDonut(s, soft) {
     });
   };
   if (state.queue) buildLegend();
-  else animateHeight(document.querySelector('.donut-card'), buildLegend, { duration: 520 });
+  else animateHeight(document.querySelector('.donut-card'), () => (soft ? regroup($('cat-legend'), 'cat', buildLegend) : buildLegend()), { duration: 520 });
 }
 
 let centerTimer = 0;
@@ -2454,11 +2454,49 @@ function wirePagePop() {
   });
 }
 
+// A list redrawn with new numbers (the report refreshing as time comes in): rows that
+// stay glide from where they were to their new place, so a re-sort is seen, and their
+// bars grow or shrink from the old length; new rows fade in. Nothing jumps.
+function regroup(list, key, build) {
+  if (reducedMotion() || !list.isConnected) { build(); return; }
+  const was = new Map();
+  for (const el of list.children) {
+    if (!el.dataset[key]) continue;
+    was.set(el.dataset[key], { r: el.getBoundingClientRect(), w: el.querySelector('.site-bar i')?.style.getPropertyValue('--w') });
+  }
+  build();
+  if (!was.size) return;
+  const bars = [];
+  for (const el of list.children) {
+    const old = el.dataset[key] && was.get(el.dataset[key]);
+    if (!old) {
+      if (el.dataset[key]) el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 320, delay: 180, easing: 'ease-out', fill: 'backwards' });
+      continue;
+    }
+    const r = el.getBoundingClientRect();
+    const dx = old.r.left - r.left;
+    const dy = old.r.top - r.top;
+    if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) {
+      el.animate([{ transform: `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px)` }, { transform: 'none' }], { duration: 560, easing: EASE_OUT });
+    }
+    const fill = el.querySelector('.site-bar i');
+    const w = fill && fill.style.getPropertyValue('--w');
+    if (fill && old.w && w && w !== old.w) { fill.style.setProperty('--w', old.w); bars.push([fill, w]); }
+  }
+  if (bars.length) requestAnimationFrame(() => requestAnimationFrame(() => { for (const [f, w] of bars) f.style.setProperty('--w', w); }));
+}
+
 // ----- most used -----
 
 function renderSites(s, soft) {
   // the rows are about to be rebuilt: a site's pages close back into their row first
   if (pages.isOpen) closePagePop();
+  const ol = $('sites');
+  if (soft) regroup(ol, 'domain', () => buildSites(s, soft));
+  else buildSites(s, soft);
+}
+
+function buildSites(s, soft) {
   const ol = $('sites');
   ol.classList.toggle('soft', soft);
   ol.textContent = '';

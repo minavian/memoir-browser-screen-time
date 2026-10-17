@@ -51,6 +51,10 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
   `~files` (file://); a blob: file counts for the site that made it. They have no origin or link, a name
   (`siteName`) and a glyph (fx.js `PAGE_GLYPHS`; Memoir its own icon), category Other by default, no "Never track"
   in their category menu, and survive Export/Import (`siteKey`). Before, only http(s) tabs counted.
+- Live refreshes re-sort without jumping (recap.js `regroup`, used by Most used and the Categories legend on a
+  soft render, i.e. when new time comes in, as when you switch back to the report): rows that stay glide from their
+  old place to their new one (560 ms), Most used bars grow or shrink from their old length, new rows fade in.
+  Measured: a row moving 100 px takes ~40 frames, at most 9 px a frame (it used to jump in one).
 - `trend.js` — Trend over time line chart. `tour.js` — guided tutorial. `gauntlet.js` — "reset the limit" questions.
   Trend's range switch (4/12/24 weeks, a year) is one camera (`cam`: weeks u0…u1, values 0…top) moving over the
   same weeks: the curve is worked out on weeks and values (`withTangents`, monotone) and drawn through the camera
