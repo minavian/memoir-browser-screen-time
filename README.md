@@ -93,8 +93,8 @@ mouse wheel and scrolling keys, and follow your computer's reduced-motion settin
 Open the gear in the top-right corner of the report.
 
 - **Appearance:** System (default, follows your computer), Light or Dark.
-  **Rainbow clock**, in support of the LGBTQ+ community, puts the clock's ring in
-  rainbow colours, in either theme, here and on the toolbar icon. (If you had Pink or
+  **Rainbow clock**, in support of the LGBTQ+ community, puts the clock's ring and the
+  MEMOIR wordmark in rainbow colours, in either theme, here and on the toolbar icon. (If you had Pink or
   Pride picked, you're on System with the Rainbow clock on.)
 - **Custom cursor:** the animated cursor. Turning it off is highly recommended on
   low-end devices; you get your system's pointer instead.

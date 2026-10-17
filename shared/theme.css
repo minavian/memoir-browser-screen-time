@@ -265,6 +265,19 @@ button, input { font: inherit; color: inherit; letter-spacing: inherit; }
   --wm-fill: linear-gradient(76deg, #a4a4ac, #dedee3 30%, #fff 55%, #e9e9ee 78%, #fff);
   --wm-glow: 0 0 0.045em rgba(255, 255, 255, 0.32), 0 0 0.16em rgba(255, 255, 255, 0.12);
 }
+/* Rainbow clock (Appearance): the wordmark in the rainbow too, a colour to each letter; deeper
+   on Light so it reads on white, brighter on Dark */
+:root[data-rainbow="on"], :root[data-rainbow="on"] [data-wave="light"] {
+  --wm-fill: linear-gradient(90deg, #e5484d 4%, #ef8a26 22%, #d9a800 40%, #2fae66 58%, #2f86e0 76%, #8a5cdb 94%);
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-rainbow="on"]:not([data-theme]) {
+    --wm-fill: linear-gradient(90deg, #ff6b7a 4%, #ffa45c 22%, #ffd75e 40%, #5fd38d 58%, #5aaef2 76%, #b18cf2 94%);
+  }
+}
+:root[data-rainbow="on"][data-theme="dark"], :root[data-rainbow="on"] [data-wave="dark"], :root[data-rainbow="on"] .wm-dark {
+  --wm-fill: linear-gradient(90deg, #ff6b7a 4%, #ffa45c 22%, #ffd75e 40%, #5fd38d 58%, #5aaef2 76%, #b18cf2 94%);
+}
 .wordmark {
   position: relative;
   display: inline-block;

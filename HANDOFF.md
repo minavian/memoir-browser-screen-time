@@ -15,6 +15,9 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
   `applyIcon` on start and when `settings.rainbow` changes) and on the report's tab icon. It's kept in
   localStorage (`bst-rainbow`, applied before first paint by theme-boot.js) and mirrored to
   `settings.rainbow` for the tracker. A saved `pink` or `pride` theme becomes System with Rainbow clock on.
+  The MEMOIR wordmark (`.wordmark`: popup, privacy page, menus, tour text) goes rainbow with it, a colour to
+  each letter (`--wm-fill` under `[data-rainbow="on"]`; deeper on Light, brighter on Dark); `.wordmark-plain`
+  (the Settings footer, toasts) stays plain.
 - **One screen, no scrolling** on large windows (cards stack and the page scrolls only under ~1100 px wide).
 - Minimal, clean, borderless look; **everything interactive is animated**; morph animations wherever possible.
 - Hovers use `--ease-out` and must **never shake or overshoot**. `--pop` only for deliberate pops.
