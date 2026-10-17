@@ -21,6 +21,21 @@ function angles(now) {
   return { min: m * 6 - 90, hour: h * 30 - 90, sec: s * 6 };
 }
 
+// The hands turn about a point 8 below the ring's middle (of the clock's 168): right for
+// 10:10, when they point up, but pointing down the long hand would reach into the ring. So
+// on a live clock that point circles the middle once an hour, always opposite the long
+// hand: the 10:10 pose turned with the minutes, its tip the same short way inside the ring
+// at every minute. The bars' own boxes (in those units) turn the shift into percentages,
+// so it scales with the clock.
+const PIVOT_DROP = 8;
+const BAR = { min: [59, 11], hour: [45, 11] };
+function pivotShift(minAngle, [w, h]) {
+  const phi = ((minAngle + 30) * Math.PI) / 180; // how far the long hand has turned from 10:10
+  const dx = -PIVOT_DROP * Math.sin(phi);
+  const dy = PIVOT_DROP * Math.cos(phi) - PIVOT_DROP;
+  return `${((dx / w) * 100).toFixed(3)}% ${((dy / h) * 100).toFixed(3)}%`;
+}
+
 // live clocks, and their running motion (so they can be set right again)
 const live = new Map();
 
@@ -32,14 +47,20 @@ function run(logo, now = new Date()) {
   const a = angles(now);
   part('min').style.transform = `rotate(${a.min}deg)`;
   part('hour').style.transform = `rotate(${a.hour}deg)`;
+  part('min').style.translate = pivotShift(a.min, BAR.min);
+  part('hour').style.translate = pivotShift(a.min, BAR.hour);
   if (reducedMotion()) {
     live.set(logo, []);
     return;
   }
   const turn = (el, from, ms) => el.animate([{ rotate: `${from}deg` }, { rotate: `${from + 360}deg` }], { duration: ms, iterations: Infinity });
+  // the pivot's circle, in sixty steps (one a minute: a polygon no eye can tell from it)
+  const orbit = (el, bar) => el.animate(Array.from({ length: 61 }, (_, i) => ({ translate: pivotShift(a.min + i * 6, bar) })), { duration: 3600_000, iterations: Infinity });
   live.set(logo, [
     turn(part('min'), 0, 3600_000),
     turn(part('hour'), 0, 43200_000),
+    orbit(part('min'), BAR.min),
+    orbit(part('hour'), BAR.hour),
     turn(part('sec'), a.sec, 60_000),
     turn(part('ring'), a.sec, 60_000),
   ]);

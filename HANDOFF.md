@@ -498,7 +498,11 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
   on a first visit it's held (`.hold`) until the welcome's clock flies into it. Those two are live (`live: true`):
   their hands sweep to the current time and keep it, and the knob (on its own layer, `.lg-sec`) goes round the ring
   once a minute with the ring's fade turning with it; compositor animations (`rotate`), set right again once a
-  minute and when the page is shown; reduced motion: the hands are set, nothing turns. The welcome's clock stays
+  minute and when the page is shown; reduced motion: the hands are set, nothing turns. The hands' pivot is 8
+  units below the ring's middle (right for 10:10), so on a live clock it circles the middle once an hour,
+  opposite the long hand (logo.js `pivotShift`: a 60-step `translate` loop on both bars, with the minutes): the
+  10:10 pose turned with the minutes, the long hand's tip 50 units from the middle at every minute (9 inside the
+  ring's 59; measured with a marker at the tip). Before, around :30 it reached ~8 units into the ring. The welcome's clock stays
   at 10:10. Icons (toolbar, tab, store, notifications): `icons/iconN.png`, the white clock on the black disc, one
   set for light and dark toolbars (the owner wanted the black behind it, as on the site); small sizes are drawn
   with thicker strokes (16 px has no hole in the knob).
