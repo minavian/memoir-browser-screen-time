@@ -122,6 +122,9 @@ Open the gear in the top-right corner of the report.
   older days, it asks twice before anything is removed.
 - **Sample week** and **Tutorial:** look around with made-up data, or replay
   the tour.
+- **How Memoir works:** opens a page that explains, in plain words, what counts as
+  time, when the clock stops, what counts as Private, what’s kept, and how the daily limit
+  works.
 - **Your data:** Export, Import, and **Clear all**, which asks twice. Clearing
   keeps your settings and today's limit. If a file has days that already have
   time here, Import asks first: **Merge** keeps the larger time for each site in

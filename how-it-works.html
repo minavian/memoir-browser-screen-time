@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en" class="pv-pop">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Memoir · How it works</title>
+  <link rel="icon" href="icons/icon32.png">
+  <script src="shared/theme-boot.js"></script>
+  <link rel="preload" href="fonts/Unbounded-subset.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="shared/theme.css">
+  <link rel="stylesheet" href="shared/logo.css">
+  <link rel="stylesheet" href="shared/pop.css">
+  <link rel="stylesheet" href="privacy.css">
+  <script type="module" src="privacy.js"></script>
+</head>
+<body>
+  <main>
+    <!-- How Memoir counts time, in plain words. Keep it true to background.js and core.js:
+         when a tracking rule changes, change this page with it. -->
+    <header class="brand">
+      <span class="logo themed hold" aria-hidden="true"><span class="lg-clock"><i class="lg-ring"></i><i class="lg-sec"><i class="lg-knob"></i></i><i class="lg-min"></i><i class="lg-hour"></i></span></span>
+      <span class="wordmark">Memoir</span>
+    </header>
+
+    <p class="kicker">How Memoir works</p>
+    <h1>Only the time you spend looking counts.</h1>
+    <p class="lead">Memoir times the tab in front of you, and stops when you look away. Here’s exactly what counts, when the clock stops, and what’s kept.</p>
+
+    <h2>What counts</h2>
+    <ul>
+      <li><b>The tab you’re looking at</b>, in the browser window that’s in front. Other tabs, and windows behind other apps, don’t count, even if a video is playing in them.</li>
+      <li><b>Every kind of tab.</b> Websites count under their name, like <code>youtube.com</code>. Tabs that aren’t websites count under one name each: <b>Memoir</b> itself, <b>New Tab</b>, <b>Browser pages</b> (Settings, History, Downloads and the like), <b>Extensions</b> and <b>Files</b> you open from your computer.</li>
+      <li><b>By the hour.</b> Each day keeps how long you spent on each site, and in which hours, so the report can show your day hour by hour.</li>
+    </ul>
+
+    <h2>When the clock stops</h2>
+    <ul>
+      <li>Another app is in front, or the browser is minimised.</li>
+      <li>You haven’t touched the mouse or keyboard for <b>60 seconds</b>. If the tab is playing sound, like a video or music, it keeps counting.</li>
+      <li>The screen locks, or the computer goes to sleep. After a long silence, at most a minute is counted.</li>
+      <li>You pause it with <b>Track browsing</b> in Settings.</li>
+    </ul>
+
+    <h2>Private time</h2>
+    <p>Sites on your <b>Never track</b> list still count towards your total and your limit, but only as one <b>Private</b> line, with no names. Adding a site makes its past time Private too. Private (Incognito) windows count the same way, if you let Memoir run in them.</p>
+
+    <h2>What’s kept</h2>
+    <ul>
+      <li>Each site’s name and its time, hour by hour. Never what you type, click or read.</li>
+      <li><b>Page titles</b> and their links, only if you turn them on in Settings: up to 30 a site each day, the rest as “other pages”.</li>
+      <li>Everything is kept for as long as you choose under <b>Keep history</b> (forever, unless you pick a shorter time).</li>
+      <li>It all stays in this browser, on your computer. More in the <a href="privacy.html">privacy policy</a>.</li>
+    </ul>
+
+    <h2>Your daily limit</h2>
+    <ul>
+      <li>The ring is green, then yellow at 75% of your limit, orange at 90% and red at 95%, when you get a notification. Past the limit it turns deep red with a flame, and you’re notified once more.</li>
+      <li>Once you commit to a limit, it’s locked: it stays the same on the days after. Only Settings can undo it, after a run of questions.</li>
+    </ul>
+
+    <h2>Why it may differ from other screen-time tools</h2>
+    <p>Your phone’s or your computer’s own screen time counts every app, and any time the screen is on. Memoir counts only the browser, and only while you’re using it. So its numbers are usually smaller, and they tell you where your browsing went.</p>
+  </main>
+</body>
+</html>

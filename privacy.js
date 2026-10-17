@@ -1,5 +1,6 @@
-// The privacy page: the report's cursor and scrolling, the live clock beside the name, the
-// text popping on, and the address to copy (the same popover as the report's "Made by").
+// The privacy page and How Memoir works: the report's cursor and scrolling, the live clock
+// beside the name, the text popping on, and (privacy) the address to copy, the same popover
+// as the report's "Made by".
 
 import { initCursor } from './shared/cursor.js';
 import { initSmoothScrolling } from './shared/scroll.js';
@@ -9,7 +10,8 @@ import { mailPop } from './shared/mail-pop.js';
 initSmoothScrolling();
 initCursor();
 playLogo(document.querySelector('.brand .logo'), { delay: 160, live: true });
-mailPop(document.getElementById('mail'), document.getElementById('mail-pop'), { address: 'iamminavian@gmail.com', dismiss: true });
+const mail = document.getElementById('mail');
+if (mail) mailPop(mail, document.getElementById('mail-pop'), { address: 'iamminavian@gmail.com', dismiss: true });
 
 // The text pops on: the headline word by word, then each heading, paragraph and point as
 // it comes into view; those that come into view together go one after another

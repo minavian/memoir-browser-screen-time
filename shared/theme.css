@@ -424,6 +424,7 @@ button, input { font: inherit; color: inherit; letter-spacing: inherit; }
 .btn:active { --press: 0.96; transition-duration: 0.08s, 0.2s, 0.2s, 0.2s, 0.2s; }
 .btn:focus-visible { outline: none; box-shadow: var(--ring); }
 .btn[disabled] { opacity: 0.4; cursor: var(--cursor); --press: 1; }
+a.btn { text-decoration: none; } /* a link that looks like a button (Settings: How Memoir works) */
 .btn-primary { background: var(--accent); color: var(--on-accent); }
 .btn-primary:hover { background: color-mix(in srgb, var(--accent) 86%, var(--bg)); }
 .btn-secondary { background: var(--fill-1); color: var(--label); }
