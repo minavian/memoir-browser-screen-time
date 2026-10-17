@@ -13,7 +13,7 @@
 
 import {
   APP_NAME, IDLE_SECONDS, HEARTBEAT_MINUTES, MAX_GAP_MS, SLEEP_CREDIT_MS, PRIVATE_KEY, MAX_TITLES_PER_SITE,
-  domainFromUrl, isExcluded, isPrivate, cleanTitle, cleanUrl, pruneTitles, dayKey, storageKeyForDay, normalizeDay, dayTotal,
+  domainFromUrl, isExcluded, isPrivate, cleanTitle, cleanUrl, dayKey, storageKeyForDay, normalizeDay, dayTotal,
   getSettings, getSession, getDays, startOfWeek, weekDayKeys, addDays, formatDuration,
   getGoalHistory, limitOn, retentionCutoffKey, listDayKeys, withData,
 } from './shared/core.js';
@@ -265,24 +265,17 @@ async function pruneOldDays() {
   if (old.length) await chrome.storage.local.remove(old);
 }
 
-// page titles and their links older than the chosen weeks
-async function pruneOldTitles() {
-  const settings = await getSettings();
-  await pruneTitles(settings.titleWeeks);
-}
-
 async function dailyHousekeeping() {
   const today = dayKey(new Date());
   const { lastPrune } = await chrome.storage.session.get('lastPrune');
   if (lastPrune === today) return;
   await chrome.storage.session.set({ lastPrune: today });
   await pruneOldDays();
-  await pruneOldTitles();
 }
 
 async function boot() {
   await ensureAlarms();
-  await enqueue(async () => { await pruneOldDays(); await pruneOldTitles(); });
+  await enqueue(pruneOldDays);
   sync();
 }
 
@@ -314,7 +307,6 @@ chrome.storage.onChanged.addListener((changes, area) => {
     titlesOn = !!n.titles;
     if (o.reminderDay !== n.reminderDay || o.reminderMinutes !== n.reminderMinutes) enqueue(() => scheduleWeekly(true));
     if (o.retention !== n.retention) enqueue(pruneOldDays);
-    if (o.titleWeeks !== n.titleWeeks) enqueue(pruneOldTitles);
   }
   if (changes.goal) enqueue(() => checkGoal(Date.now()));
 });

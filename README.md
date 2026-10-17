@@ -101,9 +101,8 @@ Open the gear in the top-right corner of the report.
   touch behind it, instead of sitting exactly on it. Needs Custom cursor on.
 - **Tracking detail:** *Domains only* (default) or *Page titles*, which saves the
   titles of pages and their links, so you can see which pages took your time (click
-  a site in Most used, or in a day or an hour) and open them again.
-- **Keep page titles and links:** 4 (default), 8, 12 or 16 weeks. Older days keep
-  their time; only their page titles and links go. Hover an option for an estimate.
+  a site in Most used, or in a day or an hour) and open them again. They're kept as
+  long as your history (Keep history, below) and deleted with it.
 - **Track browsing:** pause and resume. Only here: the popup and the right-click
   menus can resume tracking but never pause it.
 - **Never track:** sites you add are still timed and still count toward your

@@ -237,10 +237,10 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
   own pages), `tu` (title → its latest link, cleaned by core.js `cleanUrl`: http(s) only, on that site, no login
   or #part, tracking tags dropped, at most 500 chars), `tp` (sites whose titles were deleted as they got old).
   Links are only saved with a title (Page titles on), never for Private, excluded or incognito time; the 30-titles
-  cap is unchanged ("other pages" has no link). Titles, hours and links are kept `settings.titleWeeks` (4, 8, 12,
-  16; `pruneTitles`/`dropTitles`, run by the tracker at start, daily, and when the setting changes, and by
-  Settings when you pick a shorter time, after a confirm). Never track, Erase titles, merge/replace imports and
-  Clear all cover `th`/`tu`/`tp`.
+  cap is unchanged ("other pages" has no link). Titles, hours and links are kept as long as their day (Keep
+  history); the old `settings.titleWeeks` (4–16 weeks, `pruneTitles`/`dropTitles`) is gone, and `getSettings`
+  drops the key. Days it trimmed still have `tp`. Never track, Erase titles, merge/replace imports and Clear all
+  cover `th`/`tu`/`tp`.
   UI (recap.js `openPagePop`, `pagesFor`, `pagesWhen`): rows with pages (`.has-pages`) in Most used and in the
   day/hour views hint "Click to see each page's time …" and open `#page-pop`, a second page of the Most used card
   (`.sites-page`, absolute over the card: its own surface, corners and padding, no shadow, so it's the card turning
@@ -254,13 +254,11 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
   own content is `inert` while the pages are over it. A back button (`.pp-back`), Escape, the mouse's Back button or
   a click elsewhere close them. Page rows show the site-link ↗ on hover; "Open URL" waits for a 1 s rest the first
   time, then morphs from page to page like every tip (gone over a row without a link). An hour saved before `th`
-  existed shows that day's pages with a note. Titles gone: a message, with Open Settings when a longer time could
-  have kept them (within 16 weeks and the setting is shorter than 16). The pages close when their rows are rebuilt.
+  existed shows that day's pages with a note. Titles gone (deleted by an older version): a message. The pages close when their rows are rebuilt.
   A popover on its way out (`.pop[data-state="closing"]`) lets clicks through.
   Live refreshes (`refreshSoon`) now wait while a menu or popover is shown or still animating (they used to be
   dropped while one was open, leaving stale numbers until the next save).
-  Export carries `format: 2`; files without it are announced as older, brought up to date (titles past the
-  setting dropped) and imported.
+  Export carries `format: 2`; files without it are announced as older, brought up to date and imported.
 
 - Toast (5.1.5, recap.js `toast` / `hideToast`): rises in (pop), sinks away after its hold. A new one while
   it's up or sinking morphs the pill (width and height) to the new words while the old words fade up and

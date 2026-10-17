@@ -16,10 +16,6 @@ export const RETENTION_OPTIONS = [0, 365, 182, 91]; // 0 = forever
 export const GOAL_MIN_MS = 60_000;
 export const GOAL_MAX_MS = (23 * 60 + 59) * 60_000;
 export const MAX_TITLES_PER_SITE = 30;
-// Page titles (and their links) are kept this many weeks; site times stay as long as
-// history does. The most anyone can keep them is the last option.
-export const TITLE_WEEKS_OPTIONS = [4, 8, 12, 16];
-export const MAX_TITLE_WEEKS = 16;
 // The version of the export file. 1 (no number): before page links were saved.
 export const EXPORT_FORMAT = 2;
 
@@ -30,8 +26,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
   reminderMinutes: 19 * 60,  // minutes after midnight
   titles: false,             // false = domains only
   excluded: [],
-  retention: 0,              // days; 0 = forever (nothing is deleted unless you choose)
-  titleWeeks: 4,             // page titles and their links are kept this many weeks
+  retention: 0,              // days; 0 = forever (nothing is deleted unless you choose); page titles go with their day
 });
 
 // Category colours are a colour-blind-checked set with light and dark steps
@@ -236,11 +231,6 @@ export function retentionCutoffKey(days, now = new Date()) {
   return days > 0 ? dayKey(addDays(now, -days)) : null;
 }
 
-// Days before this keep their site times but not their page titles and links.
-export function titleCutoffKey(weeks, now = new Date()) {
-  return dayKey(addDays(startOfDay(now), -7 * weeks + 1));
-}
-
 // ---------- formatting ----------
 
 export function formatDuration(ms, { seconds = false } = {}) {
@@ -335,7 +325,7 @@ export function cleanUrl(url, domain = null) {
 // A day: { s: {domain: ms}, h: [24 × ms], hs: {hour: {domain: ms}}, ti: {domain: {title: ms}},
 //          th: {hour: {domain: {title: ms}}} (the same page times, hour by hour),
 //          tu: {domain: {title: url}} (the latest address of each page title),
-//          tp: [domain] (sites whose titles and links were deleted as they got old) }
+//          tp: [domain] (sites whose titles and links were deleted as they got old, by older versions) }
 
 export function normalizeDay(rec) {
   const ok = rec && typeof rec === 'object';
@@ -365,32 +355,6 @@ export function cloneDay(d) {
   return { s: { ...d.s }, h: d.h.slice(), hs, ti, th, tu, tp: (d.tp || []).slice() };
 }
 
-// An old day loses its page titles and links (its site times stay); the sites that
-// had them are remembered, so the report can say they were deleted. Returns the
-// trimmed day, or null when there was nothing to trim.
-export function dropTitles(rec) {
-  const had = Object.keys(rec.ti).filter(d => Object.keys(rec.ti[d] || {}).length);
-  if (!had.length && !Object.keys(rec.tu).length && !Object.keys(rec.th).length) return null;
-  return { ...rec, ti: {}, th: {}, tu: {}, tp: [...new Set([...rec.tp, ...had])] };
-}
-
-// Page titles older than the chosen number of weeks go (under the data lock).
-export async function pruneTitles(weeks, now = new Date()) {
-  const cutoff = titleCutoffKey(weeks, now);
-  const keys = (await listDayKeys()).filter(k => k < cutoff);
-  if (!keys.length) return 0;
-  const raw = await chrome.storage.local.get(keys.map(storageKeyForDay));
-  const patch = {};
-  for (const k of keys) {
-    const r = raw[storageKeyForDay(k)];
-    if (!r || (!r.ti && !r.tu && !r.th)) continue;
-    const trimmed = dropTitles(normalizeDay(r));
-    if (trimmed) patch[storageKeyForDay(k)] = trimmed;
-  }
-  if (Object.keys(patch).length) await chrome.storage.local.set(patch);
-  return Object.keys(patch).length;
-}
-
 export const dayTotal = d => Object.values(d.s).reduce((a, b) => a + b, 0);
 
 // ---------- storage ----------
@@ -404,7 +368,7 @@ export async function getSettings() {
   const merged = { ...DEFAULT_SETTINGS, ...(settings || {}) };
   if (!Array.isArray(merged.excluded)) merged.excluded = [];
   if (!RETENTION_OPTIONS.includes(merged.retention)) merged.retention = DEFAULT_SETTINGS.retention;
-  if (!TITLE_WEEKS_OPTIONS.includes(merged.titleWeeks)) merged.titleWeeks = DEFAULT_SETTINGS.titleWeeks;
+  delete merged.titleWeeks; // page titles once had their own time to keep; now they go with their day
   return merged;
 }
 

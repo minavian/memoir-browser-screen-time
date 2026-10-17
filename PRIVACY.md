@@ -1,6 +1,6 @@
 # Memoir privacy policy
 
-**Memoir: Browser Screen Time** (the Chrome extension) · Effective 15 October 2026
+**Memoir: Browser Screen Time** (the Chrome extension) · Effective 17 October 2026
 
 **In short:** everything Memoir records stays in your browser, on your computer. Memoir has no servers, no accounts, no analytics and no ads. It never sends your data anywhere, so nobody else can see it, including the developer.
 
@@ -9,7 +9,7 @@
 To show where your browsing time goes, Memoir keeps these in your browser:
 
 - **Which website you're on, and for how long.** It keeps the site's name (for example `youtube.com`), the time you spent there and the hours of the day it was in. It does not keep the addresses of the pages you visit, unless you turn on Page titles.
-- **Page titles and their addresses, only if you turn on "Page titles"** in Settings (it's off unless you turn it on). They are kept for 4 weeks unless you choose 8, 12 or 16, and are then deleted automatically. The time you spent stays.
+- **Page titles and their addresses, only if you turn on "Page titles"** in Settings (it's off unless you turn it on). They are kept as long as the rest of your history, and deleted with it.
 - **Each site's home address** (for example `https://www.youtube.com`), so its icon and link work.
 - **Your settings**: your daily limit and when it changed, your reminder day and time, categories you changed, sites you never track, and your theme and cursor choices.
 
@@ -35,7 +35,7 @@ It is never sold or shared. It is never used for advertising, and never used to 
 
 - **Pause tracking** at any time, with the Track browsing switch in Settings.
 - **Never track** particular sites.
-- **Choose how long to keep history**: forever, 1 year, 6 months or 3 months. Older days are deleted automatically.
+- **Choose how long to keep history**: forever, 1 year, 6 months or 3 months. Older days are deleted automatically, page titles included.
 - **Export** everything as a file, or **import** a file you exported earlier. The file goes wherever you save it; Memoir doesn't upload it.
 - **Clear all** deletes everything at once. **Removing the extension** deletes everything too.
 

@@ -4,8 +4,7 @@ import {
   setCategoryOverride, getOrigins, formatDuration, formatBytes, formatTimeOfDay, hourLabel, hourRange, escapeHtml,
   storageKeyForDay, normalizeDay, cloneDay, dayTotal, listDayKeys, normalizeSite, isExcluded, uses24h,
   getGoalHistory, limitOn, limitLocked, commitLimit, removeLimit, goalLevel, retentionCutoffKey, resetLimit,
-  withData, domainFromUrl, safeKey, cleanUrl, dropTitles, pruneTitles, titleCutoffKey, TITLE_WEEKS_OPTIONS,
-  MAX_TITLE_WEEKS, EXPORT_FORMAT,
+  withData, domainFromUrl, safeKey, cleanUrl, EXPORT_FORMAT,
 } from './shared/core.js';
 import {
   animateNumber, tween, reveal, createTooltip, faviconTile, reducedMotion, syncSegmented, slicePath, initPetals,
@@ -2312,11 +2311,8 @@ function buildPages(domain, days, hour) {
     if (wholeDay) body.insertAdjacentHTML('beforeend', `<p class="pp-foot">Pages for the whole ${days && days.length > 1 ? 'days' : 'day'}: this hour was saved before pages were kept hour by hour.</p>`);
     else if (gone) body.insertAdjacentHTML('beforeend', '<p class="pp-foot">Pages from earlier days were deleted as they got old.</p>');
   } else {
-    // its titles were deleted: say so, and where to keep them longer (when that's possible)
-    const canKeepLonger = gone >= titleCutoffKey(MAX_TITLE_WEEKS) && state.settings.titleWeeks < MAX_TITLE_WEEKS;
-    body.insertAdjacentHTML('beforeend', `<div class="pp-gone-box">${canKeepLonger
-      ? '<p class="pp-gone">The page titles and links for this site were deleted. To keep them longer, choose a longer time for page titles in Settings.</p><button class="btn btn-secondary btn-xs" type="button" data-act="title-weeks">Open Settings</button>'
-      : '<p class="pp-gone">The page titles and links for this site were deleted.</p>'}</div>`);
+    // its titles were deleted (by a version that kept them only a few weeks): say so
+    body.insertAdjacentHTML('beforeend', '<div class="pp-gone-box"><p class="pp-gone">The page titles and links for this site were deleted.</p></div>');
   }
   return body;
 }
@@ -2448,16 +2444,6 @@ function wirePagePop() {
       const back = popAnchor;
       closePagePop();
       back?.querySelector('[role="button"]')?.focus({ preventScroll: true });
-      return;
-    }
-    if (e.target.closest('[data-act="title-weeks"]')) {
-      closePagePop();
-      openSettings();
-      setTimeout(() => {
-        const t = $('title-weeks');
-        const target = $('tw-more').classList.contains('open') ? t : $('detail');
-        target.scrollIntoView({ block: 'center', behavior: reducedMotion() ? 'auto' : 'smooth' });
-      }, reducedMotion() ? 0 : 450);
       return;
     }
     const row = e.target.closest('.page-row[data-url]');
@@ -3196,12 +3182,10 @@ function renderSettings() {
   setPressed('detail', b => (b.dataset.val === 'titles') === !!st.titles);
   setPressed('retention', b => +b.dataset.days === st.retention);
   const desc = st.titles
-    ? 'Saves page titles and their links, like a specific video you watched on YouTube.'
+    ? 'Saves page titles and their links, like a specific video you watched on YouTube. They’re kept as long as your history.'
     : 'Only domains are saved, not titles, like youtube.com or minavian.com.';
   const dd = $('detail-desc');
   if (dd.textContent !== desc) animateHeight(dd, () => swapText(dd, desc));
-  setReveal('tw-more', !!st.titles);
-  if (pendingTitleWeeks == null) setPressed('title-weeks', b => +b.dataset.weeks === st.titleWeeks);
   $('set-cursor').checked = cursorEnabled();
   $('set-smooth').checked = cursorSmooth();
   lockSmooth();
@@ -3519,18 +3503,7 @@ async function refreshStats() {
   const keys = await listDayKeys();
   const dayBytes = keys.length ? await chrome.storage.local.getBytesInUse(keys.map(storageKeyForDay)) : 0;
   const all = await chrome.storage.local.getBytesInUse(null);
-  // page titles and links: what they take now, and per day on the recent days that have them
-  const recent = keys.slice(-28);
-  const raw = recent.length ? await chrome.storage.local.get(recent.map(storageKeyForDay)) : {};
-  let titleBytes = 0;
-  let titleDays = 0;
-  for (const r of Object.values(raw)) {
-    if (!r || !r.ti || !Object.keys(r.ti).length) continue;
-    titleBytes += JSON.stringify(r.ti).length + JSON.stringify(r.th || {}).length + JSON.stringify(r.tu || {}).length;
-    titleDays++;
-  }
-  state.stats = { keys, days: keys.length, dayBytes, all, titleBytes, titleDays };
-  renderTitleWeeksDesc();
+  state.stats = { keys, days: keys.length, dayBytes, all };
   state.earliestKey = keys[0] || null;
   const d = $('ret-desc');
   const text = keys.length ? `Used ${formatBytes(all)} so far.` : 'Nothing saved yet.';
@@ -3543,52 +3516,6 @@ function estimateFor(days) {
   if (days === 0) return `Grows about ${formatBytes(perDay * 365)} a year`;
   const label = days === 365 ? 'a year' : days === 182 ? '6 months' : '3 months';
   return `About ${formatBytes(perDay * days)} for ${label} of history`;
-}
-
-// ----- how long page titles and links are kept -----
-
-let pendingTitleWeeks = null;
-function titleEstimate(weeks) {
-  const st = state.stats;
-  const perDay = st && st.titleDays >= 2 ? st.titleBytes / st.titleDays : 18000;
-  return `About ${formatBytes(perDay * weeks * 7)} for ${weeks} weeks of page titles and links`;
-}
-function renderTitleWeeksDesc() {
-  const st = state.stats;
-  const base = 'Older days keep their time; only their page titles and links go.';
-  const text = st && st.titleDays ? `${base} They use about ${formatBytes(st.titleBytes)} now.` : base;
-  const d = $('tw-desc');
-  if (d.textContent !== text) swapText(d, text);
-}
-async function chooseTitleWeeks(weeks) {
-  if (weeks === state.settings.titleWeeks) {
-    pendingTitleWeeks = null;
-    setReveal('tw-confirm', false);
-    setPressed('title-weeks', b => +b.dataset.weeks === weeks);
-    return;
-  }
-  const cutoff = titleCutoffKey(weeks);
-  const keys = (await listDayKeys()).filter(k => k < cutoff);
-  const raw = keys.length ? await chrome.storage.local.get(keys.map(storageKeyForDay)) : {};
-  const doomed = Object.values(raw).filter(r => r && r.ti && Object.keys(r.ti).length).length;
-  if (doomed) {
-    pendingTitleWeeks = weeks;
-    setPressed('title-weeks', b => +b.dataset.weeks === weeks);
-    $('tw-msg').textContent = `This removes the page titles and links of ${doomed} older day${doomed === 1 ? '' : 's'}. Their time stays.`;
-    setReveal('tw-confirm', true);
-    return;
-  }
-  await applyTitleWeeks(weeks);
-}
-async function applyTitleWeeks(weeks) {
-  pendingTitleWeeks = null;
-  setReveal('tw-confirm', false);
-  await withData(() => pruneTitles(weeks));
-  state.settings = await updateSettings({ titleWeeks: weeks });
-  setPressed('title-weeks', b => +b.dataset.weeks === weeks);
-  await refreshStats();
-  render({ soft: true });
-  toast(`Page titles and links are kept for ${weeks} weeks`);
 }
 
 let pendingRetention = null;
@@ -4148,24 +4075,6 @@ function wire() {
   $('rem-ampm').addEventListener('click', () => saveReminder({ reminderMinutes: (state.settings.reminderMinutes + 720) % 1440 }));
 
   // keep history
-  const tw = $('title-weeks');
-  tw.addEventListener('click', e => {
-    const b = e.target.closest('button[data-weeks]');
-    if (b) chooseTitleWeeks(+b.dataset.weeks);
-  });
-  tw.addEventListener('pointerover', e => {
-    const b = e.target.closest('button[data-weeks]');
-    if (!b) return;
-    const r = b.getBoundingClientRect();
-    tip.show(`<div class="tip-row"><span>${titleEstimate(+b.dataset.weeks)}</span></div>`, r.left + r.width / 2, r.top);
-  });
-  tw.addEventListener('pointerleave', () => tip.hide());
-  $('tw-keep').addEventListener('click', () => {
-    pendingTitleWeeks = null;
-    setReveal('tw-confirm', false);
-    setPressed('title-weeks', b => +b.dataset.weeks === state.settings.titleWeeks);
-  });
-  $('tw-remove').addEventListener('click', () => { if (pendingTitleWeeks != null) applyTitleWeeks(pendingTitleWeeks); });
   const ret = $('retention');
   ret.addEventListener('click', e => {
     const b = e.target.closest('button[data-days]');
@@ -4508,11 +4417,7 @@ async function writeImport({ days, categories, origins }, mode) {
   const keys = Object.keys(days);
   const raw = await chrome.storage.local.get([...keys, 'categories', 'origins']);
   const patch = {};
-  const cutoff = titleCutoffKey(state.settings.titleWeeks);
-  for (const k of keys) {
-    const day = mode === 'merge' && raw[k] ? mergeDay(normalizeDay(raw[k]), days[k]) : days[k];
-    patch[k] = k.slice(4) < cutoff ? dropTitles(day) || day : day;
-  }
+  for (const k of keys) patch[k] = mode === 'merge' && raw[k] ? mergeDay(normalizeDay(raw[k]), days[k]) : days[k];
   if (Object.keys(categories).length) patch.categories = { ...(raw.categories || {}), ...categories };
   if (Object.keys(origins).length) patch.origins = { ...(raw.origins || {}), ...origins };
   await chrome.storage.local.set(patch);
