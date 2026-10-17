@@ -397,6 +397,9 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
   Settings, hides it again (fresh dust settles in). Enter twice works too. The × is hidden with the name
   (visibility, its place kept): it appears only on a shown site, 0.5 s after the reveal, so a triple tap
   can't remove the site; clicks in that half second neither remove nor re-hide it (`REVEAL_GUARD_MS`).
+  The name answers anywhere on the pill (`.ex-name::after` covers its edges and the ×'s place): a hidden × takes
+  no clicks, so its place used to be dead (clicks fell on the `li`, which the handler ignores). A shown × is drawn
+  above it and takes its own.
   A site that's just landed (`.landing`) shows no × before it turns to dust. The newest site is first; a typed site lifts off the field the
   moment you add it (the field empties under it in the same frame, `liftTyped`), glides into the first slot
   (the others make room, FLIP) and lands exactly on the chip's name, then turns to dust after a beat.

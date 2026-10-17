@@ -249,6 +249,9 @@ body { overflow: hidden; }
   cursor: var(--cursor-hand);
 }
 .ex-chip:has(.ex-name:focus-visible) { box-shadow: var(--ring); }
+/* the name answers anywhere on the pill: its edges, and the remove button's place while
+   that's hidden (a shown one is drawn above this and takes its own clicks) */
+.ex-name::after { content: ''; position: absolute; inset: -2px -24px -2px -3px; }
 .ex-text { overflow: hidden; text-overflow: ellipsis; }
 .ex-chip:not(.shown):not(.hiding) .ex-text, .ex-chip.awaiting .ex-text { visibility: hidden; }
 /* the dust fills the whole pill, the remove button's place too (white specks, tinted
