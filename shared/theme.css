@@ -212,8 +212,7 @@
 
 /* Pride: in support of the LGBTQ+ community. Pastel, in the trans flag's light blue, pink
    and white, with a touch of rainbow on the clock's ring (logo.css). It's Light underneath
-   (every rule for Light applies to it too); this is only what it changes. The categories'
-   colours keep their meaning, so they stay as on Light; the daily limit's go pastel. */
+   (every rule for Light applies to it too); this is only what it changes. */
 :root[data-theme="pride"],
 [data-wave="pride"] {
   color-scheme: light;
@@ -251,6 +250,20 @@
   --shadow-pop: 0 14px 44px rgba(60, 30, 90, 0.16), 0 2px 8px rgba(60, 30, 90, 0.06);
   --drop: drop-shadow(0 14px 30px rgba(60, 30, 90, 0.14)) drop-shadow(0 2px 6px rgba(60, 30, 90, 0.06));
   --ring: 0 0 0 3px rgba(240, 143, 179, 0.4);
+  /* the categories in pastel, each in its usual colour family (pink social, lavender video,
+     coral games, sky-blue work, peach shopping, mint learning, butter news, pale other), the
+     lightness spread so they stay apart for colour-blind eyes too (checked: closer to each
+     other than Light's set nowhere but protanopia, and there barely) */
+  --cat-social: #f08ab5;
+  --cat-video: #8f78dc;
+  --cat-games: #e9636e;
+  --cat-work: #64b5ec;
+  --cat-shopping: #f8ab6c;
+  --cat-learning: #4fbf8c;
+  --cat-news: #f3cf5a;
+  --cat-other: #e0dbe7;
+  /* a site's letter tile is drawn in its category's colour: dark letters read on pastels */
+  --tile-ink: rgba(43, 36, 51, 0.82);
   /* the daily limit, in pastels that keep their order (go, careful, stop): mint, butter,
      peach, coral, and a rose for over, a pink-red that still reads as "over" */
   --goal-ok: #7fd6a8;
@@ -600,7 +613,7 @@ button, input { font: inherit; color: inherit; letter-spacing: inherit; }
   overflow: hidden;
 }
 .favicon img { width: 16px; height: 16px; border-radius: 3px; }
-.favicon .letter { font-weight: 700; font-size: 13px; color: #fff; }
+.favicon .letter { font-weight: 700; font-size: 13px; color: var(--tile-ink, #fff); }
 
 /* tooltip: glides after the pointer and morphs its size between contents */
 .tip {

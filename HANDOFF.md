@@ -11,8 +11,9 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
   with a soft rainbow on the header clock's ring (logo.css). It is Light underneath: every Light rule
   also covers `[data-wave="pride"]`, and one block in theme.css (`:root[data-theme="pride"]`) holds only
   what it changes (surfaces, ink, the pink accent, the blue→lavender→pink hour grid, the limit clock).
-  Category colours stay as on Light (they carry meaning); the daily limit's go pastel in the same order
-  (mint, butter, peach, coral, and rose for over; the owner asked). A saved `pink` is read as `pride`
+  Categories and the daily limit go pastel too (the owner asked), in their usual colour families; the
+  category set was checked for colour-blind eyes (min ΔE: normal 29, deuteranopia 14, protanopia 18; Light's:
+  22, 13, 20). Letter tiles get dark letters (`--tile-ink`), which read on pastels. A saved `pink` is read as `pride`
   (theme-boot.js, theme.js). Pink's falling petals went with it. Test and tune all three themes.
   Its own character (the owner asked for "more expressive", not Light recoloured): an aurora page (blue top
   left, pink bottom right, lavender between); cards tinted blue→pink (no edge: a gradient border looked machine-made to the owner);
