@@ -212,8 +212,8 @@
 
 /* Pride: in support of the LGBTQ+ community. Pastel, in the trans flag's light blue, pink
    and white, with a touch of rainbow on the clock's ring (logo.css). It's Light underneath
-   (every rule for Light applies to it too); this is only what it changes. The colours of
-   the categories and of the daily limit keep their meaning, so they stay as on Light. */
+   (every rule for Light applies to it too); this is only what it changes. The categories'
+   colours keep their meaning, so they stay as on Light; the daily limit's go pastel. */
 :root[data-theme="pride"],
 [data-wave="pride"] {
   color-scheme: light;
@@ -251,6 +251,13 @@
   --shadow-pop: 0 14px 44px rgba(60, 30, 90, 0.16), 0 2px 8px rgba(60, 30, 90, 0.06);
   --drop: drop-shadow(0 14px 30px rgba(60, 30, 90, 0.14)) drop-shadow(0 2px 6px rgba(60, 30, 90, 0.06));
   --ring: 0 0 0 3px rgba(240, 143, 179, 0.4);
+  /* the daily limit, in pastels that keep their order (go, careful, stop): mint, butter,
+     peach, coral, and a rose for over, a pink-red that still reads as "over" */
+  --goal-ok: #7fd6a8;
+  --goal-warn: #f4cd5f;
+  --goal-high: #f7a574;
+  --goal-critical: #ef7f8d;
+  --goal-over: #e2557e;
   /* activity by hour: from the flag's blue, through lavender, to its pink; each step darker */
   --g0: #eeebf3;
   --g1: #cde7fa;
