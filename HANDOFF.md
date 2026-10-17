@@ -452,11 +452,6 @@ the big-to-small redraw is in flight), the starting look set before its animatio
 (shape and core opacity) carried over when it rises out, and its own flicker at rest exactly as it lands. Clicks go
 through; reduced motion: none.
 
-Testing it: Settings > Developer (shown only in unpacked builds, where the manifest has no `update_url`; the
-Web Store adds one) sends the over-limit notification as if 20m, 45m, 1h 15m or 2h 30m over (`devNotify` in
-background.js, id `goal-over-dev:<ms>:<time>`). Clicking it opens `recap.html#over=<ms>`: the ring shows that far over
-(your limit, or an hour if none) and the moment plays, until the page is reloaded.
-
 ## Popup's first open
 The first time the popup opens (storage key `popupIntroduced`), once: a line above Weekly Report ("Your whole week,
 day by day, is one click away.") and a soft ring going out from the button three times once the popup is in (its own

@@ -359,8 +359,6 @@ body { overflow: hidden; }
 
 /* your data: Clear all → big red "Are you sure?" → "Are you absolutely SURE?" */
 .data-row { display: flex; align-items: center; gap: 8px; min-height: 30px; }
-/* Settings > Developer: unpacked builds only */
-.dev-row { display: flex; flex-wrap: wrap; gap: 6px; }
 .data-row .keep-btn {
   flex: 1 1 0;
   min-width: 0;
