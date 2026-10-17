@@ -66,7 +66,13 @@
               <div class="panel-cols">
                 <div class="panel-col">
                   <div class="p-block">
-                    <span class="p-label">Appearance</span>
+                    <div class="p-head">
+                      <span class="p-label">Appearance</span>
+                      <span class="p-head-opt">
+                        <label class="p-head-name" for="set-rainbow" id="rainbow-name">Rainbow clock</label>
+                        <label class="switch switch-sm"><input type="checkbox" id="set-rainbow" aria-labelledby="rainbow-name" aria-describedby="rainbow-desc"><span class="track"></span><span class="knob"></span></label>
+                      </span>
+                    </div>
                     <span class="theme-progress" aria-hidden="true"><i class="tp-fill"></i></span>
                     <div class="segmented" id="appearance" role="group" aria-label="Appearance">
                       <span class="thumb"></span>
@@ -74,10 +80,7 @@
                       <button type="button" data-pref="light" aria-pressed="false">Light</button>
                       <button type="button" data-pref="dark" aria-pressed="false">Dark</button>
                     </div>
-                    <div class="p-row p-row-gap">
-                      <span><b>Rainbow clock</b><small id="rainbow-desc">In support of the LGBTQ+ community: the clock and MEMOIR in rainbow colours, here and in your toolbar</small></span>
-                      <label class="switch"><input type="checkbox" id="set-rainbow" aria-label="Rainbow clock" aria-describedby="rainbow-desc"><span class="track"></span><span class="knob"></span></label>
-                    </div>
+                    <p class="p-desc" id="rainbow-desc">Rainbow clock: in support of the LGBTQ+ community</p>
                   </div>
 
                   <div class="p-block">

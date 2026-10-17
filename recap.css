@@ -152,6 +152,10 @@ body { overflow: hidden; }
   will-change: transform, opacity;
 }
 .p-label { font-size: 12px; font-weight: 500; color: var(--label-2); }
+/* a block's heading with an option on the same line (Appearance: Rainbow clock) */
+.p-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.p-head-opt { display: flex; align-items: center; gap: 8px; }
+.p-head-name { font-size: 12px; font-weight: 500; color: var(--label-2); cursor: var(--cursor-hand); }
 .p-desc { margin: 0; font-size: 11.5px; line-height: 1.45; color: var(--label-2); }
 .p-desc.swap { animation: swap 0.35s var(--ease-out); }
 .p-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; }

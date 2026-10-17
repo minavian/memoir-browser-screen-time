@@ -8,7 +8,9 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
 ## What the owner cares about (apply to every change)
 - **Themes:** Light / Dark; the default follows the system. Pink was dropped (2026-10-17), and so was the
   full Pride palette that briefly replaced it (pastel trans-flag colours: every version looked off to the owner,
-  as it went against "colour is reserved for data"). What stayed is **Rainbow clock** (Appearance), in support
+  as it went against "colour is reserved for data"). What stayed is **Rainbow clock** (a small switch,
+  `.switch-sm`, on the Appearance heading's line, with one line under the theme buttons: it keeps the left
+  column of Settings short; moving Never track out of Tracking detail instead looked broken), in support
   of the LGBTQ+ community: the clock's ring in the rainbow's colours with its usual clockwise fade, in either
   theme (logo.css, `:root[data-rainbow="on"]`), on the toolbar icon (`icons/rainbowN.png`, made from
   `iconN.png` by recolouring only the ring's pixels by angle, keeping their brightness; background.js

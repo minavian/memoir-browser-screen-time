@@ -478,6 +478,11 @@ button, input { font: inherit; color: inherit; letter-spacing: inherit; }
 .switch input:checked + .track + .knob { transform: translateX(18px); background: var(--knob-on); }
 .switch input:active + .track + .knob { width: 27px; }
 .switch input:checked:active + .track + .knob { left: -3px; }
+/* a smaller one, for a heading's line */
+.switch-sm { width: 36px; height: 20px; }
+.switch-sm .knob { width: 16px; height: 16px; }
+.switch-sm input:checked + .track + .knob { transform: translateX(16px); }
+.switch-sm input:active + .track + .knob { width: 20px; }
 .switch input:focus-visible + .track { box-shadow: var(--ring); }
 /* locked (aria-disabled): it doesn't give under a press; the row says why (recap.js) */
 .switch:has(input[aria-disabled="true"]), .switch input[aria-disabled="true"] { cursor: var(--cursor); }
