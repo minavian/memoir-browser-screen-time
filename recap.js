@@ -4702,8 +4702,9 @@ async function startTour({ prepared = false, handoff = null } = {}) {
       { text: 'Switch <b>Custom cursor</b> off, then on again, to compare', watch: onChange('#set-cursor') },
       { text: 'Try <b>Smooth cursor</b>', watch: onChange('#set-smooth') },
     ] },
-    { title: 'What gets tracked', text: '<b>Page titles</b> lets you revisit a particular page you opened. Turning off <b>Track browsing</b> pauses tracking.', target: () => block('#detail'), before: toSettings('#detail'), settle: 350, radius: 14, tasks: [
+    { title: 'What gets tracked', text: '<b>Page titles</b> lets you revisit a particular page you opened. Turning off <b>Track browsing</b> pauses tracking. Type a site into <b>Never track</b> and it will never be tracked, unless you remove it.', target: () => [block('#detail'), block('#ex-form')], before: toSettings('#ex-form'), settle: 350, radius: 14, tasks: [
       { text: 'Switch <b>Tracking detail</b>', watch: onClick('#detail button[aria-pressed="false"]') },
+      { text: 'Add a site to <b>Never track</b>', watch: onNewSite },
     ] },
     { title: 'Weekly recap', text: 'A reminder on the day and at the time you choose, with your week ready to look at.', target: () => block('#set-reminder'), before: toSettings('#set-reminder'), settle: 350, radius: 14, tasks: [
       ...(state.settings.weeklyReminder ? [] : [{ text: 'Switch the reminder on', watch: onChange('#set-reminder') }]),
@@ -4711,9 +4712,6 @@ async function startTour({ prepared = false, handoff = null } = {}) {
       { text: 'Change the time', watch: either(onChange('#rem-h, #rem-m'), onClick('#rem-ampm'), listen('keydown', e => (e.key === 'ArrowUp' || e.key === 'ArrowDown') && !!e.target.closest('#rem-h, #rem-m'))) },
     ] },
     { title: 'Your limit and history', text: 'A committed limit can only be undone here. <b>Keep history</b> sets how long days are kept.', target: () => [row('#limit-reset'), block('#retention')], before: toSettings('#retention'), settle: 350, radius: 14 },
-    { title: 'Never track', text: 'Type a site into <b>Never track</b> and it will never be tracked, unless you remove it. Its time still counts, as Private.', target: () => block('#ex-form'), before: toSettings('#ex-form'), settle: 350, radius: 14, tasks: [
-      { text: 'Add a site to <b>Never track</b>', watch: onNewSite },
-    ] },
     { title: 'Sample week, tour and data', text: 'Look around with made-up data, replay this tour, and <b>Export</b> or <b>Import</b> your history. The <b>Clear all</b> button asks twice before deleting your data.', target: () => [block('#set-demo'), block('#data-row')], before: toSettings('#data-row'), settle: 350, radius: 14 },
     { kicker: 'All set', title: 'That’s the tour', text: 'Your own week fills in as you browse. The clock in your toolbar shows today at a glance.', before: async () => { await noSettings(); await toWeek(); }, settle: 300 },
   ];
