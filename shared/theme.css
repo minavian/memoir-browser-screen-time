@@ -1,10 +1,11 @@
 /* Browser Screen Time — one design, three themes.
-   Light and Dark follow the system by default; Pink is only ever chosen by you.
+   Light and Dark follow the system by default; Pride is only ever chosen by you.
    Colour is reserved for data. Hover motion never overshoots, so nothing
    wobbles when the pointer leaves; bounce is kept for deliberate pops only. */
 
 :root,
-[data-wave="light"] {
+[data-wave="light"],
+[data-wave="pride"] {
   color-scheme: light;
 
   --bg: #f5f5f7;
@@ -80,8 +81,6 @@
 
   --r-card: 20px;
 
-  --petal-a: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23ffc2da'/%3E%3Cstop offset='1' stop-color='%23e9709f'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M16 30C8 26 3 17 6 9c2-5 6-6 8-3l2 3 2-3c2-3 6-2 8 3 3 8-2 17-10 21z' fill='url(%23g)'/%3E%3C/svg%3E");
-  --petal-b: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23ffadcb'/%3E%3Cstop offset='1' stop-color='%23cf4b83'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M16 30C8 26 3 17 6 9c2-5 6-6 8-3l2 3 2-3c2-3 6-2 8 3 3 8-2 17-10 21z' fill='url(%23g)'/%3E%3C/svg%3E");
 }
 
 @media (prefers-color-scheme: dark) {
@@ -211,71 +210,51 @@
   --cursor-hand: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2728%27 height=%2728%27 viewBox=%270 0 28 28%27%3E%3Cpath d=%27M6.65 5.33L19.79 14.35Q21.60 15.60 19.46 16.09L16.02 16.88Q12.90 17.60 10.62 19.85L7.77 22.66Q6.20 24.20 6.07 22.00L5.12 6.20Q5.00 4.20 6.65 5.33Z%27 fill=%27rgba%280%2C0%2C0%2C0.85%29%27 stroke=%27rgba%280%2C0%2C0%2C0.85%29%27 stroke-width=%274.6%27 stroke-linejoin=%27round%27/%3E%3Cpath d=%27M6.65 5.33L19.79 14.35Q21.60 15.60 19.46 16.09L16.02 16.88Q12.90 17.60 10.62 19.85L7.77 22.66Q6.20 24.20 6.07 22.00L5.12 6.20Q5.00 4.20 6.65 5.33Z%27 fill=%27%231c1c1e%27 stroke=%27%23f5f5f7%27 stroke-width=%272%27 stroke-linejoin=%27round%27/%3E%3C/svg%3E") 5 4, pointer;
 }
 
-/* Pink: the dusky rose from the cute version — soft on the eyes */
-:root[data-theme="pink"],
-[data-wave="pink"] {
-  color-scheme: dark;
-  --bg: #2b1521;
+/* Pride: in support of the LGBTQ+ community. Pastel, in the trans flag's light blue, pink
+   and white, with a touch of rainbow on the clock's ring (logo.css). It's Light underneath
+   (every rule for Light applies to it too); this is only what it changes. The colours of
+   the categories and of the daily limit keep their meaning, so they stay as on Light. */
+:root[data-theme="pride"],
+[data-wave="pride"] {
+  color-scheme: light;
+  --bg: #f8f6fb;
   --bg-art:
-    radial-gradient(900px 600px at 100% 0%, rgba(201, 58, 116, 0.18), transparent 70%),
-    radial-gradient(700px 500px at 0% 100%, rgba(247, 103, 157, 0.1), transparent 70%);
-  --surface: #3a2331;
-  --surface-2: #4a2c3d;
-  --raised: #4a2c3d;
-  --fill-1: rgba(255, 143, 184, 0.09);
-  --fill-2: rgba(255, 143, 184, 0.16);
-  --fill-3: rgba(255, 143, 184, 0.26);
-  --label: #fbe7f0;
-  --label-2: #e0b3c7;
-  --label-3: #c592a9;
-  --sep: rgba(255, 170, 205, 0.14);
-  --accent: #f58bb5;
-  --on-accent: #3a1628;
-  --track: #4d2e40;
-  --knob: #fbe7f0;
-  --knob-on: #3a1628;
-  --thumb: #6a3d55;
-  --glass: rgba(58, 35, 49, 0.86);
-  --shadow: 0 16px 36px -18px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 190, 220, 0.07);
-  --shadow-hover: 0 18px 40px -18px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 190, 220, 0.12);
-  --shadow-pop: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 170, 205, 0.14);
-  --drop: drop-shadow(0 18px 36px rgba(0, 0, 0, 0.55)) drop-shadow(0 0 0.5px rgba(255, 170, 205, 0.4));
-  --ring: 0 0 0 3px rgba(245, 139, 181, 0.4);
-  --cat-social: #d55181;
-  --cat-video: #9085e9;
-  --cat-games: #e66767;
-  --cat-work: #3987e5;
-  --cat-shopping: #d95926;
-  --cat-learning: #199e70;
-  --cat-news: #c98500;
-  --cat-other: #e3d0d9;
-  --g0: #452a3b;
-  --g1: #6b2f4c;
-  --g2: #963a61;
-  --g3: #c64a7c;
-  --g4: #ee6d9f;
-  --g5: #ffa8c8;
-
-  --goal-ok: #30d158;
-  --goal-warn: #ffd60a;
-  --goal-high: #ff9f0a;
-  --goal-critical: #ff453a;
-  --goal-over: #ff2d45;
-  --danger: #ff5c7a;
-  --danger-soft: rgba(255, 92, 122, 0.16);
-  --danger-glow: rgba(255, 92, 122, 0.6);
-  --on-danger: #ffffff;
-  --pk-bg: #3a2331;
-  --pk-fg: #fbe7f0;
-  --pk-dim: rgba(251, 231, 240, 0.58);
-  --pk-track: rgba(255, 143, 184, 0.14);
-  --pk-field: rgba(255, 143, 184, 0.12);
-  --pk-accent: #f58bb5;
-  --pk-on-accent: #3a1628;
-  --pk-shadow: 0 30px 80px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 190, 220, 0.08);
-  --pk-scrim: rgba(22, 6, 15, 0.52);
-  --cursor: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2728%27 height=%2728%27 viewBox=%270 0 28 28%27%3E%3Cpath d=%27M6.65 5.33L19.79 14.35Q21.60 15.60 19.46 16.09L16.02 16.88Q12.90 17.60 10.62 19.85L7.77 22.66Q6.20 24.20 6.07 22.00L5.12 6.20Q5.00 4.20 6.65 5.33Z%27 fill=%27rgba%2843%2C21%2C33%2C0.9%29%27 stroke=%27rgba%2843%2C21%2C33%2C0.9%29%27 stroke-width=%274.6%27 stroke-linejoin=%27round%27/%3E%3Cpath d=%27M6.65 5.33L19.79 14.35Q21.60 15.60 19.46 16.09L16.02 16.88Q12.90 17.60 10.62 19.85L7.77 22.66Q6.20 24.20 6.07 22.00L5.12 6.20Q5.00 4.20 6.65 5.33Z%27 fill=%27%233a1628%27 stroke=%27%23f58bb5%27 stroke-width=%272%27 stroke-linejoin=%27round%27/%3E%3C/svg%3E") 5 4, default;
-  --cursor-hand: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2728%27 height=%2728%27 viewBox=%270 0 28 28%27%3E%3Cpath d=%27M6.65 5.33L19.79 14.35Q21.60 15.60 19.46 16.09L16.02 16.88Q12.90 17.60 10.62 19.85L7.77 22.66Q6.20 24.20 6.07 22.00L5.12 6.20Q5.00 4.20 6.65 5.33Z%27 fill=%27rgba%2843%2C21%2C33%2C0.9%29%27 stroke=%27rgba%2843%2C21%2C33%2C0.9%29%27 stroke-width=%274.6%27 stroke-linejoin=%27round%27/%3E%3Cpath d=%27M6.65 5.33L19.79 14.35Q21.60 15.60 19.46 16.09L16.02 16.88Q12.90 17.60 10.62 19.85L7.77 22.66Q6.20 24.20 6.07 22.00L5.12 6.20Q5.00 4.20 6.65 5.33Z%27 fill=%27%233a1628%27 stroke=%27%23f58bb5%27 stroke-width=%272%27 stroke-linejoin=%27round%27/%3E%3C/svg%3E") 5 4, pointer;
+    radial-gradient(900px 620px at 100% 0%, rgba(116, 196, 240, 0.2), transparent 70%),
+    radial-gradient(820px 580px at 0% 100%, rgba(245, 169, 184, 0.22), transparent 70%);
+  --surface: #ffffff;
+  --surface-2: #f6f3fa;
+  --raised: #ffffff;
+  --fill-1: rgba(128, 104, 160, 0.08);
+  --fill-2: rgba(128, 104, 160, 0.14);
+  --fill-3: rgba(128, 104, 160, 0.22);
+  --label: #2b2433;
+  --label-2: #6f6679;
+  --label-3: #8f8799;
+  --sep: rgba(96, 72, 128, 0.12);
+  --accent: #f08fb3;
+  --on-accent: #3a1f30;
+  --track: #ebe6f1;
+  --glass: rgba(255, 255, 255, 0.82);
+  --shadow: 0 1px 2px rgba(60, 30, 90, 0.04), 0 6px 22px rgba(60, 30, 90, 0.06);
+  --shadow-hover: 0 1px 2px rgba(60, 30, 90, 0.05), 0 10px 30px rgba(60, 30, 90, 0.09);
+  --shadow-pop: 0 14px 44px rgba(60, 30, 90, 0.16), 0 2px 8px rgba(60, 30, 90, 0.06);
+  --drop: drop-shadow(0 14px 30px rgba(60, 30, 90, 0.14)) drop-shadow(0 2px 6px rgba(60, 30, 90, 0.06));
+  --ring: 0 0 0 3px rgba(240, 143, 179, 0.4);
+  /* activity by hour: from the flag's blue, through lavender, to its pink; each step darker */
+  --g0: #eeebf3;
+  --g1: #cde7fa;
+  --g2: #94cdf1;
+  --g3: #b7a3e6;
+  --g4: #dc6f9f;
+  --g5: #c04477;
+  --pk-fg: #2b2433;
+  --pk-dim: rgba(43, 36, 51, 0.5);
+  --pk-track: rgba(96, 72, 128, 0.09);
+  --pk-field: rgba(96, 72, 128, 0.05);
+  --pk-accent: #f08fb3;
+  --pk-on-accent: #3a1f30;
+  --pk-shadow: 0 30px 80px rgba(60, 30, 90, 0.18), 0 2px 10px rgba(60, 30, 90, 0.08);
+  --pk-scrim: rgba(40, 24, 60, 0.22);
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -320,7 +299,7 @@ button, input { font: inherit; color: inherit; letter-spacing: inherit; }
   font-weight: 200 900;
   font-display: block;
 }
-:root, [data-wave="light"] {
+:root, [data-wave="light"], [data-wave="pride"] {
   --wm-fill: linear-gradient(76deg, #5e5e64, #2c2c30 30%, #0e0e10 55%, #232327 78%, #0e0e10);
   --wm-glow: 0 0.02em 0.06em rgba(0, 0, 0, 0.14);
 }
@@ -420,33 +399,6 @@ button, input { font: inherit; color: inherit; letter-spacing: inherit; }
 @keyframes enter { from { opacity: 0; translate: 0 10px; } to { opacity: 1; translate: 0 0; } }
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes fade-out { from { opacity: 1; } to { opacity: 0; } }
-
-/* ---------- pink-only falling petals ---------- */
-
-.ambient { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; display: none; }
-:root[data-theme="pink"] .ambient { display: block; }
-.petal {
-  position: absolute;
-  top: 0;
-  left: var(--x);
-  width: var(--size);
-  height: var(--size);
-  animation: petal-fall var(--dur) linear var(--delay) infinite;
-}
-.petal i {
-  display: block;
-  width: 100%;
-  height: 100%;
-  background: var(--img, var(--petal-a)) center / contain no-repeat;
-  opacity: var(--alpha, 0.4);
-  animation: petal-flutter var(--flutter) var(--ease-in-out) var(--delay) infinite alternate;
-}
-@keyframes petal-fall { from { transform: translate3d(0, -40px, 0); } to { transform: translate3d(var(--drift), calc(100vh + 40px), 0); } }
-@keyframes petal-flutter {
-  0%   { transform: translateX(-12px) rotate(-30deg) rotateY(0deg); }
-  50%  { transform: translateX(5px) rotate(10deg) rotateY(70deg); }
-  100% { transform: translateX(12px) rotate(40deg) rotateY(160deg); }
-}
 
 /* ---------- surfaces ---------- */
 
@@ -879,11 +831,10 @@ button, input { font: inherit; color: inherit; letter-spacing: inherit; }
 .sb:hover i, .scroller.dragging .sb i { width: 7px; right: 1.5px; opacity: 0.85; }
 
 /* ---------- animated cursor (see cursor.js); "off" falls back to the system's ---------- */
-:root, [data-wave="light"] { --cur-fill: #ffffff; --cur-stroke: #1d1d1f; --cur-halo: rgba(255, 255, 255, 0.92); }
+:root, [data-wave="light"], [data-wave="pride"] { --cur-fill: #ffffff; --cur-stroke: #1d1d1f; --cur-halo: rgba(255, 255, 255, 0.92); }
 @media (prefers-color-scheme: dark) { :root:not([data-theme]) { --cur-fill: #1c1c1e; --cur-stroke: #f5f5f7; --cur-halo: rgba(0, 0, 0, 0.85); } }
 :root[data-theme="dark"], [data-wave="dark"] { --cur-fill: #1c1c1e; --cur-stroke: #f5f5f7; --cur-halo: rgba(0, 0, 0, 0.85); }
-:root[data-theme="pink"], [data-wave="pink"] { --cur-fill: #3a1628; --cur-stroke: #f58bb5; --cur-halo: rgba(43, 21, 33, 0.9); }
-/* !important: the dark and pink themes set their own arrow with a stronger selector */
+/* !important: the dark theme sets its own arrow with a stronger selector */
 /* (also on blocks a theme wave has passed: they carry their own theme's --cursor) */
 html[data-cursor="off"],
 html[data-cursor="off"] [data-wave] { --cursor: auto !important; --cursor-hand: pointer !important; }

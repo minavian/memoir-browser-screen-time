@@ -2,10 +2,7 @@
 
 Quietly logs where your browsing time goes, keeps you to a daily limit if you
 want one, and shows your whole week at a glance, on one screen with no
-scrolling. Three themes: **Light**, **Dark** and **Pink**.
-
-> **Themes, from this version on:** only **Light** and **Dark** are being worked on.
-> **Pink** stays as it is and will be replaced with a new theme soon.
+scrolling. Three themes: **Light**, **Dark** and **Pride**.
 
 The Windows app is in **Windows Memoir**. Open `Memoir.exe` there; see
 [its instructions](Windows%20Memoir/README.md) for Windows app tracking and the optional browser connector.
@@ -95,8 +92,10 @@ mouse wheel and scrolling keys, and follow your computer's reduced-motion settin
 
 Open the gear in the top-right corner of the report.
 
-- **Appearance:** System (default, follows your computer), Light, Dark or Pink.
-  Pink is never picked automatically.
+- **Appearance:** System (default, follows your computer), Light, Dark or Pride.
+  **Pride** is in support of the LGBTQ+ community: pastel, in the trans flag's light
+  blue, pink and white, with a soft rainbow on the clock's ring. It's never picked
+  automatically (it replaced Pink; if you had Pink, you now have Pride).
 - **Custom cursor:** the animated cursor. Turning it off is highly recommended on
   low-end devices; you get your system's pointer instead.
 - **Smooth cursor:** off by default. The custom cursor glides after your mouse, a

@@ -6,9 +6,13 @@ Current version: **5.1.5** (`manifest.json`). Load unpacked from this folder; af
 press reload on the extension in `chrome://extensions` and refresh the report tab.
 
 ## What the owner cares about (apply to every change)
-- **Themes:** Light / Dark / Pink. Default follows the system and is never Pink.
-  **From 2026-10-12 on, work on Light and Dark only.** Leave Pink as it is: don't test, tune or
-  screenshot it (it burns tokens for nothing); it will be replaced with a new theme soon.
+- **Themes:** Light / Dark / Pride. Default follows the system and is never Pride. **Pride** (2026-10-17)
+  replaced Pink: in support of the LGBTQ+ community, pastel, the trans flag's light blue, pink and white,
+  with a soft rainbow on the header clock's ring (logo.css). It is Light underneath: every Light rule
+  also covers `[data-wave="pride"]`, and one block in theme.css (`:root[data-theme="pride"]`) holds only
+  what it changes (surfaces, ink, the pink accent, the blue→lavender→pink hour grid, the limit clock).
+  Category and limit colours stay as on Light (they carry meaning). A saved `pink` is read as `pride`
+  (theme-boot.js, theme.js). Pink's falling petals went with it. Test and tune all three themes.
 - **One screen, no scrolling** on large windows (cards stack and the page scrolls only under ~1100 px wide).
 - Minimal, clean, borderless look; **everything interactive is animated**; morph animations wherever possible.
 - Hovers use `--ease-out` and must **never shake or overshoot**. `--pop` only for deliberate pops.
@@ -155,7 +159,7 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
   ring around 20 and 40 minutes, where the knob couldn't be grabbed. Tick dots sit on the track, numbers outside,
   Cancel in the centre column. The ✓ centres with `translate`, hovers with `scale`, and pops via WAAPI `transform`,
   so its animations never restart or fight each other.
-- Picker look (4.3.0): colours follow the theme (light picker on Light, dark on Dark, deep pink on Pink;
+- Picker look (4.3.0): colours follow the theme (light picker on Light, dark on Dark, pastel with a pink knob on Pride;
   `--pk-*` tokens incl. `--pk-shadow`, `--pk-scrim`). The page behind blurs like Settings (2px backdrop blur).
   Opening is choreographed in goal.js (`buildParts` / `playIn`): the track draws itself round (dashoffset,
   pathLength 1), dots pop as the sweep passes, numbers drift out after them, knob/✓/digits/underline/hint/Cancel
@@ -347,7 +351,7 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
     The first wave also lays a `base` layer of the old theme. While `:root.waving`, the board's cards are
     transparent so the layers show through. With Settings open, `.wave-panel` (inside the panel, z-index -1) fills
     in a soft circle from the clicked button (`--wave-r`, 840 ms).
-  - Content: theme tokens are scoped to `[data-wave="light|dark|pink"]` as well as `:root` (theme.css, recap.css),
+  - Content: theme tokens are scoped to `[data-wave="light|dark|pride"]` as well as `:root` (theme.css, recap.css),
     so a single element can carry a theme. `blocksIn` splits the parts into small blocks (≤ 40 000 px², or leaves;
     a small part such as the gear button switches whole). One rAF loop flips each block's `data-wave` when the middle
     of a wave's soft edge reaches its centre (the times come from the easing curve inverted in JS). A block takes

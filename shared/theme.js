@@ -1,5 +1,6 @@
-// Appearance: System (default — follows light/dark), Light, Dark or Pink.
-// Pink is never chosen automatically; it only applies when picked.
+// Appearance: System (default — follows light/dark), Light, Dark or Pride.
+// Pride is never chosen automatically; it only applies when picked. It took the place of
+// Pink, so a saved Pink is read as Pride.
 // Stored in localStorage so the popup and the report share it instantly and it
 // can be applied before first paint (see theme-boot.js).
 
@@ -8,8 +9,9 @@ const darkQuery = matchMedia('(prefers-color-scheme: dark)');
 
 export function getThemePref() {
   try {
-    const p = localStorage.getItem(THEME_KEY);
-    return p === 'light' || p === 'dark' || p === 'pink' ? p : 'auto';
+    const saved = localStorage.getItem(THEME_KEY);
+    const p = saved === 'pink' ? 'pride' : saved;
+    return p === 'light' || p === 'dark' || p === 'pride' ? p : 'auto';
   } catch {
     return 'auto';
   }
@@ -112,8 +114,9 @@ function layer(theme, rects) {
     shapes.appendChild(s);
   }
   el.appendChild(shapes);
-  // under the petals and the board, above the page's own background, oldest first
-  document.body.insertBefore(el, document.querySelector('body > .ambient') || document.body.firstChild);
+  // under the board, above the page's own background, oldest first (after the last wave)
+  const waves = document.querySelectorAll('body > .wave-layer');
+  document.body.insertBefore(el, waves.length ? waves[waves.length - 1].nextSibling : document.body.firstChild);
   return el;
 }
 

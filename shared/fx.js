@@ -660,25 +660,6 @@ export function slicePath(cx, cy, r1, r2, a0, a1, corner) {
     `A${cr} ${cr} 0 0 1 ${pt(r1 + cr, a0)}L${pt(r2 - cr, a0)}A${cr} ${cr} 0 0 1 ${pt(r2, a0 + dO)}Z`;
 }
 
-export function initPetals(count = 10, sizes = [9, 16]) {
-  if (reducedMotion()) return;
-  const r = (a, b) => a + Math.random() * (b - a);
-  const amb = document.createElement('div');
-  amb.className = 'ambient';
-  amb.setAttribute('aria-hidden', 'true');
-  for (let i = 0; i < count; i++) {
-    const p = document.createElement('div');
-    p.className = 'petal';
-    const dur = r(15, 26);
-    p.style.cssText = `--x:${r(-3, 98).toFixed(1)}%;--size:${r(sizes[0], sizes[1]).toFixed(1)}px;--dur:${dur.toFixed(1)}s;--delay:${(-r(0, dur)).toFixed(1)}s;--drift:${r(-80, 80).toFixed(0)}px`;
-    const inner = document.createElement('i');
-    inner.style.cssText = `--img:var(${i % 2 ? '--petal-b' : '--petal-a'});--flutter:${r(2.8, 4.4).toFixed(1)}s;--alpha:${r(0.22, 0.45).toFixed(2)}`;
-    p.appendChild(inner);
-    amb.appendChild(p);
-  }
-  document.body.prepend(amb);
-}
-
 // ---------- smooth height changes ----------
 
 // Runs `mutate`, then animates the element from its old height to its new one.

@@ -42,11 +42,17 @@
    under it, and turns with the knob on a live clock). On Dark it's white on the disc, as
    above. The welcome's clock comes out of the black opening white on its disc and turns
    to this as it lands (welcome-intro.js). */
-:root, [data-wave="light"] { --logo-ink: 29 29 31; --logo-disc: transparent; --logo-inset: 0%; }
+:root, [data-wave="light"], [data-wave="pride"] { --logo-ink: 29 29 31; --logo-disc: transparent; --logo-inset: 0%; }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]) { --logo-ink: 255 255 255; --logo-disc: #111114; --logo-inset: 8%; }
 }
 :root[data-theme="dark"], [data-wave="dark"] { --logo-ink: 255 255 255; --logo-disc: #111114; --logo-inset: 8%; }
+/* Pride: the theme's ink, and the ring a soft rainbow with the same clockwise fade */
+:root[data-theme="pride"], [data-wave="pride"] { --logo-ink: 43 36 51; }
+:root[data-theme="pride"] .logo.themed .lg-ring::before, [data-wave="pride"] .logo.themed .lg-ring::before {
+  background: conic-gradient(rgb(232 102 124 / 0.937), rgb(240 146 84 / 0.86) 50deg, rgb(226 184 52 / 0.74) 110deg,
+    rgb(84 184 116 / 0.6) 170deg, rgb(74 160 226 / 0.47) 235deg, rgb(150 112 214 / 0.32) 300deg, rgb(150 112 214 / 0.181));
+}
 .logo.themed { --lg-ink: var(--logo-ink); --lg-knob-mid: transparent; }
 .logo.themed::before { background: var(--logo-disc); }
 .logo.themed .lg-clock { inset: var(--logo-inset); }

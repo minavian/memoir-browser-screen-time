@@ -7,7 +7,7 @@ import {
   withData, domainFromUrl, safeKey, cleanUrl, EXPORT_FORMAT,
 } from './shared/core.js';
 import {
-  animateNumber, tween, reveal, createTooltip, faviconTile, reducedMotion, syncSegmented, slicePath, initPetals,
+  animateNumber, tween, reveal, createTooltip, faviconTile, reducedMotion, syncSegmented, slicePath,
   setOrigins, siteLinkHtml, morph, MorphPopover, replay, EASE_OUT, animateHeight, makeScroller, initSmoothScrolling, disableTitleTooltips,
   ARROW_SVG, POP,
 } from './shared/fx.js';
@@ -113,7 +113,6 @@ async function init() {
   initSmoothScrolling();
   disableTitleTooltips();
   initCursor();
-  initPetals(10);
   document.fonts.load('600 14px "Memoir Inter"').then(() => document.fonts.load('900 14px "Memoir Inter"')).then(measureSure, measureSure);
   const m = location.hash.match(/week=(\d{4}-\d{2}-\d{2})/);
   if (m) state.weekStart = startOfWeek(dateFromKey(m[1]));
@@ -4686,7 +4685,7 @@ async function startTour({ prepared = false, handoff = null } = {}) {
     { title: 'Settings', text: '', target: () => ($('settings').classList.contains('open') ? q('#settings-panel') : q('#settings-btn')), before: noSettings, settle: 0, radius: 22, pad: 6, tasks: [
       { text: 'Click the gear to open Settings', watch: onClick('#settings-btn', () => $('settings').classList.contains('open')) },
     ] },
-    { title: 'Appearance', text: '<b>System</b> picks your theme automatically. Or pick Light, Dark, or <b>Pink</b>.', target: () => block('#appearance'), before: toSettings('#appearance'), settle: 350, radius: 14, tasks: [
+    { title: 'Appearance', text: '<b>System</b> picks your theme automatically. Or pick Light, Dark, or <b>Pride</b>: soft trans-flag colours with a touch of rainbow, for the LGBTQ+ community.', target: () => block('#appearance'), before: toSettings('#appearance'), settle: 350, radius: 14, tasks: [
       { text: 'Try another theme', watch: onClick('#appearance button') },
     ] },
     { title: 'Cursor', text: 'Turning it on gives you <span class="wordmark wm-in">Memoir</span>’s custom, modern-looking cursor. <b>Smooth cursor</b> makes your cursor move smoothly.', target: () => block('#set-cursor'), before: toSettings('#set-smooth'), settle: 350, radius: 14, tasks: [

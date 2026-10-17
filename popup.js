@@ -5,7 +5,7 @@ import {
   getGoalHistory, limitOn, limitLocked, commitLimit, removeLimit,
 } from './shared/core.js';
 import {
-  animateNumber, reveal, faviconTile, tween, slicePath, initPetals, setOrigins, siteLinkHtml, replay, reducedMotion, POP, EASE_OUT, makeScroller, initSmoothScrolling, disableTitleTooltips, MorphPopover,
+  animateNumber, reveal, faviconTile, tween, slicePath, setOrigins, siteLinkHtml, replay, reducedMotion, POP, EASE_OUT, makeScroller, initSmoothScrolling, disableTitleTooltips, MorphPopover,
 } from './shared/fx.js';
 import { watchTheme } from './shared/theme.js';
 import { createGoalRing, openPicker } from './shared/goal.js';
@@ -44,7 +44,6 @@ async function main() {
   disableTitleTooltips();
   initCursor({ edge: true });
   watchTheme();
-  initPetals(6, [8, 13]);
   $('today-label').textContent = `Today, ${new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}`;
 
   // Nudge the tracker to save; the popup adds unsaved seconds itself, so it never waits.
