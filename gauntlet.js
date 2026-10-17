@@ -255,15 +255,14 @@ export function runGauntlet({ fromEl, onReset }) {
       </div>`;
     }
 
-    // A question's parts arrive one after another, like the limit clock's "Are you
-    // committed?" card: what it said back, the title, the words, what to pick or type, then
-    // each button. Opening, they rise into place; a new question slides in on its side.
-    function playParts(stepEl, { dx = 0, delay = 0 } = {}) {
+    // Opening, the first question's parts arrive one after another, like the limit clock's
+    // "Are you committed?" card: the title, the words, what to pick or type, then each
+    // button, rising into place. (A next question slides in whole, in show.)
+    function playParts(stepEl) {
       if (reducedMotion()) return;
       const parts = [...stepEl.children].flatMap(el => (el.matches('.gx-actions, .gx-options') ? [...el.children] : [el]));
-      const from = dx ? `translateX(${dx}px)` : 'translateY(10px) scale(0.97)';
       parts.forEach((el, k) => {
-        el.animate([{ opacity: 0, transform: from }, { opacity: 1, transform: 'none' }], { duration: 480, delay: delay + k * 60, easing: EASE_OUT, fill: 'backwards' });
+        el.animate([{ opacity: 0, transform: 'translateY(10px) scale(0.97)' }, { opacity: 1, transform: 'none' }], { duration: 480, delay: k * 60, easing: EASE_OUT, fill: 'backwards' });
       });
     }
 
@@ -299,7 +298,7 @@ export function runGauntlet({ fromEl, onReset }) {
         body.appendChild(stepEl);
       }, { duration: 420 });
       if (!reducedMotion()) {
-        playParts(stepEl, { dx: 30 * dir, delay: 60 });
+        stepEl.animate([{ opacity: 0, transform: `translateX(${34 * dir}px)` }, { opacity: 1, transform: 'none' }], { duration: 460, delay: 60, easing: EASE_OUT, fill: 'backwards' });
       }
       wireStep(stepEl, i);
     }
