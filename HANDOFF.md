@@ -572,7 +572,8 @@ for `nativeMessaging` and links. A hello the app doesn't answer (it's still star
 "Memoir for Windows is cleared too". In Memoir for Windows it's a "Memoir in browser" row for each browser linked
 with it, any that runs Chrome extensions (from the `sync` record's peers, the browser's name underneath: what the
 extension said, else the program that started its host), each with its own Unlink (`link.unlink`); with none, the
-row's Guide opens how to connect one (`#guide-pop`), and Connect another browser opens it later. Under Track browsing, `#startup-row` (Start with Windows) is Memoir for Windows' only: hidden here, it asks the
+row's Guide opens how to connect one (`#guide-pop`), and Connect another browser opens it later. While tracking is paused (from anywhere), the header holds a "Tracking is paused" pill with Resume (`showPaused`)
+and an empty week says so. Under Track browsing, `#startup-row` (Start with Windows) is Memoir for Windows' only: hidden here, it asks the
 app (`startup.get` / `startup.set`). Test it by pressing it for real against a throwaway
 Memoir for Windows, as above.
 
