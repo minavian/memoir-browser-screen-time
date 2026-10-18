@@ -535,7 +535,11 @@ the button, under its label, scaled up from the button's size as it fades (`puls
 where the growing box-shadow it replaced repainted every frame (1,631 paints in the first 7 s, now 82).
 
 ## Windows app
-`Windows Memoir/Memoir.exe` is the portable x64 Windows app (5.0.2), with its own native foreground tracker and the same web UI. See its README and VALIDATION for build/setup, test results, and optional exact browser connector setup. Minimizing disposes WebView2. The themed tray popup runs in a temporary WPF process that exits after dismissal, so its graphics heap is released. Both mouse buttons open it; double-click restores the app. All data remains local; preserve `Windows Memoir/Data` and exclude data/test profiles from distributed copies.
+Its own folder and private repo since 2026-10-18: `M:\Code\MEMOIR\Windows Memoir`, minavian/windows-memoir (its `Data` folder is
+the owner's history: never commit or overwrite it; test with `Memoir.exe --data-dir=`). Ported to this extension at commit
+`53e8106` (three-way merge per file; its `PORTING.md` has the method, the Windows edits and the next merge base). When a
+change here touches the data, the bridge or the wording, note it there.
+`Memoir.exe` is the portable x64 Windows app, with its own native foreground tracker and the same web UI. See its README and VALIDATION for build/setup, test results, and optional exact browser connector setup. Minimizing disposes WebView2. The themed tray popup runs in a temporary WPF process that exits after dismissal, so its graphics heap is released. Both mouse buttons open it; double-click restores the app. All data remains local; preserve `Windows Memoir/Data` and exclude data/test profiles from distributed copies.
 
 ## How Memoir works (`how-it-works.html`)
 Opened from Settings (How Memoir works → Open, a new tab, under Tutorial; pointed at, Open grows to show the
