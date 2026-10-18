@@ -256,7 +256,8 @@ button, input { font: inherit; color: inherit; letter-spacing: inherit; }
   font-display: block;
 }
 /* Inter 4.1 (rsms/inter, Open Font License), every weight and its optical sizes (opsz: the larger the
-   text, the tighter its Display cut), cut down to Latin, Greek, Cyrillic, punctuation and arrows.
+   text, the tighter its Display cut), cut down to Latin, Greek, Cyrillic, punctuation and arrows, and
+   with the plain 1 in tabular digits too (Inter's own has a foot there).
    theme-boot.js starts loading it before first paint, except on a Mac, which uses SF Pro */
 @font-face {
   font-family: "Memoir Inter";

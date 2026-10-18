@@ -83,6 +83,9 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
 - `fonts/InterVariable-memoir.woff2` — Inter 4.1 (OFL), every weight and optical size, Latin/Greek/Cyrillic: the text's
   font everywhere but on a Mac, which keeps SF Pro (`-apple-system` first in `--font`; SF Pro is never named, so a PC
   with it installed still gets Inter). theme-boot.js preloads it off-Mac. The Clear-all label uses it on a Mac too.
+  One change from Inter itself (the owner's ask): tabular digits keep the plain 1, not Inter's footed tabular 1
+  (`tnum`'s one → one.tf rule removed before subsetting, fontTools; OFL allows it, Inter reserves no name), so a 1
+  looks the same everywhere. Remaking the file: subset InterVariable.ttf to the ranges in the @font-face comment.
 - `PRIVACY.md` — the privacy policy; `privacy.html/css/js` — the same text in the extension: plain text in one column, the clock
   and MEMOIR on top, the report's cursor and scrolling; sizes follow the window; the text pops on (the
   headline word by word, the rest as it comes into view; `<html class="pv-pop">` hides it from the start; not `pop`, which shared/pop.css styles as a
