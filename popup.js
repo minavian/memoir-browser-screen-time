@@ -22,6 +22,17 @@ const TAU = Math.PI * 2;
 const GAP = 3 / 50;
 
 
+// The first open's soft ring, three times: it starts as the button's own pill (hidden by
+// it: the same colour) and grows 12px past it as it fades, the way a spreading shadow would
+function pulseWeek() {
+  const btn = $('open-week');
+  btn.classList.add('pulse');
+  if (reducedMotion()) return;
+  const w = btn.offsetWidth, h = btn.offsetHeight;
+  btn.animate([{ scale: `${w / (w + 24)} ${h / (h + 24)}`, opacity: 1 }, { scale: '1', opacity: 0 }],
+    { duration: 1600, delay: 900, iterations: 3, easing: EASE_OUT, fill: 'both', pseudoElement: '::after' });
+}
+
 const state = {
   todayKey: dayKey(new Date()),
   today: normalizeDay(null),
@@ -72,7 +83,7 @@ async function main() {
   // the first time it opens: a line and a soft pulse on the way to the week, once
   if (!popupIntroduced) {
     $('week-tip').hidden = false;
-    $('open-week').classList.add('pulse');
+    pulseWeek();
     chrome.storage.local.set({ popupIntroduced: true }).catch(() => {});
   }
   render();

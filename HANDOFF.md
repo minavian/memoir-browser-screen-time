@@ -525,7 +525,9 @@ through; reduced motion: none.
 ## Popup's first open
 The first time the popup opens (storage key `popupIntroduced`), once: a line above Weekly Report ("Your whole week,
 day by day, is one click away.") and a soft ring going out from the button three times once the popup is in (its own
-`::after` layer, so the button keeps its entrance; none with reduced motion).
+`::after` layer, so the button keeps its entrance; none with reduced motion). The ring is a pill 12 px bigger than
+the button, under its label, scaled up from the button's size as it fades (`pulseWeek`, popup.js): compositor only,
+where the growing box-shadow it replaced repainted every frame (1,631 paints in the first 7 s, now 82).
 
 ## Windows app
 `Windows Memoir/Memoir.exe` is the portable x64 Windows app (5.0.2), with its own native foreground tracker and the same web UI. See its README and VALIDATION for build/setup, test results, and optional exact browser connector setup. Minimizing disposes WebView2. The themed tray popup runs in a temporary WPF process that exits after dismissal, so its graphics heap is released. Both mouse buttons open it; double-click restores the app. All data remains local; preserve `Windows Memoir/Data` and exclude data/test profiles from distributed copies.
