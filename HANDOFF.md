@@ -568,7 +568,11 @@ Clear all's red for 5 s. The status comes from `link` (local) and `linkLive` (se
 `status()` writes); the description says when it last synced, and every text fits one line so the row never
 changes height. Link first asks, in a popover like Import's (`#link-pop`, `askLink`), whether to merge both
 histories (`merge`) or start from today (`fresh`: only days from the day of linking cross); the answer's click asks
-for `nativeMessaging` and links. A hello the app doesn't answer (it's still starting) is said again every 5 s. While linked, Clear all's steps add
+for `nativeMessaging` and links. A hello the app doesn't answer (it's still starting) is said again every 5 s. Chromium gives a worker that was already running a newly
+allowed permission's new APIs but not `runtime.connectNative` (only a fresh worker has it), so the first Link restarts
+Memoir once (`restartForLink`: the tracker's time saved first, at most once a minute) and reopens the report at
+`#link`, Settings open. Tests that grant `nativeMessaging` up front never see this: `real-flow`-style testing presses
+the browser's Allow through UI Automation. While linked, Clear all's steps add
 "Memoir for Windows is cleared too". In Memoir for Windows it's a "Memoir in browser" row for each browser linked
 with it, any that runs Chrome extensions (from the `sync` record's peers, the browser's name underneath: what the
 extension said, else the program that started its host), each with its own Unlink (`link.unlink`); with none, the

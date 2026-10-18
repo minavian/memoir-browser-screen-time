@@ -20,6 +20,7 @@ const BATCH_BYTES = 600 * 1024;        // the host takes up to 4 MB; batches sta
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 let enqueue = fn => fn();              // the tracker's queue (background.js), so saves never race
+let flushTracker = async () => {};     // the tracker's sync: the time being counted, saved (before a restart)
 let port = null;
 let app = null;                        // the app's hello, while it's open
 let lastHeard = 0;
@@ -72,6 +73,9 @@ async function connect() {
   const link = await getLink();
   if ((!link.linked && !link.unlinkOwed) || port) return;
   if (!(await chrome.permissions.contains({ permissions: ['nativeMessaging'] }))) { if (link.linked) status('denied'); return; }
+  // allowed after this worker started: Chromium gives it the permission's new APIs, but not runtime.connectNative,
+  // which only a fresh worker has. So Memoir restarts once, then links (restartForLink)
+  if (typeof chrome.runtime.connectNative !== 'function') { if (link.linked && await restartForLink()) return; if (link.linked) status('notfound'); retry(); return; }
   try { port = chrome.runtime.connectNative(HOST); } catch { port = null; if (link.linked) status('notfound'); retry(); return; }
   if (link.linked) status('connecting');
   port.onMessage.addListener(onMessage);
@@ -81,11 +85,22 @@ async function connect() {
     clearTimeout(helloTimer);
     requeue();
     const now = await getLink();
-    if (now.linked) status(/not found|forbidden|not allowed/i.test(error) ? 'notfound' : 'offline');
+    // forbidden: Memoir for Windows is there but doesn't know this copy of Memoir yet (an older version)
+    if (now.linked) status(/forbidden|not allowed/i.test(error) ? 'update' : /not found/i.test(error) ? 'notfound' : 'offline');
     if (now.linked || now.unlinkOwed) retry();
   });
 }
 function retry() { chrome.alarms.create('link-retry', { delayInMinutes: 0.5 }); }
+// The restart: the time being counted is saved first, and Settings open again where Link was pressed
+// (startLink). Once a minute at most, so it can never loop.
+async function restartForLink() {
+  const { linkRestart = 0 } = await chrome.storage.local.get('linkRestart');
+  if (Date.now() - linkRestart < 60_000) return false;
+  await chrome.storage.local.set({ linkRestart: Date.now(), linkReopen: true });
+  try { await flushTracker(); } catch { /* the restart goes ahead */ }
+  chrome.runtime.reload();
+  return true;
+}
 function post(message) { try { port && port.postMessage(message); return !!port; } catch { return false; } }
 
 // The browser's name when it says it (Chrome, Edge, Brave, Opera); otherwise none, and Memoir for Windows names
@@ -442,8 +457,12 @@ function disconnect() {
   port = null; app = null; inflight.clear();
 }
 
-export async function startLink(queue) {
+export async function startLink(queue, flush) {
   enqueue = queue;
+  if (flush) flushTracker = flush;
+  // back from the restart that finishes a Link: Settings again, where it was pressed
+  const { linkReopen } = await chrome.storage.local.get('linkReopen');
+  if (linkReopen) { await chrome.storage.local.remove('linkReopen'); chrome.tabs.create({ url: chrome.runtime.getURL('recap.html#link') }); }
   const link = await getLink();
   settingsSeen = await getSettings();
   if (link.linked || link.unlinkOwed) connect();

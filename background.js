@@ -358,4 +358,4 @@ chrome.runtime.onMessage.addListener((msg, _sender, reply) => {
 });
 
 ensureAlarms();
-startLink(enqueue);
+startLink(enqueue, sync);
