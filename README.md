@@ -130,6 +130,9 @@ Open the gear in the top-right corner of the report.
   time here, Import asks first: **Merge** keeps the larger time for each site in
   each hour, so importing the same file twice never counts anything twice;
   **Replace** uses the file's version of those days. Other days are always added.
+  Your daily limits come along too: into a Memoir with no limit yet, all of them,
+  today's included (locked, as a limit you commit is); into one with its own
+  limits, only the days before them, so an import can never change today's limit.
 - **Found a bug?** Hover (or tab to) **Mina Vian** at the bottom of Settings for
   the address to send it to.
 

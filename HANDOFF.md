@@ -256,6 +256,11 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
   round-trip; titles through `safeKey`). Days that already have time open the merge/replace popover
   (`#import-pop`, MorphPopover from the Import button). Merge = larger time per site per hour (`mergeDay`),
   idempotent; days without per-hour detail keep the fuller record.
+- Limits in Export/Import (6.0.0): Export already wrote everything, `goal` included; `readImport` now reads
+  `goal.history` too (real days only, none still to come; limits clamped to GOAL_MIN_MS…GOAL_MAX_MS) and
+  `writeImport` adds it under the lock rule: no history here, the file's whole history (today's limit too,
+  so it's locked); a history here, only the file's entries before its first `from`. An import is never a way
+  around a locked limit. The toast adds "and your limits".
 - Private windows (5.1.2): when allowed in incognito, those tabs record as `~private`.
 - Title-only tab updates sync only while titles are on (`titlesOn` in background.js).
 - Background tab (5.1.2): `onStorageChanged` folds changes while `document.hidden` and applies them once on
