@@ -708,7 +708,7 @@ function toggleEmpty(empty) {
     const fresh = isCurrentWeek();
     $('empty-title').textContent = fresh ? 'No activity yet' : 'Nothing this week';
     $('empty-text').textContent = fresh
-      ? 'Browse as usual and your week will appear here. Nothing ever leaves this browser.'
+      ? 'Browse as usual and your week will appear here. Nothing ever leaves this computer.'
       : 'No browsing was recorded this week. Try another week, or preview a sample.';
   }
   const wasEmpty = board.classList.contains('is-empty');

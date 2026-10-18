@@ -1,8 +1,8 @@
 # Memoir privacy policy
 
-**Memoir: Browser Screen Time** (the Chrome extension) · Effective 17 October 2026
+**Memoir: Browser Screen Time** (the Chrome extension) · Effective 18 October 2026
 
-**In short:** everything Memoir records stays in your browser, on your computer. Memoir has no servers, no accounts, no analytics and no ads. It never sends your data anywhere, so nobody else can see it, including the developer.
+**In short:** everything Memoir records stays on your computer: in your browser, and in Memoir for Windows if you link the two. Memoir has no servers, no accounts, no analytics and no ads. It never sends your data off your computer, so nobody else can see it, including the developer.
 
 ## What Memoir records
 
@@ -25,9 +25,20 @@ Time on sites on your **Never track** list counts only towards one combined "Pri
 - **Memoir makes no network requests.** Site icons come from Chrome's own icon cache, so the sites themselves aren't contacted.
 - **Notifications** (your daily limit, the weekly reminder) are made on your computer.
 
+## Linking with Memoir for Windows
+
+Memoir can sync with Memoir for Windows, the desktop app, on the same computer, so both show the same week. It's off until you press **Link** in Settings, under Your data, and your browser asks your permission first.
+
+- **On this computer only.** The two talk through your browser's native messaging, which starts Memoir for Windows' own program on your computer, and a named pipe that only your Windows account can open. Nothing goes online, and there is no server in between.
+- **What goes across:** your daily totals (each site's and app's time, hour by hour), with page titles and their addresses only if Page titles is on; your rules (Never track, Page titles, Keep history, the weekly reminder, your daily limit and its history, categories you changed, whether tracking is paused, and which limit warnings you've had today); each site's home address; your Windows apps' names and categories; and a note when you use Clear all or erase saved page titles, so the other side does the same.
+- **The tab in front.** While linked, Memoir tells Memoir for Windows which tab is in front, so both count the same time: its site, and its title, which the app keeps only if Page titles is on. A tab in a private (Incognito) window counts only as Private.
+- **Kept apart.** Each side keeps the other's days apart from its own, and shows the two merged, so the same minutes never count twice. When you link, you choose to merge both histories or to start from today.
+- **More than one browser.** If you link Memoir in several browsers or profiles, Memoir for Windows passes each one's time on to the others.
+- **Unlinking**, in either one's Settings, stops it, and both keep what they have. While linked, **Clear all** on either side clears both.
+
 ## How it's used
 
-Your data is used only to show you your own time: in the popup, the weekly report, the limit warnings and the weekly reminder.
+Your data is used only to show you your own time: in the popup, the weekly report, the limit warnings and the weekly reminder, and in Memoir for Windows if you link the two.
 
 It is never sold or shared. It is never used for advertising, and never used to decide creditworthiness or for lending. The developer never receives it.
 
@@ -36,8 +47,9 @@ It is never sold or shared. It is never used for advertising, and never used to 
 - **Pause tracking** at any time, with the Track browsing switch in Settings.
 - **Never track** particular sites.
 - **Choose how long to keep history**: forever, 1 year, 6 months or 3 months. Older days are deleted automatically, page titles included.
+- **Link or unlink** Memoir for Windows, in Settings under Your data. It's off unless you link it.
 - **Export** everything as a file, or **import** a file you exported earlier. The file goes wherever you save it; Memoir doesn't upload it.
-- **Clear all** deletes everything at once. **Removing the extension** deletes everything too.
+- **Clear all** deletes everything at once. **Removing the extension** deletes everything it keeps too; if it was linked, Memoir for Windows keeps its own copy until you clear it there.
 
 ## Links and email
 
