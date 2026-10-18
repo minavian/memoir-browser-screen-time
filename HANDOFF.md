@@ -80,7 +80,9 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
   snap back to the smooth curve, with dots, labels and grid swapped out.
 - `welcome.js` — first-run welcome screen (styles at the end of `recap.css`). `welcome-intro.js` — its opening;
   `fonts/Unbounded-subset.woff2` — the trailer's face, MEMOIR/WELCOME TO only.
-- `fonts/` — Inter variable subset (OFL) used by the Clear-all label.
+- `fonts/InterVariable-memoir.woff2` — Inter 4.1 (OFL), every weight and optical size, Latin/Greek/Cyrillic: the text's
+  font everywhere but on a Mac, which keeps SF Pro (`-apple-system` first in `--font`; SF Pro is never named, so a PC
+  with it installed still gets Inter). theme-boot.js preloads it off-Mac. The Clear-all label uses it on a Mac too.
 - `PRIVACY.md` — the privacy policy; `privacy.html/css/js` — the same text in the extension: plain text in one column, the clock
   and MEMOIR on top, the report's cursor and scrolling; sizes follow the window; the text pops on (the
   headline word by word, the rest as it comes into view; `<html class="pv-pop">` hides it from the start; not `pop`, which shared/pop.css styles as a

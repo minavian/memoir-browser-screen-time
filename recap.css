@@ -1584,12 +1584,6 @@ body { overflow: hidden; }
 .gx-done-icon { width: 44px; height: 44px; margin-bottom: 10px; border-radius: 50%; display: grid; place-items: center; background: var(--fill-1); color: var(--label); animation: pop-in 0.5s var(--pop) backwards; }
 .gx-done-icon svg { width: 22px; height: 22px; }
 
-@font-face {
-  font-family: "Memoir Inter";
-  src: url("fonts/InterVariable-subset.woff") format("woff");
-  font-weight: 100 900;
-  font-display: block;
-}
 
 /* ---------- tour ---------- */
 :root, [data-wave="light"] { --tour-dim: rgba(12, 12, 18, 0.55); --heavy: cubic-bezier(0.16, 1, 0.3, 1); --dust-ink: brightness(0.12) opacity(0.82); }

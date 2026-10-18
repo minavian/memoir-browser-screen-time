@@ -164,7 +164,8 @@ copy, and category actions; text fields offer editing actions. Elsewhere, quickl
 open Settings or the weekly report, pause tracking, or refresh. Use ↑ / ↓ to move
 through the menu, Enter to choose, and Esc to close it.
 
-The Clear all button uses a small subset of the Inter typeface (SIL Open Font
-License, see `fonts/Inter-LICENSE.txt`).
+Text is set in Inter (SIL Open Font License, see `fonts/Inter-LICENSE.txt`),
+bundled with Memoir so it looks the same on every PC; on a Mac it uses the
+Mac's own font, SF Pro.
 
 Made by Mina Vian

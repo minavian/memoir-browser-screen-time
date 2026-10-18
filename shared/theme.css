@@ -69,8 +69,12 @@
   --cursor: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2728%27 height=%2728%27 viewBox=%270 0 28 28%27%3E%3Cpath d=%27M6.65 5.33L19.79 14.35Q21.60 15.60 19.46 16.09L16.02 16.88Q12.90 17.60 10.62 19.85L7.77 22.66Q6.20 24.20 6.07 22.00L5.12 6.20Q5.00 4.20 6.65 5.33Z%27 fill=%27rgba%28255%2C255%2C255%2C0.92%29%27 stroke=%27rgba%28255%2C255%2C255%2C0.92%29%27 stroke-width=%274.6%27 stroke-linejoin=%27round%27/%3E%3Cpath d=%27M6.65 5.33L19.79 14.35Q21.60 15.60 19.46 16.09L16.02 16.88Q12.90 17.60 10.62 19.85L7.77 22.66Q6.20 24.20 6.07 22.00L5.12 6.20Q5.00 4.20 6.65 5.33Z%27 fill=%27%23ffffff%27 stroke=%27%231d1d1f%27 stroke-width=%272%27 stroke-linejoin=%27round%27/%3E%3C/svg%3E") 5 4, default;
   --cursor-hand: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2728%27 height=%2728%27 viewBox=%270 0 28 28%27%3E%3Cpath d=%27M6.65 5.33L19.79 14.35Q21.60 15.60 19.46 16.09L16.02 16.88Q12.90 17.60 10.62 19.85L7.77 22.66Q6.20 24.20 6.07 22.00L5.12 6.20Q5.00 4.20 6.65 5.33Z%27 fill=%27rgba%28255%2C255%2C255%2C0.92%29%27 stroke=%27rgba%28255%2C255%2C255%2C0.92%29%27 stroke-width=%274.6%27 stroke-linejoin=%27round%27/%3E%3Cpath d=%27M6.65 5.33L19.79 14.35Q21.60 15.60 19.46 16.09L16.02 16.88Q12.90 17.60 10.62 19.85L7.77 22.66Q6.20 24.20 6.07 22.00L5.12 6.20Q5.00 4.20 6.65 5.33Z%27 fill=%27%23ffffff%27 stroke=%27%231d1d1f%27 stroke-width=%272%27 stroke-linejoin=%27round%27/%3E%3C/svg%3E") 5 4, pointer;
 
-  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI Variable Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", "Segoe UI Variable Display", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  /* SF Pro on a Mac (its own system font: -apple-system, which only a Mac has), Inter everywhere else
+     (bundled, below), so Windows looks the same on every PC. SF Pro is never named: a PC with it
+     installed still gets Inter (its licence covers Apple platforms only). What Inter lacks falls back
+     to the system's own sans */
+  --font: -apple-system, BlinkMacSystemFont, "Memoir Inter", "Segoe UI Variable Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, "Memoir Inter", "Segoe UI Variable Display", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 
   --ease: cubic-bezier(0.25, 0.1, 0.25, 1);
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);   /* smooth settle, never overshoots */
@@ -249,6 +253,15 @@ button, input { font: inherit; color: inherit; letter-spacing: inherit; }
   font-family: "Memoir Unbounded";
   src: url("../fonts/Unbounded-subset.woff2") format("woff2");
   font-weight: 200 900;
+  font-display: block;
+}
+/* Inter 4.1 (rsms/inter, Open Font License), every weight and its optical sizes (opsz: the larger the
+   text, the tighter its Display cut), cut down to Latin, Greek, Cyrillic, punctuation and arrows.
+   theme-boot.js starts loading it before first paint, except on a Mac, which uses SF Pro */
+@font-face {
+  font-family: "Memoir Inter";
+  src: url("../fonts/InterVariable-memoir.woff2") format("woff2");
+  font-weight: 100 900;
   font-display: block;
 }
 :root, [data-wave="light"] {

@@ -15,4 +15,11 @@
     }
     document.documentElement.dataset.cursor = localStorage.getItem('bst-cursor') === 'off' ? 'off' : 'on';
   } catch { /* storage unavailable: follow the system */ }
+  // Inter is the text's font everywhere but on a Mac (SF Pro there): fetched now, so the first
+  // paint already has it (theme.css; on a Mac it would only go unused)
+  if (!/Mac/.test(navigator.userAgentData?.platform || navigator.platform)) {
+    const font = document.createElement('link');
+    Object.assign(font, { rel: 'preload', as: 'font', type: 'font/woff2', crossOrigin: 'anonymous', href: '/fonts/InterVariable-memoir.woff2' });
+    document.head.appendChild(font);
+  }
 })();
