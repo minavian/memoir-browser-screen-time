@@ -88,9 +88,11 @@ async function connect() {
 function retry() { chrome.alarms.create('link-retry', { delayInMinutes: 0.5 }); }
 function post(message) { try { port && port.postMessage(message); return !!port; } catch { return false; } }
 
+// The browser's name when it says it (Chrome, Edge, Brave, Opera); otherwise none, and Memoir for Windows names
+// it from the program that started its host (Arc, Comet, Vivaldi… only say "Chromium").
 function browserName() {
   const brands = (navigator.userAgentData && navigator.userAgentData.brands) || [];
-  const brand = brands.map(b => b.brand).find(b => /Edge|Chrome|Brave|Opera|Vivaldi/.test(b)) || 'Chrome';
+  const brand = brands.map(b => b.brand).find(b => /Edge|Chrome|Brave|Opera|Vivaldi/.test(b)) || '';
   return brand.replace('Microsoft ', '').replace('Google ', '');
 }
 // The app answers with its own hello. One it didn't hear (still starting up) is said again until it does.

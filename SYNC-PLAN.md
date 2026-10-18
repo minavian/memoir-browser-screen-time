@@ -8,8 +8,10 @@ Open questions are at the end; the plan assumes the recommended answers until th
 
 - **Transport:** the extension's `link.js` (service worker) and Memoir for Windows' `BrowserLink.cs` (a pipe
   that takes any number of held-open, two-way connections; the host relays both ways and says whether the
-  app is open) and `Registration.cs` (host manifest and HKCU keys written at every start; the IDs it trusts
-  are in `extension-ids.txt`, today the unpacked development ID).
+  app is open) and `Registration.cs` (host manifest and HKCU keys written at every start and every 10 minutes,
+  in every Chromium browser's own registry folder: the known ones, plus any a scan finds holding a launch beacon
+  or other apps' native hosts; the IDs it trusts are in `extension-ids.txt`, today the unpacked development ID).
+  Any browser that runs Chrome extensions can link, several at once (one per profile).
 - **The exchange** (`link.js`, `Sync.cs`): hello, rules, days in batches under 1 MB, acknowledgements, a
   per-peer list of days still to send that survives restarts, the extension's connector role, Unlink (both
   keep what they have), Clear all and Erase titles as markers, the notification hand-off.
@@ -18,7 +20,8 @@ Open questions are at the end; the plan assumes the recommended answers until th
   and Memoir for Windows' `tests/run.ps1`).
 - **Settings:** the extension's Your data has a Memoir for Windows row: Link asks to merge both histories or
   start from today, then the button says In sync (with when it last synced) or Linked while the app is closed,
-  and Unlink? when pressed again. Memoir for Windows' Settings show the browser linked with it, and can unlink it.
+  and Unlink? when pressed again. Memoir for Windows' Settings show a "Memoir in browser" row per linked browser,
+  each with its own Unlink, and a guide to connecting one. A rule changed in one browser reaches the others.
 - **Not yet:** the Web Store ID in `extension-ids.txt` (a store item is needed), the "screen time" wording
   while linked, app icons in Chrome (names and categories do travel), the installer.
 

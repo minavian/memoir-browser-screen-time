@@ -569,8 +569,10 @@ Clear all's red for 5 s. The status comes from `link` (local) and `linkLive` (se
 changes height. Link first asks, in a popover like Import's (`#link-pop`, `askLink`), whether to merge both
 histories (`merge`) or start from today (`fresh`: only days from the day of linking cross); the answer's click asks
 for `nativeMessaging` and links. A hello the app doesn't answer (it's still starting) is said again every 5 s. While linked, Clear all's steps add
-"Memoir for Windows is cleared too". In Memoir for Windows the same row shows the browser linked with it (from
-the `sync` record's peers) and unlinks it (`link.unlink`). Test it by pressing it for real against a throwaway
+"Memoir for Windows is cleared too". In Memoir for Windows it's a "Memoir in browser" row for each browser linked
+with it, any that runs Chrome extensions (from the `sync` record's peers, the browser's name underneath: what the
+extension said, else the program that started its host), each with its own Unlink (`link.unlink`); with none, the
+row's Guide opens how to connect one (`#guide-pop`), and Connect another browser opens it later. Test it by pressing it for real against a throwaway
 Memoir for Windows, as above.
 
 ## How Memoir works (`how-it-works.html`)
