@@ -543,6 +543,12 @@ tools differ, and that the clock is real (dot = seconds, long hand = minutes, sh
 a big live clock under that section (`.hw-clock`, 170–340 px; privacy.js plays it in once it's in view). **Keep it true:** when a rule in background.js / core.js changes, change this page too. The row
 also balances Settings' columns (measured 542 / 533 px).
 
+## Store listing (`store/`)
+The Web Store's words (`chrome-web-store-listing.md`, `chrome-web-store-privacy.md`) and images (`images/`).
+`node store/shots.cjs` remakes the five screenshots and the promo tile from the current pages, in Inter (never
+SF Pro: see the listing file), with made-up data. `frame.html`, `tile.html` and `fonts/` serve only that script;
+`store/` is left out of the package.
+
 ## Known notes
 - Unpacked "Load" counts as an install (welcome tab will appear then).
 - Keep the README in sync with user-visible changes; bump `version`/`version_name` in manifest when shipping.

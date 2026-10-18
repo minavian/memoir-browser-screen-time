@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Store shot: the popup</title>
+  <!-- For shots.cjs only (not part of Memoir): the popup in its real size, scaled up a little, on the
+       report's background, as it opens from the toolbar. -->
+  <script src="../shared/theme-boot.js"></script>
+  <link rel="stylesheet" href="../shared/theme.css">
+  <style>
+    html, body { height: 100%; margin: 0; overflow: hidden; }
+    body { display: grid; place-items: center; background: var(--bg-art), var(--bg); }
+    iframe {
+      width: 380px; height: 600px; border: 0; border-radius: 14px;
+      box-shadow: var(--shadow-pop);
+      transform: scale(1.2);
+    }
+  </style>
+</head>
+<body>
+  <iframe title="Memoir" src="../popup.html"></iframe>
+</body>
+</html>
