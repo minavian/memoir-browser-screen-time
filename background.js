@@ -15,8 +15,9 @@ import {
   APP_NAME, IDLE_SECONDS, HEARTBEAT_MINUTES, MAX_GAP_MS, SLEEP_CREDIT_MS, PRIVATE_KEY, MAX_TITLES_PER_SITE,
   siteFromUrl, isExcluded, isPrivate, isPage, cleanTitle, cleanUrl, dayKey, storageKeyForDay, normalizeDay, dayTotal,
   getSettings, getSession, getDays, startOfWeek, weekDayKeys, addDays, formatDuration,
-  getGoalHistory, limitOn, retentionCutoffKey, listDayKeys, withData,
+  getGoalHistory, limitOn, retentionCutoffKey, listDayKeys, withData, listDayRecordKeys, recordDate,
 } from './shared/core.js';
+import { startLink, onStorageChanged, appOnline, link, unlink } from './link.js';
 
 chrome.idle.setDetectionInterval(IDLE_SECONDS);
 
@@ -159,12 +160,15 @@ async function commit(session, start, end, settings) {
 // ---------- daily limit ----------
 
 async function checkGoal(now) {
+  // linked with Memoir for Windows and it's open: it sends these (it sees everything, even with the
+  // browser closed), and the notices it shows come back here so they're never shown twice
+  if (appOnline()) return;
   const todayKey = dayKey(now);
   const history = await getGoalHistory();
   const limit = limitOn(history, todayKey);
   if (!limit) return;
-  const raw = await chrome.storage.local.get([storageKeyForDay(todayKey), 'goalNotify']);
-  const used = dayTotal(normalizeDay(raw[storageKeyForDay(todayKey)]));
+  const raw = await chrome.storage.local.get('goalNotify');
+  const used = dayTotal((await getDays([todayKey]))[todayKey]); // today as shown: with the app's time once linked
   const prev = raw.goalNotify && raw.goalNotify.day === todayKey ? raw.goalNotify : { day: todayKey, n95: false, over: false };
   const next = { ...prev };
 
@@ -220,7 +224,7 @@ async function weeklyReminder(alarm) {
   const late = Date.now() - scheduled > 2 * 24 * 3600_000;
   const settings = await getSettings();
 
-  if (settings.weeklyReminder && !late) {
+  if (settings.weeklyReminder && !late && !appOnline()) {
     const at = new Date(scheduled);
     // Early in the week, recap the week that just ended.
     const lastWeek = at.getDay() === 1 || at.getDay() === 2;
@@ -263,7 +267,7 @@ async function pruneOldDays() {
   const settings = await getSettings();
   const cutoff = retentionCutoffKey(settings.retention);
   if (!cutoff) return;
-  const old = (await listDayKeys()).filter(k => k < cutoff).map(storageKeyForDay);
+  const old = (await listDayRecordKeys()).filter(k => recordDate(k) < cutoff); // this side's days and a linked Memoir's
   if (old.length) await chrome.storage.local.remove(old);
 }
 
@@ -312,6 +316,7 @@ chrome.idle.onStateChanged.addListener(sync);
 
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== 'local') return;
+  onStorageChanged(changes);
   if (changes.settings) {
     sync();
     const o = changes.settings.oldValue || {};
@@ -336,6 +341,15 @@ chrome.runtime.onMessage.addListener((msg, _sender, reply) => {
     sync().then(() => reply({ ok: true }));
     return true;
   }
+  // Settings: link with Memoir for Windows (after the page got the permission), or unlink
+  if (msg && msg.type === 'link') {
+    link(msg.mode).then(() => reply({ ok: true }), () => reply({ ok: false }));
+    return true;
+  }
+  if (msg && msg.type === 'unlink') {
+    unlink().then(() => reply({ ok: true }), () => reply({ ok: false }));
+    return true;
+  }
   if (msg && msg.type === 'openRecap') {
     openRecap(msg.week).then(() => reply({ ok: true }));
     return true;
@@ -344,3 +358,4 @@ chrome.runtime.onMessage.addListener((msg, _sender, reply) => {
 });
 
 ensureAlarms();
+startLink(enqueue);

@@ -231,6 +231,7 @@ export function setOrigins(map) {
 }
 
 export function siteHref(domain) {
+  if (domain.startsWith('app:')) return null;
   if (ORIGINS[domain]) return `${ORIGINS[domain]}/`;
   const plain = domain === 'localhost' || /^\d{1,3}(\.\d{1,3}){3}$/.test(domain);
   return `${plain ? 'http' : 'https'}://${domain}/`;
@@ -309,6 +310,10 @@ function favSlot(task) {
 // Chrome keys icons by the exact address visited (www., port…), so try the
 // address the site was really visited on first, then the usual spellings.
 export function resolveFavicon(domain) {
+  if (window.memoir?.windows) {
+    const icon = window.memoir.apps[domain]?.icon;
+    return Promise.resolve(domain.startsWith('app:') && /^[a-f0-9]{24}\.png$/.test(icon || '') ? `https://memoir-icons.example/${icon}` : null);
+  }
   if (iconCache.has(domain)) return iconCache.get(domain);
   const p = favSlot(async () => {
     const known = rememberedPage(domain);
@@ -395,19 +400,25 @@ export function faviconTile(domain, color) {
     tile.innerHTML = PAGE_GLYPHS[domain];
     return tile;
   }
+  // Windows: an app's first letter when it has no icon, or its icon file won't load
+  const letterTile = () => {
+    tile.replaceChildren();
+    tile.style.background = color || 'var(--label-3)';
+    const letter = document.createElement('span');
+    letter.className = 'letter';
+    letter.textContent = (siteName(domain) || '?').charAt(0).toUpperCase();
+    tile.appendChild(letter);
+  };
   const fill = (src, animate) => {
     if (src) {
       const img = document.createElement('img');
       img.alt = '';
+      img.addEventListener('error', letterTile, { once: true });
       img.src = src;
       tile.appendChild(img);
       if (animate && !reducedMotion()) img.animate([{ opacity: 0, transform: 'scale(0.7)' }, { opacity: 1, transform: 'none' }], { duration: 260, easing: EASE_OUT });
     } else {
-      tile.style.background = color || 'var(--label-3)';
-      const letter = document.createElement('span');
-      letter.className = 'letter';
-      letter.textContent = (domain || '?').charAt(0).toUpperCase();
-      tile.appendChild(letter);
+      letterTile();
     }
   };
   // known already: in place at once, no entrance (redrawn lists would otherwise blink)
@@ -424,6 +435,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;'
 // shows a small ↗ on hover.
 export function siteLinkHtml(domain, extra = '') {
   if (domain === '~private') return `<span class="private-name ${extra}">Private</span>`;
+  if (domain.startsWith('app:')) return `<span class="app-name ${extra}" data-domain="${esc(domain)}" title="Windows app"><span class="sl-text">${esc(siteName(domain))}</span></span>`;
   // not a website, so nothing to open: just its name
   if (isPage(domain)) return `<span class="page-name ${extra}">${esc(siteName(domain))}</span>`;
   return `<a class="site-link ${extra}" href="${esc(siteHref(domain))}" target="_blank" rel="noopener noreferrer" data-domain="${esc(domain)}" title="Open ${esc(domain)}"><span class="sl-text">${esc(domain)}</span>${ARROW_SVG}</a>`;

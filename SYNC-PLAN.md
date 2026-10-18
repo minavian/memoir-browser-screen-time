@@ -1,8 +1,31 @@
 # Sync between the extension and Memoir for Windows: the plan
 
 Written 2026-10-17, updated 2026-10-18 (page titles no longer have a keep-time of their own: they go with
-their day, under Keep history). Nothing here is built yet. The owner decided sync must work at launch (19 November).
+their day, under Keep history). The owner decided sync must work at launch (19 November).
 Open questions are at the end; the plan assumes the recommended answers until they're settled.
+
+## Built (6.0, 2026-10-18)
+
+- **Transport:** the extension's `link.js` (service worker) and Memoir for Windows' `BrowserLink.cs` (a pipe
+  that takes any number of held-open, two-way connections; the host relays both ways and says whether the
+  app is open) and `Registration.cs` (host manifest and HKCU keys written at every start; the IDs it trusts
+  are in `extension-ids.txt`, today the unpacked development ID).
+- **The exchange** (`link.js`, `Sync.cs`): hello, rules, days in batches under 1 MB, acknowledgements, a
+  per-peer list of days still to send that survives restarts, the extension's connector role, Unlink (both
+  keep what they have), Clear all and Erase titles as markers, the notification hand-off.
+- **One rule set:** `cleanDay`, `mergeDay`, `anonymizeDay` in `shared/core.js` and the same in C#
+  (`SyncData.cs`), held together by the shared cases in `tests/merge-cases` (run by `node tests/merge.test.mjs`
+  and Memoir for Windows' `tests/run.ps1`).
+- **Not yet:** the Web Store ID in `extension-ids.txt` (a store item is needed), the "screen time" wording
+  while linked, app icons in Chrome (names and categories do travel), the installer.
+
+**A correction to "merge into its own" (below):** a side's tracker adds its new minutes to the stored day. If
+incoming days were merged into that same record, the next tracker save would add onto the other side's
+figure: Chrome's 60 s for 10:00–10:01, merged into Windows' 30 s, then Windows' other 30 s on top makes 90 s.
+So each side keeps its own measurement where its tracker writes (`day:<date>`) and the other side's apart
+(`link:<peer>:<date>`), and what's shown (and counted against the limit) is both merged. The larger-wins rule
+then always compares two independent measurements, which is what makes it right. Each extension gets the
+app's own days merged with other extensions' (never its own back).
 
 ## What "in sync" means
 
@@ -80,7 +103,7 @@ untested, and it would mean a second build. Revisit after launch.
 ## What syncs, and how it merges
 
 Each side keeps tracking into its own storage, exactly as now. Sync sends records across and the
-receiver merges them into its own. Every merge below is commutative, associative and idempotent, so both
+receiver keeps them beside its own; what's shown is the two merged (see the correction above). Every merge below is commutative, associative and idempotent, so both
 sides end up with the same data whatever the order, the repeats or the dropped connections. There's no
 "which tracker is right" logic, and no handing over between trackers (a hand-over loses time when one of
 them stops unexpectedly).

@@ -546,6 +546,23 @@ the owner's history: never commit or overwrite it; test with `Memoir.exe --data-
 change here touches the data, the bridge or the wording, note it there.
 `Memoir.exe` is the portable x64 Windows app, with its own native foreground tracker and the same web UI. See its README and VALIDATION for build/setup, test results, and optional exact browser connector setup. Minimizing disposes WebView2. The themed tray popup runs in a temporary WPF process that exits after dismissal, so its graphics heap is released. Both mouse buttons open it; double-click restores the app. All data remains local; preserve `Windows Memoir/Data` and exclude data/test profiles from distributed copies.
 
+## Linked with Memoir for Windows (`link.js`, 6.0)
+Sync with the Windows app, on this computer only (SYNC-PLAN.md has the design and what's built). The service
+worker's `link.js` talks native messaging to `Memoir.exe` (host `com.minavian.memoir`; `nativeMessaging` is an
+optional permission, asked for on Link). **Storage:** this side's own days stay `day:<date>` (only the tracker
+writes them); the app's arrive as `link:windows:<date>`, listed in `linkPeers`. `getDays` and `listDayKeys`
+(core.js) merge them for every page, the limit and Trend; `listDayRecordKeys` is every record of both kinds,
+for Never track, Erase titles, Keep history, Clear all and the storage count. Never merge incoming days into
+`day:` records: the tracker adds onto those, which would count shared minutes twice. Export writes the merged
+view as plain days. Clear all and Erase titles leave `wipe` / `titlesErased` markers the other side applies.
+While the app is open, it sends the limit's and the week's notifications (`appOnline()`). Windows apps show by
+name and category (`setApps`, from the app's `apps`), as first-letter tiles. `cleanDay` / `mergeDay` /
+`anonymizeDay` are shared by Import and the link, and must match Memoir for Windows' `SyncData.cs`:
+`node tests/merge.test.mjs` runs the shared cases in `tests/merge-cases` (copy the file to Windows Memoir's
+`tests/merge-cases` when it changes). End-to-end testing needs the app built and a copy of the extension that
+holds `nativeMessaging` up front (a headless browser can't answer the prompt); `MEMOIR_EXTRA_EXTENSION_IDS` makes
+the app trust that copy's ID.
+
 ## How Memoir works (`how-it-works.html`)
 Opened from Settings (How Memoir works → Open, a new tab, under Tutorial; pointed at, Open grows to show the
 site links' ↗, which comes in the same way: `.open-btn .ext`). Plain text in one column like the
