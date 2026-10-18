@@ -26,6 +26,7 @@ let lastHeard = 0;
 let seq = 0;
 let rulesDue = false;
 let sendTimer = 0;
+let helloTimer = 0;                    // says hello again until the app answers
 const inflight = new Map();            // seq → dates sent, not yet acknowledged
 const expect = new Map();              // key → JSON this module just wrote (not a change of the user's)
 
@@ -77,6 +78,7 @@ async function connect() {
   port.onDisconnect.addListener(async () => {
     const error = (chrome.runtime.lastError && chrome.runtime.lastError.message) || '';
     port = null; app = null;
+    clearTimeout(helloTimer);
     requeue();
     const now = await getLink();
     if (now.linked) status(/not found|forbidden|not allowed/i.test(error) ? 'notfound' : 'offline');
@@ -91,9 +93,12 @@ function browserName() {
   const brand = brands.map(b => b.brand).find(b => /Edge|Chrome|Brave|Opera|Vivaldi/.test(b)) || 'Chrome';
   return brand.replace('Microsoft ', '').replace('Google ', '');
 }
+// The app answers with its own hello. One it didn't hear (still starting up) is said again until it does.
 async function sayHello() {
+  clearTimeout(helloTimer);
   const link = await getLink();
   post({ type: 'hello', protocol: PROTOCOL, device: link.device, kind: 'extension', name: browserName(), version: chrome.runtime.getManifest().version, linked: { mode: link.mode, since: link.since } });
+  helloTimer = setTimeout(() => { if (port && !app) sayHello(); }, 5000);
 }
 
 async function onMessage(message) {
@@ -101,7 +106,7 @@ async function onMessage(message) {
   lastHeard = Date.now();
   if (message.type === 'host') {
     if (message.app === 'online') sayHello();
-    else { app = null; requeue(); if ((await getLink()).linked) status('offline'); }
+    else { clearTimeout(helloTimer); app = null; requeue(); if ((await getLink()).linked) status('offline'); }
   } else if (message.type === 'hello') {
     app = message;
     if (message.protocol !== PROTOCOL) { status('update'); return; }

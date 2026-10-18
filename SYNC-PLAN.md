@@ -16,6 +16,9 @@ Open questions are at the end; the plan assumes the recommended answers until th
 - **One rule set:** `cleanDay`, `mergeDay`, `anonymizeDay` in `shared/core.js` and the same in C#
   (`SyncData.cs`), held together by the shared cases in `tests/merge-cases` (run by `node tests/merge.test.mjs`
   and Memoir for Windows' `tests/run.ps1`).
+- **Settings:** the extension's Your data has a Memoir for Windows row: Link asks to merge both histories or
+  start from today, then the button says In sync (with when it last synced) or Linked while the app is closed,
+  and Unlink? when pressed again. Memoir for Windows' Settings show the browser linked with it, and can unlink it.
 - **Not yet:** the Web Store ID in `extension-ids.txt` (a store item is needed), the "screen time" wording
   while linked, app icons in Chrome (names and categories do travel), the installer.
 

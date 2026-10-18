@@ -566,7 +566,9 @@ the app trust that copy's ID.
 Link, Linking…, In sync (a check grows in) or Linked (the app is closed); pressed while linked it asks Unlink? in
 Clear all's red for 5 s. The status comes from `link` (local) and `linkLive` (session storage, which `link.js`
 `status()` writes); the description says when it last synced, and every text fits one line so the row never
-changes height. Link asks for `nativeMessaging` in the click itself. While linked, Clear all's steps add
+changes height. Link first asks, in a popover like Import's (`#link-pop`, `askLink`), whether to merge both
+histories (`merge`) or start from today (`fresh`: only days from the day of linking cross); the answer's click asks
+for `nativeMessaging` and links. A hello the app doesn't answer (it's still starting) is said again every 5 s. While linked, Clear all's steps add
 "Memoir for Windows is cleared too". In Memoir for Windows the same row shows the browser linked with it (from
 the `sync` record's peers) and unlinks it (`link.unlink`). Test it by pressing it for real against a throwaway
 Memoir for Windows, as above.
