@@ -2,7 +2,7 @@
 
 Chrome MV3 extension by **Mina Vian** ("Made by Mina Vian" credit stays everywhere).
 Logs browsing time and shows today in a popup and the whole week in a full-page report.
-Current version: **5.1.5** (`manifest.json`). Load unpacked from this folder; after edits,
+Current version: **6.0.0** (`manifest.json`). Load unpacked from this folder; after edits,
 press reload on the extension in `chrome://extensions` and refresh the report tab.
 
 ## What the owner cares about (apply to every change)
