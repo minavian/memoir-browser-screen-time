@@ -551,7 +551,8 @@ also balances Settings' columns (measured 542 / 533 px).
 ## Store listing (`store/`)
 The Web Store's words (`chrome-web-store-listing.md`, `chrome-web-store-privacy.md`) and images (`images/`).
 `node store/shots.cjs` remakes the five screenshots and the promo tile from the current pages, in Inter (never
-SF Pro: see the listing file), with made-up data. `frame.html`, `tile.html` and `fonts/` serve only that script;
+SF Pro: see the listing file), with made-up data: the week and the popup whole, then a day, the limit's ring and
+Trend over time (Dark) up close. `frame.html` and `tile.html` serve only that script;
 `store/` is left out of the package.
 
 ## Known notes

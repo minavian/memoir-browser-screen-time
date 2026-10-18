@@ -62,27 +62,28 @@ Two lines to add when they're true (not yet):
 | Asset | Size | Status |
 |---|---|---|
 | Store icon | 128 × 128 PNG | `icons/icon128.png` |
-| Screenshots | 1280 × 800 PNG, 1 to 5 | `images/1-report.png` … `5-report-dark.png` |
+| Screenshots | 1280 × 800 PNG, 1 to 5 | `images/1-report.png` … `5-trend-dark.png` |
 | Small promo tile | 440 × 280 PNG | `images/promo-440x280.png` |
 | Marquee promo tile | 1400 × 560 PNG | optional, only used if Google features the item |
 
-`node store/shots.cjs` makes them all again from the current pages (run it after any visible change):
+`node store/shots.cjs` makes them all again from the current pages (run it after any visible change). Two
+show the whole thing, three come up close on one feature each, so they don't all look like the report:
 1. The Weekly Report: the whole week on one screen.
 2. The popup: today at a click (`frame.html`: the popup at 1.2 ×, on the report's background).
-3. A day opened from Daily activity (the week's busiest): its hours and its sites.
-4. The daily limit's ring, being set to 3 h 30 m.
-5. The Weekly Report in Dark.
+3. Up close: a day opened from Daily activity (the week's busiest), its hours and its sites; the card on its own.
+4. Up close: the daily limit's ring, being set to 3 h 30 m, over the dimmed report.
+5. Up close, on Dark: Trend over time, 24 weeks, sloping down; the card on its own.
 
 The promo tile is `tile.html`: the clock at 10:10 and MEMOIR on Dark, with "Where your browsing time goes".
 
 Rules for every image:
-- **Inter, never SF Pro** (the owner's choice, 2026-10-18). The owner's PC has SF Pro installed and Memoir's
-  font list names it first, but its licence covers Apple platforms only. The script swaps the page font for
-  Inter (`fonts/InterVariable.ttf`, Open Font License, from rsms/inter v4.1); Memoir itself is unchanged.
+- **Inter, never SF Pro** (the owner's choice, 2026-10-18). Memoir uses Inter everywhere but on a Mac; the
+  script sets Memoir's own Inter on every page, so the images are the same wherever they're made.
 - **The clock** shows as in the app, **the Rainbow clock** stays off (the owner's yes, 2026-10-18).
-- **No personal history:** a made-up fortnight (about 3 h a day, a 3 h 30 m limit) and nothing of the shoot
-  itself is tracked.
-- Pages laid out at 1440 × 900 and drawn at 1280 × 800 by Chrome itself, so text stays sharp.
+- **No personal history:** half a year made up (about 3 h a day by now, more further back, a 3 h 30 m limit),
+  and nothing of the shoot itself is tracked.
+- Pages laid out at 1440 × 900 and drawn at exactly 1280 × 800 by Chrome itself, close-ups at a larger scale,
+  so text stays sharp.
 
 ## Contact and links
 
