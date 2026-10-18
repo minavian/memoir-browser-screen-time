@@ -556,7 +556,11 @@ for Never track, Erase titles, Keep history, Clear all and the storage count. Ne
 `day:` records: the tracker adds onto those, which would count shared minutes twice. Export writes the merged
 view as plain days. Clear all and Erase titles leave `wipe` / `titlesErased` markers the other side applies.
 While the app is open, it sends the limit's and the week's notifications (`appOnline()`). Windows apps show by
-name and category (`setApps`, from the app's `apps`), as first-letter tiles. `cleanDay` / `mergeDay` /
+name and category (`setApps`, from the app's `apps`), as first-letter tiles. **Each minute once:** Memoir for
+Windows files a browser's time under the browser and under the site in front, so Most used can show **Apps** and
+**Browsers** (`ofKind`, the `#kind` switch, only with both); everything that adds time up uses `hourParts` /
+`dayParts` / `dayTotal` (core.js): apps, plus the sites' time beyond the browser apps' (`isBrowserApp`). Lists
+of names use each name's own time (`nameList`); highlights, categories and Today use `dayParts`. `cleanDay` / `mergeDay` /
 `anonymizeDay` are shared by Import and the link, and must match Memoir for Windows' `SyncData.cs`:
 `node tests/merge.test.mjs` runs the shared cases in `tests/merge-cases` (copy the file to Windows Memoir's
 `tests/merge-cases` when it changes). End-to-end testing needs the app built and a copy of the extension that
