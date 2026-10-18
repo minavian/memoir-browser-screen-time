@@ -581,7 +581,10 @@ the browser's Allow through UI Automation. While linked, Clear all's steps add
 with it, any that runs Chrome extensions (from the `sync` record's peers, the browser's name underneath: what the
 extension said, else the program that started its host), each with its own Unlink (`link.unlink`); with none, the
 row's Guide opens how to connect one (`#guide-pop`), and Connect another browser opens it later. While tracking is paused (from anywhere), the header holds a "Tracking is paused" pill with Resume (`showPaused`)
-and an empty week says so. Under Track browsing, `#startup-row` (Start with Windows) is Memoir for Windows' only: hidden here, it asks the
+and an empty week says so. The tour's Most used step teaches Apps | Browsers when the switch shows (`kindTasks`). Memoir for Windows only:
+its sample week has apps (`SAMPLE_APPS`, sites filed under Chrome too), and the first browser linked with it gets
+`startTour({ link })`, a short tour on the real week (`linkSteps`), started by `maybeLinkTour` when the app sets
+`linkTour.pending` (it opens itself for it) and marked `linkTour.shown` after. Under Track browsing, `#startup-row` (Start with Windows) is Memoir for Windows' only: hidden here, it asks the
 app (`startup.get` / `startup.set`). Test it by pressing it for real against a throwaway
 Memoir for Windows, as above.
 
