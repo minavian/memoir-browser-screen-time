@@ -60,6 +60,12 @@ async function status(state, extra = {}) {
   try { await chrome.storage.session.set({ linkLive: { state, at: Date.now(), lastSync, appVersion: app ? app.version : null, ...extra } }); } catch { /* no session storage */ }
 }
 
+// anything across, either way, is a sync: Settings say when the last one was (at most every 5 s)
+async function synced() {
+  const link = await getLink();
+  if (link.linked && Date.now() - (link.lastSync || 0) > 5000) { await setLink({ lastSync: Date.now() }); status('insync'); }
+}
+
 // ---------- connecting ----------
 async function connect() {
   const link = await getLink();
@@ -103,6 +109,7 @@ async function onMessage(message) {
     // unlinked while the app was closed: it hears it now
     if (!link.linked) { if (link.unlinkOwed) post({ type: 'unlink' }); return; }
     rulesDue = true;
+    await setLink({ lastSync: Date.now() });
     await status('insync');
     sendTab();
     send();
@@ -115,12 +122,11 @@ async function onMessage(message) {
     if ((await getLink()).linked) await unlink({ tell: false });
   } else if (!app) {
     // nothing before the app has said hello
-  } else if (message.type === 'rules') enqueue(() => applyRules(message));
-  else if (message.type === 'days') enqueue(() => applyDays(message));
+  } else if (message.type === 'rules') enqueue(async () => { await applyRules(message); await synced(); });
+  else if (message.type === 'days') enqueue(async () => { await applyDays(message); await synced(); });
   else if (message.type === 'ack') {
     inflight.delete(message.seq);
-    const link = await getLink();
-    if (Date.now() - (link.lastSync || 0) > 5000) { await setLink({ lastSync: Date.now() }); status('insync'); }
+    await synced();
   }
 }
 // sent but not acknowledged: back on the list

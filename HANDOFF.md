@@ -91,7 +91,7 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
   headline word by word, the rest as it comes into view; `<html class="pv-pop">` hides it from the start; not `pop`, which shared/pop.css styles as a
   popover); hovering the address opens the report's "Made by" popover, holding just its Copy button
   (`shared/mail-pop.js`, styles in `shared/pop.css`). Opened from the footer of
-  Settings ("Your data never leaves this browser"). Keep the two the same. `store/chrome-web-store-privacy.md` — the
+  Settings ("Your data never leaves this computer": linked with Memoir for Windows it goes to that app, on the same computer). Keep the two the same. `store/chrome-web-store-privacy.md` — the
   Web Store's Privacy practices answers (single purpose, why each permission, data use), checked against the code.
   If a permission, a stored field or a data flow changes, update all of these.
 
@@ -562,6 +562,14 @@ name and category (`setApps`, from the app's `apps`), as first-letter tiles. `cl
 `tests/merge-cases` when it changes). End-to-end testing needs the app built and a copy of the extension that
 holds `nativeMessaging` up front (a headless browser can't answer the prompt); `MEMOIR_EXTRA_EXTENSION_IDS` makes
 the app trust that copy's ID.
+**In Settings** (Your data, above Export): the Memoir for Windows row (`recap.js` `renderLink`). Its button reads
+Link, Linking…, In sync (a check grows in) or Linked (the app is closed); pressed while linked it asks Unlink? in
+Clear all's red for 5 s. The status comes from `link` (local) and `linkLive` (session storage, which `link.js`
+`status()` writes); the description says when it last synced, and every text fits one line so the row never
+changes height. Link asks for `nativeMessaging` in the click itself. While linked, Clear all's steps add
+"Memoir for Windows is cleared too". In Memoir for Windows the same row shows the browser linked with it (from
+the `sync` record's peers) and unlinks it (`link.unlink`). Test it by pressing it for real against a throwaway
+Memoir for Windows, as above.
 
 ## How Memoir works (`how-it-works.html`)
 Opened from Settings (How Memoir works → Open, a new tab, under Tutorial; pointed at, Open grows to show the

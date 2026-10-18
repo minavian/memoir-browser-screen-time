@@ -186,6 +186,11 @@
 
                   <div class="p-block">
                     <span class="p-label">Your data</span>
+                    <!-- Memoir for Windows: Link, then In sync (or Linked while it's closed); pressed again, Unlink? (recap.js renderLink) -->
+                    <div class="p-row link-row" id="link-row">
+                      <span><b id="link-title">Memoir for Windows</b><small id="link-desc">Syncs on this computer, never online</small></span>
+                      <button class="btn btn-secondary btn-xs link-btn" id="link-btn" type="button" aria-describedby="link-desc"><svg class="link-ok" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.4 6.4 4.9 8.8 9.6 3.6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="link-label">Link</span></button>
+                    </div>
                     <div class="data-row" id="data-row" data-step="0">
                       <button class="btn btn-secondary btn-sm keep-btn" id="export" type="button">Export</button>
                       <button class="btn btn-secondary btn-sm keep-btn" id="import" type="button">Import</button>
@@ -199,11 +204,12 @@
                       </button>
                     </div>
                     <button class="never-mind" id="nuke-cancel" type="button" tabindex="-1">Never mind</button>
+                    <small class="nuke-also" id="nuke-also" aria-hidden="true">Memoir for Windows is cleared too.</small>
                     <input type="file" id="import-file" accept="application/json,.json" hidden>
                   </div>
                 </div>
               </div>
-              <p class="p-foot"><span class="wordmark-plain">Memoir</span> · Made by <button class="p-author" id="author" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="author-pop">Mina Vian</button> · <a class="p-author" href="privacy.html" target="_blank" rel="noopener">Your data never leaves this browser</a></p>
+              <p class="p-foot"><span class="wordmark-plain">Memoir</span> · Made by <button class="p-author" id="author" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="author-pop">Mina Vian</button> · <a class="p-author" href="privacy.html" target="_blank" rel="noopener">Your data never leaves this computer</a></p>
             </div>
           </div>
           <button class="icon-btn morph-trigger" id="settings-btn" aria-label="Settings" aria-expanded="false" aria-controls="settings-panel">
