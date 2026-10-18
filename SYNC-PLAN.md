@@ -1,6 +1,7 @@
 # Sync between the extension and Memoir for Windows: the plan
 
-Written 2026-10-17. Nothing here is built yet. The owner decided sync must work at launch (19 November).
+Written 2026-10-17, updated 2026-10-18 (page titles no longer have a keep-time of their own: they go with
+their day, under Keep history). Nothing here is built yet. The owner decided sync must work at launch (19 November).
 Open questions are at the end; the plan assumes the recommended answers until they're settled.
 
 ## What "in sync" means
@@ -8,8 +9,8 @@ Open questions are at the end; the plan assumes the recommended answers until th
 - **One history, two places to see it.** Link them once. From then on the extension shows the time the
   Windows app recorded (Windows apps, Edge, Firefox), and the app shows the browsing the extension
   recorded, including from before the app was installed.
-- **One set of rules:** the daily limit and its lock, Never track, Page titles and how long they're kept,
-  Keep history, the weekly recap, category moves, pausing.
+- **One set of rules:** the daily limit and its lock, Never track, Page titles,
+  Keep history (titles included), the weekly recap, category moves, pausing.
 - **On this computer only:** no account, no network, no local web server. That's what the website
   already promises ("right on your computer: no account, no cloud").
 - **Either can be closed.** They catch up the next time both run. The app doesn't start with Windows,
@@ -93,9 +94,9 @@ them stops unexpectedly).
 | `goal.history` | Per `from` day, the newer write wins. A limit committed on one side locks the other; the gauntlet's reset (`limit: null`) carries over. |
 | `goalTrial` | The newer wins (Undo on either side removes it). |
 | `goalNotify`, the weekly recap flag | OR per day (or per week): once shown anywhere, never again. |
-| `settings`: `paused`, `titles`, `titleWeeks`, `retention`, `weeklyReminder`, `reminderDay`, `reminderMinutes` | Per field, the newer change wins. |
+| `settings`: `paused`, `titles`, `retention`, `weeklyReminder`, `reminderDay`, `reminderMinutes` | Per field, the newer change wins. |
 | `settings.excluded` (Never track) | A set: additions are joined; a removal wins only over an older addition. |
-| Not synced | `onboarded`, `popupIntroduced`, the session, theme and cursor (localStorage, per place). |
+| Not synced | `onboarded`, `popupIntroduced`, the session, theme, Rainbow clock and cursor (localStorage, per place; `settings.rainbow` only mirrors the Rainbow clock for the toolbar icon). |
 
 **Why the larger and not the sum:** while both run, they measure the same browser minutes under the same
 site and hour, so the larger figure is the real time, not double. Windows apps exist only on the Windows
@@ -118,8 +119,8 @@ other. So deletions travel as rules, and every incoming record passes through th
   that hour and drops incoming time from before it. The confirmation must say it clears Memoir for Windows
   too. At most the rest of that one hour is lost on the other side.
 - **Erase titles:** a `titlesErased` marker that works the same way, for page titles and links only.
-- **Keep history / Keep page titles:** both are synced settings, so both sides prune the same way.
-  Incoming days past the cutoff are dropped (or lose their titles) as they arrive.
+- **Keep history:** a synced setting, so both sides prune the same way, page titles with their day.
+  Incoming days past the cutoff are dropped as they arrive.
 - **Unlink:** syncing stops; both keep what they have.
 
 ## Who sends notifications
@@ -148,7 +149,7 @@ app for 2 minutes. The OR-merged flags stop repeats. The popup's flame moment wo
 ### Windows (needs the data half of the re-port first)
 - `Engine.Normalize` must keep every field. Right now it keeps only `s/h/hs/ti`, so every Windows save
   would strip `th/tu/tp` from a synced day.
-- Port the writing of `th/tu/tp` and the `titleWeeks` pruning, and make Never track and Erase titles
+- Port the writing of `th/tu/tp`, and make Never track and Erase titles
   (`Redact`) cover `th/tu/tp` too. As it stands, an excluded site's name would survive there and travel.
 - `BrowserLink`: two-way, persistent, bigger frames, several instances, and self-registration at startup.
 - New `Sync.cs`: peers, the change counter (from `Store.Changed`), the merge (a C# port of `mergeDay` and
@@ -198,7 +199,7 @@ app for 2 minutes. The OR-merged flags stop repeats. The popup's flame moment wo
 1. **Oct 18–20, spike:** check that `nativeMessaging` granted at runtime works and that `connectNative`
    keeps the worker alive in current Chrome. Create the Web Store draft to get the ID. **Start the
    code-signing identity check and open a Microsoft Partner Center account** (both can take days).
-2. **Oct 20–26:** Windows data parity (`Normalize`, `th/tu/tp`, `Redact`, `titleWeeks`). The shared merge
+2. **Oct 20–26:** Windows data parity (`Normalize`, `th/tu/tp`, `Redact`). The shared merge
    cases, running on both sides.
 3. **Oct 27–Nov 2:** transport (two-way host, registration, the extension's link and connector role), the
    exchange, live sync. The per-user installer, with data moved out of the program folder.
