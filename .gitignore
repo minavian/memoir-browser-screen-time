@@ -27,3 +27,8 @@ Windows Memoir/tests/*.png
 # Release archives
 *.7z
 *.zip
+
+# The store package (store/pack/pack.ps1) and its stripping tool's packages
+store/pack/out/
+store/pack/node_modules/
+store/pack/package-lock.json

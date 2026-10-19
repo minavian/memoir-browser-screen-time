@@ -1,0 +1,9 @@
+{
+  "name": "memoir-pack",
+  "private": true,
+  "description": "Strips developer comments from the extension for its store package (strip.mjs, pack.ps1)",
+  "type": "module",
+  "dependencies": {
+    "terser": "5.36.0"
+  }
+}
