@@ -16,7 +16,8 @@ import {
 const HOST = 'com.minavian.memoir';
 const PROTOCOL = 1;
 const PEER = 'windows';                // the app's days: link:windows:<date>
-const SETTINGS_FIELDS = ['paused', 'titles', 'retention', 'weeklyReminder', 'reminderDay', 'reminderMinutes'];
+// (Appearance too: theme, rainbow, cursor and cursorSmooth are copies of this place's choices, shared/appearance.js)
+const SETTINGS_FIELDS = ['paused', 'titles', 'retention', 'weeklyReminder', 'reminderDay', 'reminderMinutes', 'theme', 'rainbow', 'cursor', 'cursorSmooth'];
 const BATCH_BYTES = 600 * 1024;        // the host takes up to 4 MB; batches stay small
 const ICON_BYTES = 64 * 1024;          // one icon, at most (they're 32 to 40 px)
 const DATE = /^\d{4}-\d{2}-\d{2}$/;

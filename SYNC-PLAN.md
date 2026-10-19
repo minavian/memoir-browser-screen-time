@@ -124,9 +124,9 @@ them stops unexpectedly).
 | `goal.history` | Per `from` day, the newer write wins. A limit committed on one side locks the other; the gauntlet's reset (`limit: null`) carries over. |
 | `goalTrial` | The newer wins (Undo on either side removes it). |
 | `goalNotify`, the weekly recap flag | OR per day (or per week): once shown anywhere, never again. |
-| `settings`: `paused`, `titles`, `retention`, `weeklyReminder`, `reminderDay`, `reminderMinutes` | Per field, the newer change wins. |
+| `settings`: `paused`, `titles`, `retention`, `weeklyReminder`, `reminderDay`, `reminderMinutes`, and Appearance: `theme`, `rainbow`, `cursor`, `cursorSmooth` | Per field, the newer change wins. Appearance lives in each place's localStorage (first paint) with these copies in settings (`shared/appearance.js`): a page puts its choice in the copy, and takes a changed copy back. |
 | `settings.excluded` (Never track) | A set: additions are joined; a removal wins only over an older addition. |
-| Not synced | `onboarded`, `popupIntroduced`, the session, theme, Rainbow clock and cursor (localStorage, per place; `settings.rainbow` only mirrors the Rainbow clock for the toolbar icon). |
+| Not synced | `onboarded`, `popupIntroduced`, the session, Start with Windows (Windows only), the Apps or Browsers choice in Most used. |
 
 **Why the larger and not the sum:** while both run, they measure the same browser minutes under the same
 site and hour, so the larger figure is the real time, not double. Windows apps exist only on the Windows
