@@ -2,14 +2,15 @@
 // days (day:<date>) go to the app, and the app's (its own merged with any other browser profile's) come
 // back and are kept as they are (link:windows:<date>); what's shown is both merged (core.js getDays), so the
 // same minutes measured on both sides never add up. Settings, Never track, the limit's history and moved
-// categories go to whichever side changed them last; Clear all and Erase titles travel as markers. It also
-// tells the app which tab is in front (the old Memoir Windows Connector's job), so both count the same
-// names. All of it on this computer: native messaging to Memoir.exe, which relays over a pipe only this
-// Windows account can open. No network.
+// categories go to whichever side changed them last; Clear all and Erase titles travel as markers. Icons go
+// where they're missing: the app's icons for its apps come here (`appIcons`), and the websites' icons the
+// browser has go to the app, each when the other side asks. It also tells the app which tab is in front (the
+// old Memoir Windows Connector's job), so both count the same names. All of it on this computer: native
+// messaging to Memoir.exe, which relays over a pipe only this Windows account can open. No network.
 
 import {
   siteFromUrl, dayKey, storageKeyForDay, normalizeDay, linkKey, linkPeers, recordDate,
-  listDayRecordKeys, cleanDay, mergeDay, anonymizeDay, isExcluded, getSettings, siteKey,
+  listDayRecordKeys, cleanDay, mergeDay, anonymizeDay, isExcluded, getSettings, siteKey, isApp, isPage, ICON_FILE,
 } from './shared/core.js';
 
 const HOST = 'com.minavian.memoir';
@@ -17,6 +18,7 @@ const PROTOCOL = 1;
 const PEER = 'windows';                // the app's days: link:windows:<date>
 const SETTINGS_FIELDS = ['paused', 'titles', 'retention', 'weeklyReminder', 'reminderDay', 'reminderMinutes'];
 const BATCH_BYTES = 600 * 1024;        // the host takes up to 4 MB; batches stay small
+const ICON_BYTES = 64 * 1024;          // one icon, at most (they're 32 to 40 px)
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 let enqueue = fn => fn();              // the tracker's queue (background.js), so saves never race
@@ -29,6 +31,7 @@ let rulesDue = false;
 let sendTimer = 0;
 let helloTimer = 0;                    // says hello again until the app answers
 const inflight = new Map();            // seq → dates sent, not yet acknowledged
+const askedIcons = new Set();          // app icons asked for while connected (each once)
 const expect = new Map();              // key → JSON this module just wrote (not a change of the user's)
 
 // While the app is open it sends the limit's and the week's notifications (it sees everything, even with
@@ -126,6 +129,7 @@ async function onMessage(message) {
     else { clearTimeout(helloTimer); app = null; requeue(); if ((await getLink()).linked) status('offline'); }
   } else if (message.type === 'hello') {
     app = message;
+    askedIcons.clear();
     if (message.protocol !== PROTOCOL) { status('update'); return; }
     const link = await getLink();
     // unlinked while the app was closed: it hears it now
@@ -146,6 +150,8 @@ async function onMessage(message) {
     // nothing before the app has said hello
   } else if (message.type === 'rules') enqueue(async () => { await applyRules(message); await synced(); });
   else if (message.type === 'days') enqueue(async () => { await applyDays(message); await synced(); });
+  else if (message.type === 'iconWants') sendFavicons(message.sites);
+  else if (message.type === 'icons') enqueue(() => keepIcons(message.apps));
   else if (message.type === 'ack') {
     inflight.delete(message.seq);
     await synced();
@@ -330,11 +336,12 @@ async function applyRules(remote) {
     if (!origins[site] && siteKey(site) !== null && typeof origin === 'string' && /^https?:\/\/[^/]+$/.test(origin)) { origins[site] = origin; found = true; }
   }
   if (found) patch.origins = origins;
+  let apps = null;
   if (remote.apps && typeof remote.apps === 'object') {
-    const apps = {};
+    apps = {};
     for (const [key, a] of Object.entries(remote.apps)) {
       if (siteKey(key) === null || !a || typeof a.name !== 'string') continue;
-      apps[key] = { name: a.name.slice(0, 160), category: typeof a.category === 'string' ? a.category : 'other' };
+      apps[key] = { name: a.name.slice(0, 160), category: typeof a.category === 'string' ? a.category : 'other', icon: ICON_FILE.test(a.icon || '') ? a.icon : null };
     }
     patch.apps = apps;
   }
@@ -355,6 +362,78 @@ async function applyRules(remote) {
   if (wiped) await wipe(m.wipe);
   if (titlesGone) await eraseTitles(m.titlesErased);
   if (privacy) await anonymizeAll(settings.excluded);
+  if (apps) await askIcons(apps);
+}
+
+// ---------- icons ----------
+// The app's apps: the pictures this side doesn't have yet are asked for (icons the app no longer uses go)
+async function askIcons(apps) {
+  const files = new Set(Object.values(apps).map(a => a.icon).filter(Boolean));
+  const { appIcons = {} } = await chrome.storage.local.get('appIcons');
+  const kept = Object.fromEntries(Object.entries(appIcons).filter(([f]) => files.has(f)));
+  if (Object.keys(kept).length !== Object.keys(appIcons).length) await write({ appIcons: kept });
+  const want = [...files].filter(f => !kept[f] && !askedIcons.has(f)).slice(0, 500);
+  if (!want.length) return;
+  want.forEach(f => askedIcons.add(f));
+  post({ type: 'iconWants', apps: want });
+}
+async function keepIcons(icons) {
+  if (!icons || typeof icons !== 'object') return;
+  const { apps = {}, appIcons = {} } = await chrome.storage.local.get(['apps', 'appIcons']);
+  const used = new Set(Object.values(apps).map(a => a && a.icon).filter(Boolean));
+  const next = { ...appIcons };
+  for (const [file, data] of Object.entries(icons)) {
+    if (ICON_FILE.test(file) && used.has(file) && typeof data === 'string' && data.startsWith('data:image/png;base64,') && data.length < ICON_BYTES * 1.4) next[file] = data;
+  }
+  if (Object.keys(next).length !== Object.keys(appIcons).length) await write({ appIcons: next });
+}
+
+// The websites' icons, for the app: what this browser shows for each (its own favicon store, the same as the
+// report's), or null when it has none. Chrome keys icons by the exact address visited, so the address the site
+// was visited on comes first, then the usual spellings; its grey globe means none.
+const favUrl = page => chrome.runtime.getURL(`/_favicon/?pageUrl=${encodeURIComponent(page)}&size=32`);
+async function pngData(page) {
+  const res = await fetch(favUrl(page));
+  if (!res.ok) return null;
+  const bytes = new Uint8Array(await res.arrayBuffer());
+  if (bytes.length < 8 || bytes.length > ICON_BYTES || bytes[0] !== 0x89 || bytes[1] !== 0x50) return null;
+  let text = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) text += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return `data:image/png;base64,${btoa(text)}`;
+}
+let globe = null;
+async function favicon(domain, origins) {
+  if (!globe) globe = pngData('https://memoir-no-icon.invalid/').catch(() => null);
+  const none = await globe;
+  const pages = new Set([origins[domain] && `${origins[domain]}/`, `https://${domain}/`, `https://www.${domain}/`, `http://${domain}/`, `http://www.${domain}/`].filter(Boolean));
+  for (const page of pages) {
+    const data = await pngData(page).catch(() => null);
+    if (data && data !== none) return data;
+  }
+  return null;
+}
+let faviconsBusy = Promise.resolve();
+function sendFavicons(sites) {
+  if (!Array.isArray(sites)) return;
+  faviconsBusy = faviconsBusy.then(async () => {
+    const { origins = {} } = await chrome.storage.local.get('origins');
+    const settings = await getSettings();
+    const list = [...new Set(sites)].filter(d => typeof d === 'string' && siteKey(d) === d && !isApp(d) && !isPage(d) && !d.startsWith('~') && !isExcluded(d, settings.excluded)).slice(0, 500);
+    let batch = {}, size = 0;
+    const flush = () => { if (Object.keys(batch).length) post({ type: 'icons', sites: batch }); batch = {}; size = 0; };
+    // a few at a time
+    for (let i = 0; i < list.length; i += 6) {
+      const part = list.slice(i, i + 6);
+      const found = await Promise.all(part.map(d => favicon(d, origins).catch(() => null)));
+      part.forEach((d, j) => {
+        const bytes = found[j] ? found[j].length : 4;
+        if (size + bytes > BATCH_BYTES) flush();
+        batch[d] = found[j];
+        size += bytes + d.length;
+      });
+    }
+    flush();
+  }).catch(() => {});
 }
 async function wipe(at) {
   const wipeDay = dayKey(new Date(at));
@@ -362,7 +441,7 @@ async function wipe(at) {
   const raw = await chrome.storage.local.get(keys.filter(k => recordDate(k) === wipeDay));
   const patch = {};
   for (const [k, v] of Object.entries(raw)) { const d = normalizeDay(v); dropHours(d, new Date(at).getHours()); patch[k] = d; }
-  await chrome.storage.local.remove([...keys.filter(k => recordDate(k) < wipeDay), 'categories', 'origins', 'apps', 'goalNotify']);
+  await chrome.storage.local.remove([...keys.filter(k => recordDate(k) < wipeDay), 'categories', 'origins', 'apps', 'appIcons', 'goalNotify']);
   if (Object.keys(patch).length) await write(patch);
 }
 async function eraseTitles(at) {

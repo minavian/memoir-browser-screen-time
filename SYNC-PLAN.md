@@ -117,7 +117,8 @@ them stops unexpectedly).
 | Data | Merge |
 |---|---|
 | `day:YYYY-MM-DD` | `mergeDay` (`recap.js`, Import's merge): per hour and site, the larger time; page times and per-hour page times the same way; `tp` as a union; links get a fixed tie-break so both sides keep the same one. Totals are recomputed from the hours. |
-| `apps` (Windows: app name, category, icon) | Comes from Windows. Icons travel as small `data:` URLs. |
+| `apps` (Windows: app name, category, icon) | Comes from Windows. The icon is a file name; the extension asks for the pictures it lacks (`iconWants`) and keeps them as `data:` URLs in `appIcons`. |
+| `favicons` (Windows: the websites' icons) | Windows asks a linked browser for the icons of websites it has none for (`iconWants`, each once per run); the browser answers from its own favicon store (`icons`, `null` for none). Saved in `icons\sites`, named in `favicons`; Never track and Clear all remove them. |
 | `origins` | Union; the newer one wins. |
 | `categories` (moved sites and apps) | Per entry, the newer change wins. |
 | `goal.history` | Per `from` day, the newer write wins. A limit committed on one side locks the other; the gauntlet's reset (`limit: null`) carries over. |
