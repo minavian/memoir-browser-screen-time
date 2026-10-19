@@ -16,8 +16,8 @@ These are the answers for the developer dashboard (Item > Privacy practices), ch
 | `idle` | To stop counting when the computer is idle or locked, so time away isn't counted as browsing. Only the active, idle or locked state is used. |
 | `alarms` | To save the visit in progress every minute (MV3 service workers can stop at any time), to clear old history as the user's retention setting asks, and for the weekly reminder. |
 | `notifications` | To tell the user when they're close to or over their own daily limit, and for the weekly recap reminder they can turn off in Settings. |
-| `favicon` | To show each site's icon in the list from Chrome's own icon cache, so sites are never contacted to fetch icons. |
-| `nativeMessaging` (optional) | Asked for only when the user presses Link in Settings (Your data), to sync with Memoir for Windows, the developer's own desktop app, on the same computer. It is used only to talk to that app's program (`Memoir.exe`, native host `com.minavian.memoir`), which passes messages on over a named pipe only the user's Windows account can open. It carries the user's own daily totals, settings and the tab in front between the two. Nothing goes over the network, and Memoir works fully without it. |
+| `favicon` | To show each site's icon in the list from Chrome's own icon cache, so sites are never contacted to fetch icons. When the user has linked Memoir for Windows, the same cached icons are passed to that app on the same computer, so it can show them too. |
+| `nativeMessaging` (optional) | Asked for only when the user presses Link in Settings (Your data), to sync with Memoir for Windows, the developer's own desktop app, on the same computer. It is used only to talk to that app's program (`Memoir.exe`, native host `com.minavian.memoir`), which passes messages on over a named pipe only the user's Windows account can open. It carries the user's own daily totals, settings, the tab in front and the sites' and apps' icons between the two. Nothing goes over the network, and Memoir works fully without it. |
 
 Host permissions: none. Content scripts: none.
 
