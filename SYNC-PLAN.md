@@ -95,8 +95,10 @@ build to test.
   few hundred dollars a year on a hardware token. Identity checks take days, so start this week.
 - **Updates are the app's job** (the Store doesn't update EXE apps). There's no update check, to keep the
   "nothing is sent" promise. Instead, the extension, which Chrome keeps up to date, knows the latest
-  Windows version. When the app says hello with an older one, both show "A new Memoir for Windows is out"
-  with the website link. Because of this, the extension must keep speaking older protocol versions for a
+  Windows version (`WINDOWS_LATEST` in link.js: raise it with each Windows release) and says it in its hello
+  (`windowsLatest`). Memoir for Windows keeps it for each linked browser; when it's newer than itself, its
+  Settings shows "A newer Memoir for Windows" with Get it (the website) and Not now (until the next version),
+  and one toast says so (recap.js `renderUpdate`). Because of this, the extension must keep speaking older protocol versions for a
   while.
 - **The website must be live first:** the Store submission needs the installer's permanent address.
 
@@ -162,7 +164,7 @@ app for 2 minutes. The OR-merged flags stop repeats. The popup's flame moment wo
 ## The exchange
 
 - **On connect:** `hello` both ways (protocol version, device id, kind, a name like "Chrome · Profile 1",
-  app version). The extension also speaks older protocol versions, because the app is updated by hand.
+  app version; the extension's also `windowsLatest`, above). The extension also speaks older protocol versions, because the app is updated by hand.
   If it can't speak the app's version, nothing syncs and Settings says which one to update.
 - Next comes the `sync` record (settings, markers, Never track, limit, categories), then every key
   changed since the other side last acknowledged. Each side keeps a change counter; a first link sends

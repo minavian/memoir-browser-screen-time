@@ -15,6 +15,10 @@ import {
 
 const HOST = 'com.minavian.memoir';
 const PROTOCOL = 1;
+// The newest Memoir for Windows when this copy of the extension was made. A linked Memoir for Windows older than this
+// says a newer one is out (it never looks online itself; this extension is kept up to date by its store). Raise it
+// with each Memoir for Windows release.
+const WINDOWS_LATEST = '6.0.0';
 const PEER = 'windows';                // the app's days: link:windows:<date>
 // (Appearance too: theme, rainbow, cursor and cursorSmooth are copies of this place's choices, shared/appearance.js)
 const SETTINGS_FIELDS = ['paused', 'titles', 'retention', 'weeklyReminder', 'reminderDay', 'reminderMinutes', 'theme', 'rainbow', 'cursor', 'cursorSmooth'];
@@ -118,7 +122,7 @@ function browserName() {
 async function sayHello() {
   clearTimeout(helloTimer);
   const link = await getLink();
-  post({ type: 'hello', protocol: PROTOCOL, device: link.device, kind: 'extension', name: browserName(), version: chrome.runtime.getManifest().version, linked: { mode: link.mode, since: link.since } });
+  post({ type: 'hello', protocol: PROTOCOL, device: link.device, kind: 'extension', name: browserName(), version: chrome.runtime.getManifest().version, windowsLatest: WINDOWS_LATEST, linked: { mode: link.mode, since: link.since } });
   helloTimer = setTimeout(() => { if (port && !app) sayHello(); }, 5000);
 }
 
