@@ -1,6 +1,6 @@
 # Memoir privacy policy
 
-**Memoir: Browser Screen Time** (the Chrome extension) · Effective 19 October 2026
+**Memoir: Browser Screen Time** (the Chrome extension) · Effective 20 October 2026
 
 **In short:** everything Memoir records stays on your computer: in your browser, and in Memoir for Windows if you link the two. Memoir has no servers, no accounts, no analytics and no ads. It never sends your data off your computer, so nobody else can see it, including the developer.
 
@@ -30,7 +30,7 @@ Time on sites on your **Never track** list counts only towards one combined "Pri
 Memoir can sync with Memoir for Windows, the desktop app, on the same computer, so both show the same week. It's off until you press **Link** in Settings, under Your data, and your browser asks your permission first.
 
 - **On this computer only.** The two talk through your browser's native messaging, which starts Memoir for Windows' own program on your computer, and a named pipe that only your Windows account can open. Nothing goes online, and there is no server in between.
-- **What goes across:** your daily totals (each site's and app's time, hour by hour), with page titles and their addresses only if Page titles is on; your rules (Never track, Page titles, Keep history, the weekly reminder, your daily limit and its history, categories you changed, whether tracking is paused, and which limit warnings you've had today); each site's home address; your Appearance choices; your Windows apps' names, categories and icons, to this browser; the icons of the sites you visit, from Chrome's own icon cache, to Memoir for Windows; and a note when you use Clear all or erase saved page titles, so the other side does the same.
+- **What goes across:** your daily totals (each site's and app's time, hour by hour), with page titles and their addresses only if Page titles is on; your rules (Never track, Page titles, Keep history, the weekly reminder, your daily limit and its history, categories you changed, whether tracking is paused, and which limit warnings you've had today); each site's home address; your Appearance choices; your Windows apps' names, categories and icons, to this browser; the icons of the sites you visit, from Chrome's own icon cache, to Memoir for Windows; the newest version of Memoir for Windows this extension knows of, so an older one can tell you a newer one is out; and a note when you use Clear all or erase saved page titles, so the other side does the same.
 - **The tab in front.** While linked, Memoir tells Memoir for Windows which tab is in front, so both count the same time: its site, and its title, which the app keeps only if Page titles is on. A tab in a private (Incognito) window counts only as Private.
 - **Kept apart.** Each side keeps the other's days apart from its own, and shows the two merged, so the same minutes never count twice. When you link, you choose to merge both histories or to start from today.
 - **More than one browser.** If you link Memoir in several browsers or profiles, Memoir for Windows passes each one's time on to the others.
