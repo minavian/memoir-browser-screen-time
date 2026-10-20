@@ -176,7 +176,7 @@ async function checkGoal(now) {
     next.over = true;
     next.n95 = true;
     await notify(`goal-over:${todayKey}`, 'You’ve gone over your daily limit',
-      `Your ${formatDuration(limit)} limit is used up — you’re ${formatDuration(used - limit)} over.`);
+      `Your ${formatDuration(limit)} limit is used up, you’re ${formatDuration(used - limit)} over.`);
   } else if (used >= limit * 0.95 && used <= limit && !prev.n95) {
     next.n95 = true;
     await notify(`goal-95:${todayKey}`, 'Almost at your daily limit',
