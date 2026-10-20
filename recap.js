@@ -3819,7 +3819,7 @@ function renderLink() {
     };
     if (box.children.length !== rows.length) animateHeight(box, fit);
     else fit();
-    if (peers.length) $('nuke-also').textContent = `Memoir in ${andList.format([...new Set(peers.map(p => p.browserName))])} is cleared too.`;
+    if (peers.length) brand($('nuke-also'), `Memoir in ${andList.format([...new Set(peers.map(p => p.browserName))])} is cleared too.`);
     $('link-more').hidden = !peers.length;
   } else {
     const live = linkUi.live && linkUi.live.state;
@@ -3838,7 +3838,8 @@ function paintLinkRow(el, { key, name, title, state, label, desc }) {
   // (which browser it is stays in sight while it asks)
   if (armed) { label = 'Unlink?'; desc = name ? `${name} · both keep what they have` : 'Both keep what they have so far'; }
   el.dataset.key = key;
-  swapText(el.querySelector('.link-title'), title);
+  const head = el.querySelector('.link-title');
+  if (head.textContent !== title) { brand(head, title); replay(head, 'swap'); }
   btn.hidden = state === 'none';
   btn.dataset.state = state;
   btn.dataset.arm = armed ? '1' : '';
@@ -4637,7 +4638,8 @@ async function addExcluded(site) {
   return true;
 }
 
-// Toast text, with the name set in its face (as everywhere in Settings, where toasts come from).
+// Words with the name set in its face (as everywhere in Settings, where toasts come from): toasts, and Settings'
+// rows that change.
 function brand(el, text) {
   el.replaceChildren(...text.split(/(Memoir)/).map(part => {
     if (part !== 'Memoir') return part;
@@ -5037,7 +5039,7 @@ async function startTour({ prepared = false, handoff = null, link = null } = {})
       { text: 'Change the time', watch: either(onChange('#rem-h, #rem-m'), onClick('#rem-ampm'), listen('keydown', e => (e.key === 'ArrowUp' || e.key === 'ArrowDown') && !!e.target.closest('#rem-h, #rem-m'))) },
     ] },
     { title: 'Your limit and history', text: 'A committed limit can only be undone here. <b>Keep history</b> sets how long days are kept.', target: () => [row('#limit-reset'), block('#retention')], before: toSettings('#retention'), settle: 350, radius: 14 },
-    { title: 'Sample week, tour and data', text: 'Look around with made-up data, replay this tour, read <b>how Memoir works</b>, sync with <b>Memoir for Windows</b>, and <b>Export</b> or <b>Import</b> your history. The <b>Clear all</b> button asks twice before deleting your data.', target: () => [block('#set-demo'), block('#data-row')], before: toSettings('#data-row'), settle: 350, radius: 14 },
+    { title: 'Sample week, tour and data', text: 'Look around with made-up data, replay this tour, read <b>how <span class="wordmark wm-in">Memoir</span> works</b>, sync with <b><span class="wordmark wm-in">Memoir</span> for Windows</b>, and <b>Export</b> or <b>Import</b> your history. The <b>Clear all</b> button asks twice before deleting your data.', target: () => [block('#set-demo'), block('#data-row')], before: toSettings('#data-row'), settle: 350, radius: 14 },
     { title: 'Pull to close', text: 'Pull the gear down and let go to close this tab. Leave the mouse by the gear for a moment and it shows you how. (Here in the tour, closing springs back.)', target: () => [q('#settings-btn'), q('.pull-label'), q('.pull-track')], live: true, rest: () => [q('#settings'), q('.pull-track')], before: noSettings, settle: 0, radius: 22, pad: 6, tasks: [
       { text: 'Pull the gear down and let go', watch: onPulled },
     ] },
@@ -5069,7 +5071,7 @@ async function startTour({ prepared = false, handoff = null, link = null } = {})
     const { sync } = await chrome.storage.local.get('sync');
     const p = sync && sync.peers && sync.peers[link];
     const name = p ? namePeers([{ device: link, ...p }])[0].label : 'your browser';
-    const inBrowser = p ? `Memoir in ${name}` : 'Memoir in your browser';
+    const inBrowser = p ? `<span class="wordmark wm-in">Memoir</span> in ${name}` : '<span class="wordmark wm-in">Memoir</span> in your browser';
     return [
       { kicker: 'Linked', title: `${inBrowser} is linked`, text: `This app and ${inBrowser} now share one week, on this computer only: its websites come in here, and your apps go there. It shows here in <b>Your data</b>.`, target: () => q('#link-rows'), before: toSettings('#link-rows'), settle: 450, radius: 14 },
       { title: 'Apps and Browsers', text: `<b>Apps</b> lists your apps, ${name} among them with all its time. <b>Browsers</b> lists the websites you used in it. They’re the same minutes seen two ways, so they’re never added together.`, target: () => q('.sites-card'), before: noSettings, settle: 300,
@@ -5079,7 +5081,7 @@ async function startTour({ prepared = false, handoff = null, link = null } = {})
         ] : undefined },
       { title: 'Each minute once', text: `Your daily average, your limit, the categories and every hour count the time in ${name} once, whichever side saw it.`, target: () => [q('.summary .caption'), q('#stat-avg')], before: toWeek, settle: 0, radius: 14, below: true },
       { title: 'One set of rules', text: 'Never track, page titles, Keep history, your limit, the weekly reminder, categories and Appearance follow whichever side changed them last. <b>Clear all</b> on either side clears both; <b>Unlink</b> leaves both what they have.', target: () => q('#link-rows') && q('#link-rows').closest('.p-block'), before: toSettings('#data-row'), settle: 350, radius: 14 },
-      { kicker: 'All set', title: 'You’re linked', text: 'Using another browser too? Add Memoir to it and press <b>Link</b> there. <b>Connect another browser</b>, under the rows here, shows how.', before: async () => { await noSettings(); await toWeek(); }, settle: 300 },
+      { kicker: 'All set', title: 'You’re linked', text: 'Using another browser too? Add <span class="wordmark wm-in">Memoir</span> to it and press <b>Link</b> there. <b>Connect another browser</b>, under the rows here, shows how.', before: async () => { await noSettings(); await toWeek(); }, settle: 300 },
     ];
   }
 }
