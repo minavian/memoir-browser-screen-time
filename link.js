@@ -18,7 +18,7 @@ const PROTOCOL = 1;
 // The newest Memoir for Windows when this copy of the extension was made. A linked Memoir for Windows older than this
 // says a newer one is out (it never looks online itself; this extension is kept up to date by its store). Raise it
 // with each Memoir for Windows release.
-const WINDOWS_LATEST = '6.0.0';
+const WINDOWS_LATEST = '1.0.0';
 const PEER = 'windows';                // the app's days: link:windows:<date>
 // (Appearance too: theme, rainbow, cursor and cursorSmooth are copies of this place's choices, shared/appearance.js)
 const SETTINGS_FIELDS = ['paused', 'titles', 'retention', 'weeklyReminder', 'reminderDay', 'reminderMinutes', 'theme', 'rainbow', 'cursor', 'cursorSmooth'];

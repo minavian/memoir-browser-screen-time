@@ -1,6 +1,6 @@
 # Chrome Web Store: the Privacy practices tab
 
-These are the answers for the developer dashboard (Item > Privacy practices), checked against the code of version 6.0.0. If a permission or a data flow changes, update this file and the dashboard together.
+These are the answers for the developer dashboard (Item > Privacy practices), checked against the code of version 1.0.0. If a permission or a data flow changes, update this file and the dashboard together.
 
 ## Single purpose
 

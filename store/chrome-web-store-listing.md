@@ -1,6 +1,6 @@
 # Chrome Web Store: the Store listing tab
 
-The words for the developer dashboard (Item > Store listing), checked against version 6.0.0. When a feature
+The words for the developer dashboard (Item > Store listing), checked against version 1.0.0. When a feature
 named here changes, change this file and the dashboard together. The privacy answers are in
 [`chrome-web-store-privacy.md`](chrome-web-store-privacy.md).
 
