@@ -4891,6 +4891,16 @@ async function startTour({ prepared = false, handoff = null, link = null } = {})
     return () => document.removeEventListener('click', h, true);
   };
   const onHover = sel => listen('pointerover', e => !!e.target.closest(sel));
+  // the Settings button pulled down and let go (pull-close.js). While this watches, a pull springs back instead of
+  // closing, and the button shows how once the light is on it.
+  const onPulled = done => {
+    const hint = on => document.dispatchEvent(new CustomEvent('memoir:pull-hint', { detail: on }));
+    document.documentElement.dataset.pullTour = '';
+    const shown = setTimeout(() => hint(true), reducedMotion() ? 0 : 700);
+    const h = () => done();
+    document.addEventListener('memoir:pulled', h);
+    return () => { clearTimeout(shown); document.removeEventListener('memoir:pulled', h); delete document.documentElement.dataset.pullTour; hint(false); };
+  };
   const onScroll = sel => listen('scroll', e => !!e.target.closest(sel));
   const onChange = sel => listen('change', e => !!e.target.closest(sel));
   // any of several
@@ -5029,6 +5039,9 @@ async function startTour({ prepared = false, handoff = null, link = null } = {})
     ] },
     { title: 'Your limit and history', text: 'A committed limit can only be undone here. <b>Keep history</b> sets how long days are kept.', target: () => [row('#limit-reset'), block('#retention')], before: toSettings('#retention'), settle: 350, radius: 14 },
     { title: 'Sample week, tour and data', text: 'Look around with made-up data, replay this tour, read <b>how Memoir works</b>, sync with <b>Memoir for Windows</b>, and <b>Export</b> or <b>Import</b> your history. The <b>Clear all</b> button asks twice before deleting your data.', target: () => [block('#set-demo'), block('#data-row')], before: toSettings('#data-row'), settle: 350, radius: 14 },
+    { title: 'Pull to close', text: 'Pull the gear down and let go to close this tab. Leave the mouse by the gear for a moment and it shows you how. (Here in the tour, closing springs back.)', target: () => [q('#settings-btn'), q('.pull-label'), q('.pull-track')], live: true, rest: () => [q('#settings'), q('.pull-track')], before: noSettings, settle: 0, radius: 22, pad: 6, tasks: [
+      { text: 'Pull the gear down and let go', watch: onPulled },
+    ] },
     { kicker: 'All set', title: 'That’s the tour', text: 'Your own week fills in as you browse. The clock in your toolbar shows today at a glance.', before: async () => { await noSettings(); await toWeek(); }, settle: 300 },
   ];
   await runTour(link ? await linkSteps() : steps, {
