@@ -1,8 +1,6 @@
 # Memoir: Browser Screen Time — handoff notes
 
-Chrome MV3 extension by **Mina Vian** ("Made by Mina Vian" credit stays everywhere). Every script and stylesheet
-starts with `/*! Made with care and love by Mina Vian */` (a new file gets it too); the store package keeps it
-(`store/pack/strip.mjs` keeps `/*!` comments, and only those).
+Chrome MV3 extension by **Mina Vian** ("Made by Mina Vian" credit stays everywhere).
 Logs browsing time and shows today in a popup and the whole week in a full-page report.
 Current version: **0.9.0**, shown as alpha v0.9 (a dev build) (`manifest.json`). Load unpacked from this folder; after edits,
 press reload on the extension in `chrome://extensions` and refresh the report tab.

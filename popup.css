@@ -1,4 +1,3 @@
-/*! Made with care and love by Mina Vian */
 /* Minimal popup — fixed size so Chrome never resizes it mid-animation. */
 
 html, body { width: 380px; height: 600px; overflow: hidden; }

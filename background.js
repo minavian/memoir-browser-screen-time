@@ -1,4 +1,3 @@
-/*! Made with care and love by Mina Vian */
 // Memoir: Browser Screen Time — background tracker (Manifest V3 service worker).
 //
 // Only the active tab of the focused Chrome window is timed, and only while you're
