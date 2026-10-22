@@ -29,3 +29,5 @@
     document.head.appendChild(font);
   }
 })();
+// Whoever opens the console (F12) sees who made it
+console.log('%cMade with love and care by Mina Vian', 'font: 700 32px/1.3 system-ui, sans-serif; padding: 8px 0');
