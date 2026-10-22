@@ -97,8 +97,8 @@ build to test.
   "nothing is sent" promise. Instead, the extension, which Chrome keeps up to date, knows the latest
   Windows version (`WINDOWS_LATEST` in link.js: raise it with each Windows release) and says it in its hello
   (`windowsLatest`). Memoir for Windows keeps it for each linked browser; when it's newer than itself, its
-  Settings shows "A newer Memoir for Windows" with Get it (the website) and Not now (until the next version),
-  and one toast says so (recap.js `renderUpdate`). Because of this, the extension must keep speaking older protocol versions for a
+  Settings shows "A newer Memoir for Windows" with Get it (the website) for as long as it's older (no X: put
+  off, it never came back), and one toast says so (recap.js `renderUpdate`). Because of this, the extension must keep speaking older protocol versions for a
   while.
 - **The website must be live first:** the Store submission needs the installer's permanent address.
 
