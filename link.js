@@ -1,3 +1,4 @@
+/*! Made with care and love by Mina Vian */
 // The link with Memoir for Windows (SYNC-PLAN.md), the service worker's side. Linked, this browser's own
 // days (day:<date>) go to the app, and the app's (its own merged with any other browser profile's) come
 // back and are kept as they are (link:windows:<date>); what's shown is both merged (core.js getDays), so the
