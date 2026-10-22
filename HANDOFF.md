@@ -587,7 +587,8 @@ and an empty week says so. The tour's Most used step teaches Apps | Browsers whe
 its sample week has apps (`SAMPLE_APPS`, sites filed under Chrome too), and the first browser linked with it gets
 `startTour({ link })`, a short tour on the real week (`linkSteps`), started by `maybeLinkTour` when the app sets
 `linkTour.pending` (it opens itself for it) and marked `linkTour.shown` after. Under Track browsing, `#startup-row` (Start with Windows) is Memoir for Windows' only: hidden here, it asks the
-app (`startup.get` / `startup.set`). Test it by pressing it for real against a throwaway
+app (`startup.get` / `startup.set`); turning it off asks first, with the recorder's RAM right now as Task Manager shows it
+(`memory`, followed each second while the popover is open; 13 when the app can't say). Test it by pressing it for real against a throwaway
 Memoir for Windows, as above.
 
 ## How Memoir works (`how-it-works.html`)
