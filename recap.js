@@ -2568,7 +2568,17 @@ function setKind(kind) {
   if (state.view.type === 'day') renderDetail({ soft: true });
 }
 
+let sweepEnd = 0;
+let sweepLater = 0;
 function renderSites(s, soft) {
+  // a quiet redraw during an Apps ⇄ Browsers sweep (the board resizing to the other list's length, say) waits
+  // till the sweep is done, so it doesn't cut it short
+  const left = sweepEnd - performance.now();
+  if (soft && left > 0) {
+    clearTimeout(sweepLater);
+    sweepLater = setTimeout(() => { if (state.summary) renderSites(state.summary, true); }, left + 20);
+    return;
+  }
   // the rows are about to be rebuilt: a site's pages close back into their row first
   if (pages.isOpen) closePagePop();
   const ol = $('sites');
@@ -2631,7 +2641,7 @@ function buildSites(s, soft, sweep = 0) {
   const idxs = sc.day == null ? null : [sc.day];
   // only the rows you can see make an entrance; the rest are simply there
   const onScreen = Math.ceil((ol.clientHeight || 600) / 50) + 1;
-  const grow = [];
+  const grow = [], swept = [];
   top.forEach(([domain, ms], i) => {
     const cat = CATEGORY_BY_ID[categorize(domain, activeOverrides())];
     const li = document.createElement('li');
@@ -2667,11 +2677,8 @@ function buildSites(s, soft, sweep = 0) {
     fill.style.setProperty('--c', cat.color);
     bar.appendChild(fill);
     const w = `${Math.max(2, (ms / max) * 100).toFixed(2)}%`;
-    const sweeps = sweep && i < onScreen;
-    if (sweeps) {
-      fill.style.setProperty('--d', `${260 + i * 40}ms`);
-      grow.push([fill, w]);
-    } else if (soft || i >= onScreen) {
+    if (sweep) swept.push([li, fill, w]);
+    else if (soft || i >= onScreen) {
       if (!soft) li.classList.add('still');
       fill.style.setProperty('--w', w);
     } else {
@@ -2680,10 +2687,24 @@ function buildSites(s, soft, sweep = 0) {
     }
     li.append(faviconTile(domain, cat.color), main, time, bar);
     ol.appendChild(li);
-    if (sweeps) li.animate([{ opacity: 0, transform: `translateX(${24 * sweep}px)` }, { opacity: 1, transform: 'none' }], { duration: 460, delay: 110 + i * 40, easing: EASE_OUT, fill: 'backwards' });
   });
   if (!top.length) ol.appendChild(Object.assign(emptyNote(`Nothing ${sc.when}.`), { className: 'dv-empty sites-none' }));
   ol.append(...going);
+  // the sweep: the rows that show once they're laid out (the list can be as tall as they are), in from the side
+  // switched to, a beat behind the row each replaces; each bar grows once its row is in, and the sweep is done
+  // when the last bar has
+  if (sweep) {
+    const room = ol.clientHeight;
+    let k = 0;
+    for (const [li, fill, w] of swept) {
+      if (li.offsetTop >= room) { fill.style.setProperty('--w', w); continue; }
+      li.animate([{ opacity: 0, transform: `translateX(${24 * sweep}px)` }, { opacity: 1, transform: 'none' }], { duration: 460, delay: 110 + k * 40, easing: EASE_OUT, fill: 'backwards' });
+      fill.style.setProperty('--d', `${260 + k * 40}ms`);
+      grow.push([fill, w]);
+      k++;
+    }
+    sweepEnd = performance.now() + 1160 + Math.max(0, k - 1) * 40;
+  }
   // every bar that grows starts from one frame, not a pair of frames each
   if (grow.length) requestAnimationFrame(() => requestAnimationFrame(() => { for (const [f, w] of grow) f.style.setProperty('--w', w); }));
 }
