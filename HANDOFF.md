@@ -303,9 +303,15 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
 - A site's pages (5.1.2). Data, per day: `ti` (title → ms), `th` (hour → site → title → ms, so an hour has its
   own pages), `tu` (title → its latest link, cleaned by core.js `cleanUrl`: http(s) only, on that site, no login
   or #part, tracking tags dropped, at most 500 chars), `tp` (sites whose titles were deleted as they got old).
-  Links are only saved with a title (Page titles on), never for Private, excluded or incognito time; the 30-titles
-  cap is unchanged ("other pages" has no link). Titles, hours and links are kept as long as their day (Keep
-  history); the old `settings.titleWeeks` (4–16 weeks, `pruneTitles`/`dropTitles`) is gone, and `getSettings`
+  Links are only saved with a title (Page titles on), never for Private, excluded or incognito time. Every page of a
+  day is kept while the day is recent (up to `RECENT_TITLES_PER_SITE` = 100 a site, a ceiling for titles that
+  change every second: past it the page with the least time so far makes way, `makeRoomForPage`). Once a day is
+  more than `FULL_PAGES_DAYS` (7) old, each site keeps its `MAX_TITLES_PER_SITE` (30) pages with the most time
+  (`trimPages`; background.js `trimOldPages`, daily from the `pagesTrimmed` mark on, and on any old day that
+  arrives with more, from an import or the link). Pages that go fold into "other pages" (`''`, no link), each
+  hour's share too. Until 2026-10-26 the 31st page of a day and every later one went into "other pages", so a long
+  evening of YouTube showed as one big "Other pages" under the day's first 30 videos. Titles, hours and links are
+  kept as long as their day (Keep history); the old `settings.titleWeeks` (4–16 weeks, `pruneTitles`/`dropTitles`) is gone, and `getSettings`
   drops the key. Days it trimmed still have `tp`. Never track, Erase titles, merge/replace imports and Clear all
   cover `th`/`tu`/`tp`.
   UI (recap.js `openPagePop`, `pagesFor`, `pagesWhen`): rows with pages (`.has-pages`) in Most used and in the
@@ -595,8 +601,8 @@ site links' ↗, which comes in the same way: `.open-btn .ext`). Plain text in o
 privacy page: same stylesheet (`privacy.css`) and script (`privacy.js`, whose email popover only runs where the
 page has one). It states the tracking rules in plain words: what counts (the tab in front, every kind of tab),
 when the clock stops (another app, minimised, 60 s idle unless sound plays, locked or asleep, paused), Private
-time, what's kept (titles up to 30 a site a day), the daily limit's colours and lock, why other screen-time
-tools differ, and that the clock is real (dot = seconds, long hand = minutes, short = hours, local time), with
+time, what's kept (every page title of a day, then after a week the 30 with the most time a site), the daily
+limit's colours and lock, why other screen-time tools differ, and that the clock is real (dot = seconds, long hand = minutes, short = hours, local time), with
 a big live clock under that section (`.hw-clock`, 170–340 px; privacy.js plays it in once it's in view). **Keep it true:** when a rule in background.js / core.js changes, change this page too. The row
 also balances Settings' columns (measured 542 / 533 px).
 

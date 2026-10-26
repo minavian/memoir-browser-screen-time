@@ -12,10 +12,11 @@
 // but no name is ever written.
 
 import {
-  APP_NAME, IDLE_SECONDS, HEARTBEAT_MINUTES, MAX_GAP_MS, SLEEP_CREDIT_MS, PRIVATE_KEY, MAX_TITLES_PER_SITE,
+  APP_NAME, IDLE_SECONDS, HEARTBEAT_MINUTES, MAX_GAP_MS, SLEEP_CREDIT_MS, PRIVATE_KEY,
   siteFromUrl, isExcluded, isPrivate, isPage, cleanTitle, cleanUrl, dayKey, storageKeyForDay, normalizeDay, dayTotal,
   getSettings, getSession, getDays, startOfWeek, weekDayKeys, addDays, formatDuration,
-  getGoalHistory, limitOn, retentionCutoffKey, listDayKeys, withData, listDayRecordKeys, recordDate,
+  getGoalHistory, limitOn, retentionCutoffKey, listDayKeys, withData, listDayRecordKeys, recordDate, isDayRecord,
+  makeRoomForPage, pagesCutoffKey, hasTooManyPages, trimPages,
 } from './shared/core.js';
 import { startLink, onStorageChanged, appOnline, link, unlink } from './link.js';
 
@@ -133,18 +134,19 @@ async function commit(session, start, end, settings) {
     if (added <= 0) continue;
     rec.s[domain] = (rec.s[domain] || 0) + added;
     if (title) {
+      // every page counts; only past the ceiling does the shortest one go into "other pages"
+      makeRoomForPage(rec, domain, title);
       const pages = rec.ti[domain] || (rec.ti[domain] = {});
-      const k = Object.hasOwn(pages, title) || Object.keys(pages).length < MAX_TITLES_PER_SITE ? title : '';
-      pages[k] = (Object.hasOwn(pages, k) ? pages[k] : 0) + added;
-      // the latest address of that page (none for the "other pages" share)
-      if (k && session.url) (rec.tu[domain] || (rec.tu[domain] = {}))[k] = session.url;
+      pages[title] = (Object.hasOwn(pages, title) ? pages[title] : 0) + added;
+      // the latest address of that page
+      if (session.url) (rec.tu[domain] || (rec.tu[domain] = {}))[title] = session.url;
       // and the same time hour by hour, so an hour can show its own pages
       for (const [h, ms] of hours) {
         const whole = Math.round(ms);
         if (whole <= 0) continue;
         const slot = rec.th[h] || (rec.th[h] = {});
         const byHour = slot[domain] || (slot[domain] = {});
-        byHour[k] = (Object.hasOwn(byHour, k) ? byHour[k] : 0) + whole;
+        byHour[title] = (Object.hasOwn(byHour, title) ? byHour[title] : 0) + whole;
       }
     }
     patch[storageKeyForDay(key)] = rec;
@@ -271,12 +273,31 @@ async function pruneOldDays() {
   if (old.length) await chrome.storage.local.remove(old);
 }
 
+// A day more than a week old keeps each site's 30 pages with the most time (core.js trimPages): the days
+// that turned a week old since the last pass (pagesTrimmed), or the days given (old ones that arrived
+// since: an import, the link)
+async function trimOldPages(keys = null) {
+  const cutoff = pagesCutoffKey();
+  const { pagesTrimmed = '' } = keys ? {} : await chrome.storage.local.get('pagesTrimmed');
+  const due = (keys || await listDayRecordKeys()).filter(k => { const d = recordDate(k); return d && d < cutoff && (keys || d >= pagesTrimmed); });
+  const raw = due.length ? await chrome.storage.local.get(due) : {};
+  const patch = {};
+  for (const k of due) {
+    if (!hasTooManyPages(raw[k])) continue;
+    const rec = normalizeDay(raw[k]);
+    if (trimPages(rec)) patch[k] = rec;
+  }
+  if (!keys && pagesTrimmed !== cutoff) patch.pagesTrimmed = cutoff;
+  if (Object.keys(patch).length) await chrome.storage.local.set(patch);
+}
+
 async function dailyHousekeeping() {
   const today = dayKey(new Date());
   const { lastPrune } = await chrome.storage.session.get('lastPrune');
   if (lastPrune === today) return;
   await chrome.storage.session.set({ lastPrune: today });
   await pruneOldDays();
+  await trimOldPages();
 }
 
 // Rainbow clock (Settings > Appearance): the toolbar icon's ring in rainbow colours
@@ -317,6 +338,10 @@ chrome.idle.onStateChanged.addListener(sync);
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== 'local') return;
   onStorageChanged(changes);
+  // an old day that came in with more than 30 pages a site (an import, the link) is trimmed too
+  const cutoff = pagesCutoffKey();
+  const old = Object.keys(changes).filter(k => isDayRecord(k) && recordDate(k) < cutoff && hasTooManyPages(changes[k].newValue));
+  if (old.length) enqueue(() => trimOldPages(old));
   if (changes.settings) {
     sync();
     const o = changes.settings.oldValue || {};

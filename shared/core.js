@@ -42,7 +42,12 @@ export const siteName = d => PAGE_NAMES[d] || (isApp(d) ? appName(d) : d);
 export const RETENTION_OPTIONS = [0, 365, 182, 91]; // 0 = forever
 export const GOAL_MIN_MS = 60_000;
 export const GOAL_MAX_MS = (23 * 60 + 59) * 60_000;
+// A site's pages on a day: all of them while the day is recent (up to RECENT_TITLES_PER_SITE, a ceiling
+// for titles that change every second, like a timer's), and once it's more than FULL_PAGES_DAYS old,
+// only its MAX_TITLES_PER_SITE with the most time (makeRoomForPage, trimPages)
 export const MAX_TITLES_PER_SITE = 30;
+export const RECENT_TITLES_PER_SITE = 100;
+export const FULL_PAGES_DAYS = 7;
 // The version of the export file. 1 (no number): before page links were saved.
 export const EXPORT_FORMAT = 2;
 
@@ -403,6 +408,46 @@ export function cloneDay(d) {
   const tu = {};
   for (const [k, v] of Object.entries(d.tu || {})) tu[k] = { ...v };
   return { s: { ...d.s }, h: d.h.slice(), hs, ti, th, tu, tp: (d.tp || []).slice() };
+}
+
+// ---------- a site's pages on a day (in place, on a day record from normalizeDay) ----------
+// Pages that go join "other pages" (''): their time, each hour's share too; their links go.
+function foldPages(rec, domain, titles) {
+  const fold = into => {
+    for (const t of titles) {
+      if (!Object.hasOwn(into, t)) continue;
+      into[''] = (Object.hasOwn(into, '') ? into[''] : 0) + into[t];
+      delete into[t];
+    }
+  };
+  fold(rec.ti[domain]);
+  for (const slot of Object.values(rec.th)) if (slot && slot[domain]) fold(slot[domain]);
+  if (rec.tu[domain]) for (const t of titles) delete rec.tu[domain][t];
+}
+// A new page on a site at the ceiling: the page with the least time so far makes way, so the new one
+// gets its own row and only the shortest visits go
+export function makeRoomForPage(rec, domain, title) {
+  const pages = rec.ti[domain];
+  if (!pages || Object.hasOwn(pages, title)) return;
+  const named = Object.keys(pages).filter(Boolean);
+  if (named.length < RECENT_TITLES_PER_SITE) return;
+  foldPages(rec, domain, [named.reduce((a, b) => (pages[b] < pages[a] ? b : a))]);
+}
+// A day more than a week old: each site keeps its MAX_TITLES_PER_SITE pages with the most time
+// (true when anything changed)
+export const pagesCutoffKey = (now = new Date()) => dayKey(addDays(now, -FULL_PAGES_DAYS));
+export const hasTooManyPages = rec => !!(rec && rec.ti && typeof rec.ti === 'object')
+  && Object.values(rec.ti).some(pages => pages && typeof pages === 'object' && Object.keys(pages).filter(Boolean).length > MAX_TITLES_PER_SITE);
+export function trimPages(rec) {
+  let changed = false;
+  for (const [domain, pages] of Object.entries(rec.ti)) {
+    const named = Object.keys(pages).filter(Boolean);
+    if (named.length <= MAX_TITLES_PER_SITE) continue;
+    named.sort((a, b) => pages[b] - pages[a]);
+    foldPages(rec, domain, named.slice(MAX_TITLES_PER_SITE));
+    changed = true;
+  }
+  return changed;
 }
 
 // ---------- each minute once: Windows apps, and the sites in browsers ----------
