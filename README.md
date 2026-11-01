@@ -171,4 +171,21 @@ Text is set in Inter (SIL Open Font License, see `fonts/Inter-LICENSE.txt`),
 bundled with Memoir so it looks the same on every PC; on a Mac it uses the
 Mac's own font, SF Pro.
 
+## Licence
+
+Memoir for Chrome is free software: you can redistribute it and/or modify it under the terms of the GNU General Public
+License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later
+version. It is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied
+warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. The licence's full text is in [LICENSE](LICENSE).
+
+Copyright © 2026 Mina Vian.
+
+**The name and the clock.** The licence covers the code, not the name "Memoir" or its clock logo (an additional term
+under section 7(e) of the GPL): a changed version may be shared under the GPL, but under a name and a look of its own.
+
+**What it's built with** keeps its own licences: the Inter and Unbounded fonts, under the SIL Open Font License 1.1 (`fonts/Inter-LICENSE.txt`, `fonts/Unbounded-LICENSE.txt`).
+
+Memoir's other half: [Memoir for Windows](https://github.com/minavian/windows-memoir) and [Memoir for
+Chrome](https://github.com/minavian/memoir-browser-screen-time) are both open source under the same licence.
+
 Made by Mina Vian
