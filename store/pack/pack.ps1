@@ -21,8 +21,16 @@ try {
     New-Item -ItemType Directory -Force -Path $Out | Out-Null
     $zip = Join-Path $Out "Memoir for Chrome $version.zip"
     Remove-Item -LiteralPath $zip -ErrorAction SilentlyContinue
-    Add-Type -AssemblyName System.IO.Compression.FileSystem
-    [IO.Compression.ZipFile]::CreateFromDirectory($packed, $zip, [IO.Compression.CompressionLevel]::Optimal, $false)
+    # each file by its own name, its folders split by / as zip files should be (Windows PowerShell's own
+    # CreateFromDirectory writes \, which other computers unpack as one file named "icons\icon16.png")
+    Add-Type -AssemblyName System.IO.Compression, System.IO.Compression.FileSystem
+    $archive = [IO.Compression.ZipFile]::Open($zip, [IO.Compression.ZipArchiveMode]::Create)
+    try {
+        foreach ($file in Get-ChildItem -LiteralPath $packed -Recurse -File) {
+            $name = $file.FullName.Substring($packed.Length).TrimStart('\').Replace('\', '/')
+            [IO.Compression.ZipFileExtensions]::CreateEntryFromFile($archive, $file.FullName, $name, [IO.Compression.CompressionLevel]::Optimal) | Out-Null
+        }
+    } finally { $archive.Dispose() }
     $size = [math]::Round((Get-Item -LiteralPath $zip).Length / 1KB)
     Write-Output "Packed $zip ($size KB)"
 } finally { Remove-Item -LiteralPath $stage -Recurse -Force -ErrorAction SilentlyContinue }
