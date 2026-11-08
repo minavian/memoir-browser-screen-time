@@ -419,6 +419,8 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
   Every cross-fade in this card (from a day/hour row, between sites, closing) is now a fade-through: the
   outgoing side is gone (0.16 s) before the incoming one shows (from 0.13 s), so two lists never read on top
   of each other. The "Click to see each page's time" hint vanishes on the click itself (`tip.hide(true)`).
+  It shows only once the pointer has rested on a row for a second (`rowHint` in recap.js; each move starts
+  the second again), so a pointer passing over the list shows nothing; a tip that's already up turns into it.
 
 - Tour placement (5.1.5, tour.js `cardSpot`): a step's `follow()` adds what its tries opened elsewhere
   to the light (Daily average: the trend graph; Highlights and Activity by hour: the day or hour they open
