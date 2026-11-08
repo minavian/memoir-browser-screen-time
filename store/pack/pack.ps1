@@ -13,7 +13,7 @@ New-Item -ItemType Directory -Force -Path $plain | Out-Null
 try {
     # what the extension is made of: the manifest, its pages, scripts and styles, and the icons, fonts and shared code
     Get-ChildItem -LiteralPath $root -File | Where-Object { $_.Extension -in '.html', '.js', '.css' -or $_.Name -eq 'manifest.json' } | Copy-Item -Destination $plain
-    # and Memoir's own licence (the GPL), which goes with every copy
+    # and Memoir's own licence (the AGPL), which goes with every copy
     Copy-Item -LiteralPath (Join-Path $root 'LICENSE') -Destination $plain
     foreach ($folder in @('icons', 'fonts', 'shared')) { Copy-Item -LiteralPath (Join-Path $root $folder) -Destination $plain -Recurse }
     & node (Join-Path $PSScriptRoot 'strip.mjs') $plain $packed
