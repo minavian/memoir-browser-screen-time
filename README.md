@@ -4,8 +4,8 @@ Quietly logs where your browsing time goes, keeps you to a daily limit if you
 want one, and shows your whole week at a glance, on one screen with no
 scrolling. Light and Dark themes, and an optional **Rainbow clock**.
 
-The Windows app is in **Windows Memoir**. Open `Memoir.exe` there; see
-[its instructions](Windows%20Memoir/README.md) for Windows app tracking and the optional browser connector.
+The Windows app, Memoir for Windows, has its own repository,
+[minavian/windows-memoir](https://github.com/minavian/windows-memoir): see its instructions for Windows app tracking and the optional browser connector.
 
 ## Install
 

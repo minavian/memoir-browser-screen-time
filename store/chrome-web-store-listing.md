@@ -55,7 +55,7 @@ Made by Mina Vian.
 
 Two lines to add when they're true (not yet):
 - Once sync with Memoir for Windows works: "Have Memoir for Windows? Link the two and see your whole computer's screen time in one place, right on your computer: no account, no cloud."
-- The Rainbow clock, only if the owner wants it named in the listing (it's the visible stance; ask first).
+- The Rainbow clock, only if it's to be named in the listing (it's the visible stance; decide first).
 
 ## Graphics
 
@@ -77,9 +77,9 @@ show the whole thing, three come up close on one feature each, so they don't all
 The promo tile is `tile.html`: the clock at 10:10 and MEMOIR on Dark, with "Where your browsing time goes".
 
 Rules for every image:
-- **Inter, never SF Pro** (the owner's choice, 2026-10-18). Memoir uses Inter everywhere but on a Mac; the
+- **Inter, never SF Pro** (chosen 2026-10-18). Memoir uses Inter everywhere but on a Mac; the
   script sets Memoir's own Inter on every page, so the images are the same wherever they're made.
-- **The clock** shows as in the app, **the Rainbow clock** stays off (the owner's yes, 2026-10-18).
+- **The clock** shows as in the app, **the Rainbow clock** stays off (decided 2026-10-18).
 - **No personal history:** half a year made up (about 3 h a day by now, more further back, a 3 h 30 m limit),
   and nothing of the shoot itself is tracked.
 - Pages laid out at 1440 × 900 and drawn at exactly 1280 × 800 by Chrome itself, close-ups at a larger scale,

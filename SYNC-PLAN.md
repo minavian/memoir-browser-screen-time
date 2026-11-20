@@ -1,7 +1,7 @@
 # Sync between the extension and Memoir for Windows: the plan
 
 Written 2026-10-17, updated 2026-10-18 (page titles no longer have a keep-time of their own: they go with
-their day, under Keep history). The owner decided sync must work at launch (19 November).
+their day, under Keep history). Sync must work at launch (19 November).
 Open questions are at the end; the plan assumes the recommended answers until they're settled.
 
 ## Built (6.0, 2026-10-18)

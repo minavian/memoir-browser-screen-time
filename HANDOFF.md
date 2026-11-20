@@ -5,9 +5,9 @@ Logs browsing time and shows today in a popup and the whole week in a full-page 
 Current version: **0.9.0**, shown as alpha v0.9 (a dev build) (`manifest.json`). Load unpacked from this folder; after edits,
 press reload on the extension in `chrome://extensions` and refresh the report tab.
 
-## What the owner cares about (apply to every change)
+## Principles (apply to every change)
 - **Themes:** Light / Dark; the default follows the system. Pink was dropped (2026-10-17), and so was the
-  full Pride palette that briefly replaced it (pastel trans-flag colours: every version looked off to the owner,
+  full Pride palette that briefly replaced it (pastel trans-flag colours: every version looked off,
   as it went against "colour is reserved for data"). What stayed is **Rainbow clock** (a small switch,
   `.switch-sm`, on the Appearance heading's line, with one line under the theme buttons: it keeps the left
   column of Settings short; moving Never track out of Tracking detail instead looked broken), in support
@@ -23,12 +23,12 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
 - **One screen, no scrolling** on large windows (cards stack and the page scrolls only under ~1100 px wide).
 - Minimal, clean, borderless look; **everything interactive is animated**; morph animations wherever possible.
 - Hovers use `--ease-out` and must **never shake or overshoot**. `--pop` only for deliberate pops.
-- **Performance matters** (they use a 165 Hz 2K screen): animate only `transform`/`opacity`, prefer
+- **Performance matters** (every frame counts on high-refresh screens): animate only `transform`/`opacity`, prefer
   WAAPI/CSS so the compositor runs it; avoid per-frame layout, big `filter`/`backdrop-filter`
   animations and per-element transitions on many nodes.
 - "Absolutely no bugs": verify every change, check console errors.
-- Keep edits small when asked for a "quick patch"; the owner watches usage.
-- Don't use sub-agents for reviews (owner reviews themselves).
+- Keep edits small when asked for a "quick patch".
+- Don't use sub-agents for reviews.
 
 ## Files
 - `background.js` — service worker: tracking (active tab of focused window; idle 60 s unless media),
@@ -48,7 +48,7 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
 - `shared/logo.js` — the clock logo's markup, its entrance (`playLogo`) and the live clocks (see "The clock logo"
   below).
 - `popup.*` — 380×600 "today" popup. No "Now" row (removed 5.1.5): opening the popup takes focus from the browser
-  window, so the tracker always paused and it only ever said "Nothing to track on this page". The owner kept the rest
+  window, so the tracker always paused and it only ever said "Nothing to track on this page". The rest stayed
   as it was (a simplified, centred redesign was tried and turned down).
   The legend lists every category of the day (three rows, two with the private line; the rest scroll, `makeScroller`).
   A category opens its sites on click (legend, ring segment, or Enter): the report's own category popover
@@ -83,7 +83,7 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
 - `fonts/InterVariable-memoir.woff2` — Inter 4.1 (OFL), every weight and optical size, Latin/Greek/Cyrillic: the text's
   font everywhere but on a Mac, which keeps SF Pro (`-apple-system` first in `--font`; SF Pro is never named, so a PC
   with it installed still gets Inter). theme-boot.js preloads it off-Mac. The Clear-all label uses it on a Mac too.
-  One change from Inter itself (the owner's ask): tabular digits keep the plain 1, not Inter's footed tabular 1
+  One change from Inter itself: tabular digits keep the plain 1, not Inter's footed tabular 1
   (`tnum`'s one → one.tf rule removed before subsetting, fontTools; OFL allows it, Inter reserves no name), so a 1
   looks the same everywhere. Remaking the file: subset InterVariable.ttf to the ranges in the @font-face comment.
 - `PRIVACY.md` — the privacy policy; `privacy.html/css/js` — the same text in the extension: plain text in one column, the clock
@@ -142,7 +142,7 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
   header's is; its start is allowed for being drawn from a whole pixel; a strong ease in and out; heading for the tour
   it darkens on the way to how it looks under the tour's dim, `underDim`, so landing under it changes nothing). One
   clock from the opening's O to the header,
-  nothing handed over (owner's rule). On a narrow window, with no header logo, it blurs away instead.
+  nothing handed over (house rule). On a narrow window, with no header logo, it blurs away instead.
   "Take the tour" starts the tour at once, under the card, while the words fade; the dims swap in one frame
   (`.tour.handoff` skips the spot's fade); once the words are gone and the page is calm (`calm()`), a shell reshapes
   the card into the tour's first card (`handoff(card, { onMove, onLand })` from `runTour`). That card is "Your weeks",
@@ -427,8 +427,8 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
   in Daily activity), so it's lit, usable and the card moves off it; `avoid()` (runTour option) keeps the
   card off open popovers and menus. Places beside the light are scored (covering the light, then what's
   up, then distance; right, left, below, above break ties), which gives the old placement when nothing is
-  open. Settings steps keep their old placement: the owner tried the card beside the Settings panel and
-  disliked it (it sat far from the light); keep the card next to the light. Highlights starts on the week.
+  open. Settings steps keep their old placement: the card beside the Settings panel was tried and
+  dropped (it sat far from the light); keep the card next to the light. Highlights starts on the week.
 
 - Tour arrows (5.1.5, tour.js `onArrow`): ← → are the tour's (Next, Back) wherever the focus is, caught at
   window/capture before the page's own handlers. "Your weeks" lends them to the page (`arrows(dir)` clicks
@@ -482,14 +482,14 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
   work is done, if later) it turns: band and width in one animation to the ring's own (77.632%, round) as its platinum
   gives way to the ring's fade and the clock sets itself (playLogo `fromO`); then the letters fly one after another
   (0.6 s after the clock is set), left to right, onto their own in the card's MEMOIR, the clock in the O's turn on to
-  its own place (the same element, one transform to `none`: nothing hands over, so nothing can jump; owner's rule, see
+  its own place (the same element, one transform to `none`: nothing hands over, so nothing can jump; house rule, see
   below), WELCOME TO onto the kicker, the black (or white) lifting off; it lands as the logo that follows the theme
   (`.themed`; on Light it fills the disc's room as it flies). The card's MEMOIR is cut in three (MEM, O, IR; the
   face has no kerning) so its O pops in as the second M lands to the eye, two thirds into its flight: the word fills
   in M, E, M, O, I, R. The card's entrance waits for `.cascade`. Clicks and keys
-  during it do nothing; `.wel.landed` marks the end (~5.8 s). Reduced motion: no opening. Tried and dropped by the
-  owner: sound, grain clouds, the word as a coloured loading bar ("too ugly"), and an O glyph crossfading into a
-  separate clock ("a small correction" showed as they swapped). Owner's rule: a thing that turns into another is one
+  during it do nothing; `.wel.landed` marks the end (~5.8 s). Reduced motion: no opening. Tried and
+  dropped: sound, grain clouds, the word as a coloured loading bar ("too ugly"), and an O glyph crossfading into a
+  separate clock ("a small correction" showed as they swapped). House rule: a thing that turns into another is one
   element on one path, never two matched up (that breaks on high-DPI screens). So the big MEMOIR and WELCOME TO are the
   card's own title letters and kicker, scaled up onto the opening's word (`.wi-type` is only unseen room now) and flown
   home: the card's MEMOIR is cut into letters (no kerning in the face), the kicker is in the opening's type (Unbounded
@@ -502,13 +502,13 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
   (`--wm-glow`). Painted once and never again: the glow is the word's own text-shadow (its text is transparent),
   the platinum a copy on top (`::after`, background-clip text), no filters. `<span class="wordmark">Memoir</span>`;
   `.wm-in` sizes it for a line of text; a slice (one letter) sets `data-t` and `--wm-w`/`--wm-x`. In Settings it's
-  plain on purpose (owner's rule): `.wordmark-plain`, Unbounded capitals only (footer, import popover, the toasts
+  plain on purpose (house rule): `.wordmark-plain`, Unbounded capitals only (footer, import popover, the toasts
   via `brand()`). Notifications and window titles stay plain text.
 - The clock logo (5.1.5): the hourglass is gone; the logo is a clock at 10:10 with no tile behind it. The
   ring fades clockwise from 12 in opacity (not grey shades), so it fades into any background; a knob at 12
-  covers the seam, with a hole right through. Masters: `M:\Code\MEMOIR\MEMOIR's logos` (`Memoir logo.svg`
+  covers the seam, with a hole right through. Masters: the `MEMOIR's logos` folder beside this one (`Memoir logo.svg`
   white, for dark backgrounds; `... for light backgrounds.svg` ink). In the report it's HTML, not an image
-  (`.logo`, shared/logo.css; in the report header, the empty card, the welcome and the popup header, live in all but the welcome). `.themed` (header, empty card, popup) follows the theme: on Light the master for light backgrounds (ink, no disc, the clock filling the disc's room so it isn't smaller than on Dark, the knob a hole through to the page; the owner asked for it), on Dark white on a black disc (the owner asked for a round black background
+  (`.logo`, shared/logo.css; in the report header, the empty card, the welcome and the popup header, live in all but the welcome). `.themed` (header, empty card, popup) follows the theme: on Light the master for light backgrounds (ink, no disc, the clock filling the disc's room so it isn't smaller than on Dark, the knob a hole through to the page), on Dark white on a black disc (a round black background
   there, not a square), a conic-gradient ring masked to a band. Entrance (`playLogo`, compositor only): the
   disc pops in, the band grows in as its fade turns into place, the hands sweep from 9:00 round to 10:10, and
   the knob pops onto the seam (its middle is the disc's black). The header clock (40 px with its disc) plays it
@@ -522,7 +522,7 @@ press reload on the extension in `chrome://extensions` and refresh the report ta
   10:10 pose turned with the minutes, the long hand's tip 50 units from the middle at every minute (9 inside the
   ring's 59; measured with a marker at the tip). Before, around :30 it reached ~8 units into the ring. The welcome's clock stays
   at 10:10. Icons (toolbar, tab, store, notifications): `icons/iconN.png`, the white clock on the black disc, one
-  set for light and dark toolbars (the owner wanted the black behind it, as on the site); small sizes are drawn
+  set for light and dark toolbars (the black behind it, as on the site); small sizes are drawn
   with thicker strokes (16 px has no hole in the knob).
 
 ## Over the limit: the flame's moment (`shared/overshow.js`, styles in `shared/goal.css`)
@@ -532,7 +532,7 @@ plays it, the flame rising out of its ring), the ring's own flame takes the stag
 once (220 ms), the flame grows at the middle with "42m over · your 1h daily limit", holds, then flies home into its
 ring. Four sizes by how far over (each flickers harder): under 30m small, 30m big, 1h bigger plus a dry line (10 in
 `OVER_LINES`, never the same twice running), 2h a wall of fire taller than the stage, rising from below; embers off
-the two biggest. Holds are long enough to read (2 to 3.8 s). One element (owner's rule): the flame leaves its spot
+the two biggest. Holds are long enough to read (2 to 3.8 s). One element (house rule): the flame leaves its spot
 (an empty `.gr-flame-slot` its size keeps the room), plays, lands back in it. Made flawless frame by frame: its own
 laid-out size (the ring may be scaling it in), the spot measured once the flame has left it, home measured as the
 flight starts, start and home on Chrome's whole pixels, size reached before the end (it glides the last stretch, so
@@ -548,8 +548,8 @@ the button, under its label, scaled up from the button's size as it fades (`puls
 where the growing box-shadow it replaced repainted every frame (1,631 paints in the first 7 s, now 82).
 
 ## Windows app
-Its own folder and private repo since 2026-10-18: `M:\Code\MEMOIR\Windows Memoir`, minavian/windows-memoir (its `Data` folder is
-the owner's history: never commit or overwrite it; test with `Memoir.exe --data-dir=`). Ported to this extension at commit
+Its own repo since 2026-10-18, minavian/windows-memoir (its `Data` folder is
+real history: never commit or overwrite it; test with `Memoir.exe --data-dir=`). Ported to this extension at commit
 `53e8106` (three-way merge per file; its `PORTING.md` has the method, the Windows edits and the next merge base). When a
 change here touches the data, the bridge or the wording, note it there.
 `Memoir.exe` is the portable x64 Windows app, with its own native foreground tracker and the same web UI. See its README and VALIDATION for build/setup, test results, and optional exact browser connector setup. Minimizing disposes WebView2. The themed tray popup runs in a temporary WPF process that exits after dismissal, so its graphics heap is released. Both mouse buttons open it; double-click restores the app. All data remains local; preserve `Windows Memoir/Data` and exclude data/test profiles from distributed copies.

@@ -4,11 +4,11 @@
 //   node store/shots.cjs
 //
 // Needs Playwright and Microsoft Edge (Chrome ignores --load-extension); set PLAYWRIGHT and EDGE if
-// they aren't where they are on the owner's PC. The extension is loaded unpacked from this folder,
+// they aren't in their usual places. The extension is loaded unpacked from this folder,
 // with half a year of made-up browsing (nobody's real history). Text is in Inter, Memoir's own
 // bundled font (fonts/InterVariable-memoir.woff2), even where the shots are made on a Mac: SF Pro must
 // never appear in them (its licence covers Apple platforms only). The clock shows as it does in the
-// app, with the Rainbow clock off (the owner's yes, 2026-10-18).
+// app, with the Rainbow clock off (decided 2026-10-18).
 //
 // 1 the week, whole; 2 the popup; then features up close, so the five don't all look alike:
 // 3 a day opened (its hours and its sites); 4 the daily limit's ring, being set; 5 Trend over time, on Dark.
@@ -16,7 +16,7 @@
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { chromium } = require(process.env.PLAYWRIGHT || 'C:/Users/messo/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const { chromium } = require(process.env.PLAYWRIGHT || require('node:path').join(require('node:os').homedir(), '.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright'));
 
 const EDGE = process.env.EDGE || 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe';
 const EXT = path.resolve(__dirname, '..');
