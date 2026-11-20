@@ -4,7 +4,7 @@
   "short_name": "Memoir",
   "version": "0.9.0",
   "version_name": "alpha v0.9",
-  "description": "Quietly logs where your browsing time goes, keeps you to a daily limit, and shows your whole week at a glance.",
+  "description": "This extension tracks your browsing time and summarizes it.",
   "minimum_chrome_version": "116",
   "permissions": ["tabs", "storage", "unlimitedStorage", "idle", "alarms", "notifications", "favicon"],
   "optional_permissions": ["nativeMessaging"],

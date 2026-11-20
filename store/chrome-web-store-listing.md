@@ -9,7 +9,7 @@ named here changes, change this file and the dashboard together. The privacy ans
 | Field | Value |
 |---|---|
 | Name | Memoir: Browser Screen Time (from `manifest.json`) |
-| Summary | Quietly logs where your browsing time goes, keeps you to a daily limit, and shows your whole week at a glance. (from `manifest.json`, 110 of 132 characters) |
+| Summary | This extension tracks your browsing time and summarizes it. (from `manifest.json`, 59 of 132 characters) |
 | Category | Productivity › Workflow & Planning |
 | Language | English |
 
