@@ -9,7 +9,7 @@ named here changes, change this file and the dashboard together. The privacy ans
 | Field | Value |
 |---|---|
 | Name | Memoir: Browser Screen Time (from `manifest.json`) |
-| Summary | This extension tracks your browsing time and summarizes it. (from `manifest.json`, 59 of 132 characters) |
+| Summary | Memoir is a high quality open-source browser screen time tracker that counts only the active tab you are actually looking at-pausing automatically when you switch apps, lock your screen, or step away for 60 seconds (unless audio or video is playing). (from `manifest.json`, 250 characters: over the store's 132) |
 | Category | Productivity › Workflow & Planning |
 | Language | English |
 

@@ -4,7 +4,7 @@
   "short_name": "Memoir",
   "version": "0.9.0",
   "version_name": "alpha v0.9",
-  "description": "This extension tracks your browsing time and summarizes it.",
+  "description": "Memoir is a high quality open-source browser screen time tracker that counts only the active tab you are actually looking at-pausing automatically when you switch apps, lock your screen, or step away for 60 seconds (unless audio or video is playing).",
   "minimum_chrome_version": "116",
   "permissions": ["tabs", "storage", "unlimitedStorage", "idle", "alarms", "notifications", "favicon"],
   "optional_permissions": ["nativeMessaging"],
